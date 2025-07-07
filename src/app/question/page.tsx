@@ -56,6 +56,13 @@ export default function QuestionPage() {
       setSelectedAnswer(answerId);
       setHasAnswered(true);
       console.log(`Player ${playerName} selected answer ${answerId}`);
+
+      // Redirect to results page after 2 seconds
+      setTimeout(() => {
+        router.push(
+          `/results?roomId=${encodeURIComponent(roomId)}&name=${encodeURIComponent(playerName)}&answer=${answerId}`,
+        );
+      }, 2000);
     }
   };
 
