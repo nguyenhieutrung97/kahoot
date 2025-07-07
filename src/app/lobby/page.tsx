@@ -147,6 +147,14 @@ export default function Lobby() {
             </div>
           ))}
         </div>
+
+        {players.length > 0 && (
+          <div className="mt-8 text-center">
+            <div className="text-sm text-gray-600">
+              {players.length} of {maxSlots} players joined
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
