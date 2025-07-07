@@ -1,14 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Dashboard() {
   const [roomId, setRoomId] = useState("");
+  const router = useRouter();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (roomId.trim()) {
-      console.log("Entering room:", roomId);
+      router.push(`/join?roomId=${encodeURIComponent(roomId)}`);
     }
   };
 
