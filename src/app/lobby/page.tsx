@@ -73,11 +73,13 @@ const mockPlayers: Player[] = [
 
 export default function Lobby() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const roomId = searchParams.get("roomId") || "ROOM123";
   const playerName = searchParams.get("name") || "";
 
   const [players, setPlayers] = useState<Player[]>([]);
   const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null);
+  const [countdown, setCountdown] = useState(5);
 
   useEffect(() => {
     // Add current player if they just joined
