@@ -108,9 +108,14 @@ export default function Lobby() {
   // Handle navigation when countdown reaches 0
   useEffect(() => {
     if (countdown === 0) {
-      router.push(
-        `/question?roomId=${encodeURIComponent(roomId)}&name=${encodeURIComponent(playerName)}`,
-      );
+      // Use setTimeout to defer navigation to next tick
+      const timeoutId = setTimeout(() => {
+        router.push(
+          `/question?roomId=${encodeURIComponent(roomId)}&name=${encodeURIComponent(playerName)}`,
+        );
+      }, 100);
+
+      return () => clearTimeout(timeoutId);
     }
   }, [countdown, router, roomId, playerName]);
 
