@@ -76,10 +76,10 @@ export default function QuestionPage() {
 
   const getAnswerIcon = (answerId: number) => {
     const icons = {
-      1: "△", // Triangle
-      2: "◯", // Circle
-      3: "⬜", // Square
-      4: "◇", // Diamond
+      1: "▲", // Triangle
+      2: "●", // Circle
+      3: "■", // Square
+      4: "♦", // Diamond
     };
     return icons[answerId as keyof typeof icons];
   };
