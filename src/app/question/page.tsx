@@ -74,14 +74,24 @@ export default function QuestionPage() {
     }
   };
 
-  const getAnswerIcon = (answerId: number) => {
-    const icons = {
-      1: "▲", // Triangle
-      2: "●", // Circle
-      3: "■", // Square
-      4: "♦", // Diamond
-    };
-    return icons[answerId as keyof typeof icons];
+  const getQuestionIconTheme = (questionNumber: number) => {
+    const themes = [
+      { 1: "▲", 2: "●", 3: "■", 4: "♦" }, // Geometric shapes
+      { 1: "★", 2: "☽", 3: "☀", 4: "⚡" }, // Celestial & elements
+      { 1: "♠", 2: "♥", 3: "♣", 4: "♦" }, // Card suits
+      { 1: "🌟", 2: "🔥", 3: "💧", 4: "🌪️" }, // Elements
+      { 1: "🎵", 2: "🎨", 3: "📚", 4: "⚽" }, // Activities
+      { 1: "🚀", 2: "🌙", 3: "⭐", 4: "🌍" }, // Space
+      { 1: "🔶", 2: "🔷", 3: "🔴", 4: "🟢" }, // Colored shapes
+      { 1: "💎", 2: "👑", 3: "🗝️", 4: "⚔️" }, // Treasures
+    ];
+
+    return themes[questionNumber % themes.length];
+  };
+
+  const getAnswerIcon = (answerId: number, questionNumber: number = 1) => {
+    const themeIcons = getQuestionIconTheme(questionNumber);
+    return themeIcons[answerId as keyof typeof themeIcons];
   };
 
   return (
