@@ -96,6 +96,23 @@ export default function Lobby() {
     }
   }, [playerName, currentPlayer]);
 
+  // Auto-redirect after 5 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          router.push(
+            `/question?roomId=${encodeURIComponent(roomId)}&name=${encodeURIComponent(playerName)}`,
+          );
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [router, roomId, playerName]);
+
   const maxSlots = 12;
   const emptySlots = Array(Math.max(0, maxSlots - players.length)).fill(null);
 
