@@ -53,8 +53,11 @@ export default function JoinRoom() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (name.trim() && avatar) {
-      console.log("Creating account for:", { name: name.trim(), avatar });
-      // Here you would typically save the user data and navigate to the game
+      const searchParams = new URLSearchParams(window.location.search);
+      const roomId = searchParams.get("roomId") || "ROOM123";
+      router.push(
+        `/lobby?roomId=${encodeURIComponent(roomId)}&name=${encodeURIComponent(name.trim())}`,
+      );
     }
   };
 
