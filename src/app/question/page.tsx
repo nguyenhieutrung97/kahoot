@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 
 export default function QuestionPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const roomId = searchParams.get("roomId") || "ROOM123";
   const playerName = searchParams.get("name") || "Player";
 
