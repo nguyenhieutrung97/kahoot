@@ -49,8 +49,15 @@ export default function QuestionPage() {
     if (timeLeft > 0 && !hasAnswered) {
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
       return () => clearTimeout(timer);
+    } else if (timeLeft === 0 && !hasAnswered) {
+      // Navigate to results when time runs out
+      setTimeout(() => {
+        router.push(
+          `/results?roomId=${encodeURIComponent(roomId)}&name=${encodeURIComponent(playerName)}&answer=0`,
+        );
+      }, 1000);
     }
-  }, [timeLeft, hasAnswered]);
+  }, [timeLeft, hasAnswered, router, roomId, playerName]);
 
   const handleAnswerSelect = (answerId: number) => {
     if (!hasAnswered && timeLeft > 0) {
