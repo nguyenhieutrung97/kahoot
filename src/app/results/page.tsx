@@ -77,11 +77,11 @@ export default function ResultsPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <header className="p-6 flex justify-between items-center text-white">
-        <div className="text-lg font-semibold">Room: {roomId}</div>
-        <div className="text-lg font-semibold">Results</div>
+      <header className="bg-white shadow-sm p-6 flex justify-between items-center text-gray-800 border-b-4 border-red-600">
+        <div className="text-lg font-semibold text-gray-600">Room: {roomId}</div>
+        <div className="text-lg font-bold text-red-600 uppercase tracking-wide">RESULTS</div>
       </header>
 
       {/* Results Content */}
@@ -91,23 +91,23 @@ export default function ResultsPage() {
           className={`text-center mb-8 transition-all duration-1000 ${showResults ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}
         >
           {isCorrect ? (
-            <div className="text-center">
-              <div className="text-6xl mb-4">🎉</div>
-              <h1 className="text-4xl font-bold text-white mb-2">Excellent!</h1>
-              <p className="text-xl text-green-200">You got it right!</p>
+            <div className="text-center bg-white rounded-lg p-8 shadow-lg border-l-8 border-green-600">
+              <h1 className="text-4xl font-bold text-gray-900 mb-2 uppercase tracking-wide">EXCELLENT!</h1>
+              <div className="w-16 h-1 bg-green-600 mx-auto mb-4"></div>
+              <p className="text-xl text-gray-600 font-medium">Precision and expertise</p>
             </div>
           ) : userAnswer === 0 ? (
-            <div className="text-center">
-              <div className="text-6xl mb-4">⏰</div>
-              <h1 className="text-4xl font-bold text-white mb-2">Time's Up!</h1>
-              <p className="text-xl text-yellow-200">No answer submitted</p>
+            <div className="text-center bg-white rounded-lg p-8 shadow-lg border-l-8 border-yellow-600">
+              <h1 className="text-4xl font-bold text-gray-900 mb-2 uppercase tracking-wide">TIME'S UP!</h1>
+              <div className="w-16 h-1 bg-yellow-600 mx-auto mb-4"></div>
+              <p className="text-xl text-gray-600 font-medium">No answer submitted</p>
             </div>
           ) : (
-            <div className="text-center">
-              <div className="text-6xl mb-4">💪</div>
-              <h1 className="text-4xl font-bold text-white mb-2">Good Try!</h1>
-              <p className="text-xl text-red-200">
-                Keep going, you'll get the next one!
+            <div className="text-center bg-white rounded-lg p-8 shadow-lg border-l-8 border-red-600">
+              <h1 className="text-4xl font-bold text-gray-900 mb-2 uppercase tracking-wide">GOOD TRY!</h1>
+              <div className="w-16 h-1 bg-red-600 mx-auto mb-4"></div>
+              <p className="text-xl text-gray-600 font-medium">
+                Innovation through continuous improvement
               </p>
             </div>
           )}
@@ -245,16 +245,16 @@ export default function ResultsPage() {
         <div
           className={`text-center transition-all duration-1000 delay-1000 ${showResults ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
         >
-          <div className="text-white mb-6">
-            <div className="text-sm opacity-80">Playing as</div>
-            <div className="text-lg font-semibold">{playerName}</div>
+          <div className="text-gray-700 mb-6 bg-white rounded-lg p-4 shadow border-2 border-gray-200">
+            <div className="text-sm font-medium text-gray-500 uppercase tracking-wide">Playing as</div>
+            <div className="text-lg font-bold text-gray-900">{playerName}</div>
           </div>
 
           <button
             onClick={handleContinue}
-            className="px-8 py-3 bg-white text-green-600 rounded-lg font-bold text-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-purple-600 transition-colors"
+            className="px-8 py-4 bg-red-600 text-white rounded font-bold text-lg uppercase tracking-wide hover:bg-red-700 transition-all duration-200 shadow-lg border-2 border-red-600"
           >
-            {isFinalQuestion ? "🏆 View Final Results" : "Continue"}
+            {isFinalQuestion ? "VIEW FINAL RESULTS" : "CONTINUE"}
           </button>
         </div>
       </div>
