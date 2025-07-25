@@ -57,7 +57,7 @@ export default function ResultsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 to-blue-600 flex flex-col">
+    <div className="min-h-screen flex flex-col">
       {/* Header */}
       <header className="p-6 flex justify-between items-center text-white">
         <div className="text-lg font-semibold">Room: {roomId}</div>
