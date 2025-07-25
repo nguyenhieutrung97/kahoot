@@ -44,11 +44,23 @@ export default function ResultsPage() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Mock - determine if this is the final question
+  const currentQuestionNumber = parseInt(searchParams.get("questionNumber") || "1");
+  const totalQuestions = 10;
+  const isFinalQuestion = currentQuestionNumber >= totalQuestions;
+
   const handleContinue = () => {
-    // Navigate to next question or back to lobby
-    router.push(
-      `/lobby?roomId=${encodeURIComponent(roomId)}&name=${encodeURIComponent(playerName)}`,
-    );
+    if (isFinalQuestion) {
+      // Navigate to final leaderboard
+      router.push(
+        `/leaderboard?roomId=${encodeURIComponent(roomId)}&name=${encodeURIComponent(playerName)}`,
+      );
+    } else {
+      // Navigate to next question or back to lobby
+      router.push(
+        `/lobby?roomId=${encodeURIComponent(roomId)}&name=${encodeURIComponent(playerName)}`,
+      );
+    }
   };
 
   const getAnswerStyle = (answerId: number) => {
