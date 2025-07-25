@@ -106,7 +106,7 @@ export default function LeaderboardPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex flex-col relative overflow-hidden">
+    <div className="min-h-screen bg-gray-50 flex flex-col relative overflow-hidden">
       {/* Fireworks */}
       {showFireworks && (
         <>
@@ -121,9 +121,9 @@ export default function LeaderboardPage() {
       )}
 
       {/* Header */}
-      <header className="p-6 flex justify-between items-center text-white relative z-10">
-        <div className="text-lg font-semibold">Room: {roomId}</div>
-        <div className="text-lg font-semibold">🏁 Final Results</div>
+      <header className="bg-white shadow-sm p-6 flex justify-between items-center text-gray-800 relative z-10 border-b-4 border-red-600">
+        <div className="text-lg font-semibold text-gray-600">Room: {roomId}</div>
+        <div className="text-lg font-bold text-red-600">FINAL RESULTS</div>
       </header>
 
       {/* Main Content */}
@@ -132,11 +132,11 @@ export default function LeaderboardPage() {
         <div
           className={`text-center mb-12 transition-all duration-1000 ${showLeaderboard ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}
         >
-          <div className="text-8xl mb-4">🎉</div>
-          <h1 className="text-5xl md:text-6xl font-bold text-white mb-4 bg-gradient-to-r from-yellow-400 via-pink-500 to-blue-500 bg-clip-text text-transparent">
-            Game Complete!
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 uppercase tracking-wide">
+            GAME COMPLETE
           </h1>
-          <p className="text-xl text-purple-200">All questions finished - here are the champions!</p>
+          <div className="w-24 h-1 bg-red-600 mx-auto mb-4"></div>
+          <p className="text-xl text-gray-600 font-medium">Excellence in every answer</p>
         </div>
 
         {/* Podium */}
@@ -147,12 +147,12 @@ export default function LeaderboardPage() {
           {leaderboard[1] && (
             <div className="text-center">
               <div className="relative">
-                <div className={`${getRankDisplay(2).bgColor} p-6 rounded-lg mb-4 h-32 flex flex-col justify-center items-center shadow-lg`}>
-                  <div className="text-4xl mb-2">{getRankDisplay(2).emoji}</div>
-                  <div className="text-white font-bold text-lg">{leaderboard[1].name}</div>
-                  <div className="text-white text-sm opacity-90">{leaderboard[1].score} pts</div>
+                <div className="bg-white border-4 border-gray-400 p-6 rounded-lg mb-4 h-32 flex flex-col justify-center items-center shadow-lg">
+                  <div className="text-4xl mb-2 text-gray-600">2</div>
+                  <div className="text-gray-900 font-bold text-lg">{leaderboard[1].name}</div>
+                  <div className="text-gray-600 text-sm font-medium">{leaderboard[1].score} PTS</div>
                 </div>
-                <div className="text-6xl">{leaderboard[1].badge}</div>
+                <div className="absolute -top-2 -right-2 bg-gray-400 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm">2</div>
               </div>
             </div>
           )}
@@ -161,12 +161,12 @@ export default function LeaderboardPage() {
           {leaderboard[0] && (
             <div className="text-center">
               <div className="relative transform scale-110">
-                <div className={`${getRankDisplay(1).bgColor} p-8 rounded-lg mb-4 h-40 flex flex-col justify-center items-center shadow-2xl border-4 border-yellow-300`}>
-                  <div className="text-5xl mb-2">{getRankDisplay(1).emoji}</div>
-                  <div className="text-white font-bold text-xl">{leaderboard[0].name}</div>
-                  <div className="text-white text-lg opacity-90">{leaderboard[0].score} pts</div>
+                <div className="bg-white border-4 border-red-600 p-8 rounded-lg mb-4 h-40 flex flex-col justify-center items-center shadow-xl">
+                  <div className="text-5xl mb-2 text-red-600 font-bold">1</div>
+                  <div className="text-gray-900 font-bold text-xl">{leaderboard[0].name}</div>
+                  <div className="text-red-600 text-lg font-bold">{leaderboard[0].score} PTS</div>
                 </div>
-                <div className="text-7xl animate-bounce">{leaderboard[0].badge}</div>
+                <div className="absolute -top-3 -right-3 bg-red-600 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold">1</div>
               </div>
             </div>
           )}
@@ -175,12 +175,12 @@ export default function LeaderboardPage() {
           {leaderboard[2] && (
             <div className="text-center">
               <div className="relative">
-                <div className={`${getRankDisplay(3).bgColor} p-6 rounded-lg mb-4 h-28 flex flex-col justify-center items-center shadow-lg`}>
-                  <div className="text-3xl mb-2">{getRankDisplay(3).emoji}</div>
-                  <div className="text-white font-bold text-lg">{leaderboard[2].name}</div>
-                  <div className="text-white text-sm opacity-90">{leaderboard[2].score} pts</div>
+                <div className="bg-white border-4 border-orange-500 p-6 rounded-lg mb-4 h-28 flex flex-col justify-center items-center shadow-lg">
+                  <div className="text-3xl mb-2 text-orange-600">3</div>
+                  <div className="text-gray-900 font-bold text-lg">{leaderboard[2].name}</div>
+                  <div className="text-gray-600 text-sm font-medium">{leaderboard[2].score} PTS</div>
                 </div>
-                <div className="text-5xl">{leaderboard[2].badge}</div>
+                <div className="absolute -top-2 -right-2 bg-orange-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm">3</div>
               </div>
             </div>
           )}
@@ -188,27 +188,28 @@ export default function LeaderboardPage() {
 
         {/* Current Player Stats */}
         <div
-          className={`bg-white bg-opacity-10 backdrop-blur-sm rounded-lg p-6 mb-8 max-w-md w-full text-center border border-white border-opacity-20 transition-all duration-1000 delay-1000 ${showLeaderboard ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
+          className={`bg-white rounded-lg p-6 mb-8 max-w-md w-full text-center border-2 border-gray-200 shadow-lg transition-all duration-1000 delay-1000 ${showLeaderboard ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
         >
-          <h3 className="text-xl font-bold text-black mb-4">Your Performance</h3>
-          <div className="text-black space-y-2">
-            <div className="flex justify-between">
-              <span>Player:</span>
-              <span className="font-semibold">{currentPlayerName}</span>
+          <h3 className="text-xl font-bold text-gray-900 mb-4 uppercase tracking-wide">YOUR PERFORMANCE</h3>
+          <div className="w-12 h-1 bg-red-600 mx-auto mb-4"></div>
+          <div className="text-gray-700 space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="font-medium">Player:</span>
+              <span className="font-bold text-gray-900">{currentPlayerName}</span>
             </div>
             {currentPlayerRank > 0 && (
-              <div className="flex justify-between">
-                <span>Final Rank:</span>
-                <span className="font-semibold text-yellow-400">#{currentPlayerRank}</span>
+              <div className="flex justify-between items-center">
+                <span className="font-medium">Final Rank:</span>
+                <span className="font-bold text-red-600 text-lg">#{currentPlayerRank}</span>
               </div>
             )}
-            <div className="flex justify-between">
-              <span>Correct Answers:</span>
-              <span className="font-semibold text-green-400">7/10</span>
+            <div className="flex justify-between items-center">
+              <span className="font-medium">Correct Answers:</span>
+              <span className="font-bold text-green-600">7/10</span>
             </div>
-            <div className="flex justify-between">
-              <span>Final Score:</span>
-              <span className="font-semibold text-blue-400">820 pts</span>
+            <div className="flex justify-between items-center">
+              <span className="font-medium">Final Score:</span>
+              <span className="font-bold text-gray-900 text-lg">820 PTS</span>
             </div>
           </div>
         </div>
@@ -219,15 +220,15 @@ export default function LeaderboardPage() {
         >
           <button
             onClick={handlePlayAgain}
-            className="px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg font-bold text-lg hover:from-green-600 hover:to-emerald-700 transform hover:scale-105 transition-all duration-200 shadow-lg"
+            className="px-8 py-4 bg-red-600 text-white rounded font-bold text-lg uppercase tracking-wide hover:bg-red-700 transition-all duration-200 shadow-lg border-2 border-red-600"
           >
-            🎮 Play Again
+            PLAY AGAIN
           </button>
           <button
             onClick={handleBackToHome}
-            className="px-8 py-3 bg-white bg-opacity-20 backdrop-blur-sm text-black rounded-lg font-bold text-lg hover:bg-opacity-30 transform hover:scale-105 transition-all duration-200 border border-white border-opacity-30"
+            className="px-8 py-4 bg-white text-gray-900 rounded font-bold text-lg uppercase tracking-wide hover:bg-gray-50 transition-all duration-200 border-2 border-gray-300"
           >
-            🏠 Back to Home
+            BACK TO HOME
           </button>
         </div>
       </div>
