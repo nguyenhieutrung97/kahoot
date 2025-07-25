@@ -76,9 +76,6 @@ export default function QuestionPage() {
 
   const getQuestionIconTheme = (questionNumber: number) => {
     const themes = [
-      { 1: "▲", 2: "●", 3: "■", 4: "♦" }, // Geometric shapes
-      { 1: "★", 2: "☽", 3: "☀", 4: "⚡" }, // Celestial & elements
-      { 1: "♠", 2: "♥", 3: "♣", 4: "♦" }, // Card suits
       { 1: "🌟", 2: "🔥", 3: "💧", 4: "🌪️" }, // Elements
       { 1: "🎵", 2: "🎨", 3: "📚", 4: "⚽" }, // Activities
       { 1: "🚀", 2: "🌙", 3: "⭐", 4: "🌍" }, // Space
