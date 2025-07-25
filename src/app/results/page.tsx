@@ -254,7 +254,7 @@ export default function ResultsPage() {
             onClick={handleContinue}
             className="px-8 py-3 bg-white text-green-600 rounded-lg font-bold text-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-purple-600 transition-colors"
           >
-            Continue
+            {isFinalQuestion ? "🏆 View Final Results" : "Continue"}
           </button>
         </div>
       </div>
