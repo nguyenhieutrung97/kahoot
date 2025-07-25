@@ -16,26 +16,34 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="p-6">
-        <h1 className="text-2xl font-bold text-blue-600">DASHBOARD</h1>
+      <header className="bg-white shadow-sm p-6 border-b-4 border-red-600">
+        <h1 className="text-2xl font-bold text-red-600 uppercase tracking-wide">QUIZ PLATFORM</h1>
       </header>
 
       <main className="flex items-center justify-center min-h-[calc(100vh-120px)]">
-        <form onSubmit={handleSubmit} className="flex items-center gap-2">
-          <input
-            type="text"
-            value={roomId}
-            onChange={(e) => setRoomId(e.target.value)}
-            placeholder="Enter Room ID"
-            className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-          <button
-            type="submit"
-            className="px-6 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
-          >
-            Enter
-          </button>
-        </form>
+        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full mx-4 border-2 border-gray-200">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-900 uppercase tracking-wide mb-4">JOIN ROOM</h2>
+            <div className="w-16 h-1 bg-red-600 mx-auto mb-4"></div>
+            <p className="text-gray-600 font-medium">Innovation through knowledge</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <input
+              type="text"
+              value={roomId}
+              onChange={(e) => setRoomId(e.target.value)}
+              placeholder="ENTER ROOM ID"
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded font-medium text-center uppercase tracking-wide focus:outline-none focus:border-red-600 focus:ring-0 transition-colors"
+            />
+            <button
+              type="submit"
+              className="w-full px-6 py-4 bg-red-600 text-white rounded font-bold text-lg uppercase tracking-wide hover:bg-red-700 transition-all duration-200 border-2 border-red-600"
+            >
+              ENTER ROOM
+            </button>
+          </form>
+        </div>
       </main>
     </div>
   );

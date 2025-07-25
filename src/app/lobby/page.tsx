@@ -13,16 +13,16 @@ interface Player {
 }
 
 const AVATAR_COLORS = [
-  "bg-red-500",
-  "bg-blue-500",
-  "bg-green-500",
-  "bg-yellow-500",
-  "bg-purple-500",
-  "bg-pink-500",
-  "bg-indigo-500",
-  "bg-teal-500",
-  "bg-orange-500",
-  "bg-cyan-500",
+  "bg-red-600",
+  "bg-gray-600",
+  "bg-blue-600",
+  "bg-green-600",
+  "bg-orange-600",
+  "bg-purple-600",
+  "bg-indigo-600",
+  "bg-teal-600",
+  "bg-pink-600",
+  "bg-yellow-600",
 ];
 
 const generatePlayerId = () => {
@@ -124,36 +124,41 @@ export default function Lobby() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="flex justify-between items-start p-6">
-        <h1 className="text-2xl font-bold text-blue-600">LOBBY</h1>
+      <header className="bg-white shadow-sm flex justify-between items-start p-6 border-b-4 border-red-600">
+        <h1 className="text-2xl font-bold text-red-600 uppercase tracking-wide">GAME LOBBY</h1>
         <div className="text-right">
-          <div className="text-lg font-semibold text-gray-800">
-            The Room Title
+          <div className="text-lg font-bold text-gray-900 uppercase tracking-wide">
+            WAITING ROOM
           </div>
-          <div className="text-sm text-gray-600">The Room ID: {roomId}</div>
+          <div className="text-sm text-gray-600 font-medium">Room ID: {roomId}</div>
         </div>
       </header>
 
       <main className="px-6 pb-6">
-        <div className="grid grid-cols-4 gap-4 max-w-4xl">
+        <div className="mb-8 text-center">
+          <h2 className="text-2xl font-bold text-gray-900 uppercase tracking-wide mb-4">PARTICIPANTS</h2>
+          <div className="w-16 h-1 bg-red-600 mx-auto"></div>
+        </div>
+
+        <div className="grid grid-cols-4 gap-4 max-w-4xl mx-auto">
           {/* Render existing players */}
           {players.map((player) => (
             <div
               key={player.id}
-              className="bg-white rounded-lg p-4 shadow-sm border border-gray-200"
+              className="bg-white rounded-lg p-4 shadow-lg border-2 border-gray-200 hover:border-red-600 transition-colors"
             >
-              <div className="aspect-square bg-gray-200 rounded-lg mb-3 flex items-center justify-center">
+              <div className="aspect-square bg-gray-100 rounded-lg mb-3 flex items-center justify-center border-2 border-gray-200">
                 <div
                   className={`w-16 h-16 ${player.avatar.color} rounded-full flex items-center justify-center text-white text-lg font-bold`}
                 >
                   {player.avatar.initials}
                 </div>
               </div>
-              <div className="text-sm">
-                <div className="font-medium text-gray-800 truncate">
+              <div className="text-sm text-center">
+                <div className="font-bold text-gray-900 truncate uppercase tracking-wide text-xs">
                   {player.name}
                 </div>
-                <div className="text-gray-500">{player.id}</div>
+                <div className="text-gray-500 font-medium mt-1">{player.id}</div>
               </div>
             </div>
           ))}
@@ -162,24 +167,25 @@ export default function Lobby() {
           {emptySlots.map((_, index) => (
             <div
               key={`empty-${index}`}
-              className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 opacity-50"
+              className="bg-white rounded-lg p-4 shadow-lg border-2 border-gray-200 opacity-40"
             >
-              <div className="aspect-square bg-gray-100 rounded-lg mb-3"></div>
-              <div className="text-sm">
+              <div className="aspect-square bg-gray-100 rounded-lg mb-3 border-2 border-gray-200 border-dashed"></div>
+              <div className="text-sm text-center">
                 <div className="h-4 bg-gray-100 rounded mb-1"></div>
-                <div className="h-3 bg-gray-100 rounded w-16"></div>
+                <div className="h-3 bg-gray-100 rounded w-16 mx-auto"></div>
               </div>
             </div>
           ))}
         </div>
 
         {players.length > 0 && (
-          <div className="mt-8 text-center">
-            <div className="text-sm text-gray-600 mb-2">
-              {players.length} of {maxSlots} players joined
+          <div className="mt-12 text-center bg-white rounded-lg p-6 shadow-lg border-2 border-gray-200 max-w-md mx-auto">
+            <div className="text-sm text-gray-600 mb-2 font-medium uppercase tracking-wide">
+              {players.length} of {maxSlots} participants ready
             </div>
-            <div className="text-lg font-semibold text-blue-600">
-              Game starting in {countdown} seconds...
+            <div className="w-12 h-1 bg-red-600 mx-auto mb-4"></div>
+            <div className="text-2xl font-bold text-red-600 uppercase tracking-wide">
+              START IN {countdown}S
             </div>
           </div>
         )}
