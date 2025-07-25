@@ -190,8 +190,8 @@ export default function LeaderboardPage() {
         <div
           className={`bg-white bg-opacity-10 backdrop-blur-sm rounded-lg p-6 mb-8 max-w-md w-full text-center border border-white border-opacity-20 transition-all duration-1000 delay-1000 ${showLeaderboard ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
         >
-          <h3 className="text-xl font-bold text-white mb-4">Your Performance</h3>
-          <div className="text-white space-y-2">
+          <h3 className="text-xl font-bold text-black mb-4">Your Performance</h3>
+          <div className="text-black space-y-2">
             <div className="flex justify-between">
               <span>Player:</span>
               <span className="font-semibold">{currentPlayerName}</span>
