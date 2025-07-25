@@ -225,7 +225,7 @@ export default function LeaderboardPage() {
           </button>
           <button
             onClick={handleBackToHome}
-            className="px-8 py-3 bg-white bg-opacity-20 backdrop-blur-sm text-white rounded-lg font-bold text-lg hover:bg-opacity-30 transform hover:scale-105 transition-all duration-200 border border-white border-opacity-30"
+            className="px-8 py-3 bg-white bg-opacity-20 backdrop-blur-sm text-black rounded-lg font-bold text-lg hover:bg-opacity-30 transform hover:scale-105 transition-all duration-200 border border-white border-opacity-30"
           >
             🏠 Back to Home
           </button>
