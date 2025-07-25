@@ -88,22 +88,23 @@ export default function QuestionPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <header className="p-6 flex justify-between items-center text-white">
-        <div className="text-lg font-semibold">Room: {roomId}</div>
-        <div className="text-lg font-semibold">Time: {timeLeft}s</div>
+      <header className="bg-white shadow-sm p-6 flex justify-between items-center text-gray-800 border-b-4 border-red-600">
+        <div className="text-lg font-semibold text-gray-600">Room: {roomId}</div>
+        <div className="text-lg font-bold text-red-600 uppercase tracking-wide">TIME: {timeLeft}S</div>
       </header>
 
       {/* Question Area */}
       <div className="flex-1 flex flex-col items-center justify-center px-6">
-        <div className="bg-white rounded-lg p-8 mb-8 max-w-4xl w-full text-center shadow-lg">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-4">
+        <div className="bg-white rounded-lg p-8 mb-8 max-w-4xl w-full text-center shadow-lg border-2 border-gray-200">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4 uppercase tracking-wide">
             {question.text}
           </h1>
+          <div className="w-24 h-1 bg-red-600 mx-auto mb-4"></div>
           {hasAnswered && (
-            <div className="text-green-600 font-semibold">
-              Answer submitted! Waiting for other players...
+            <div className="text-green-600 font-bold uppercase tracking-wide">
+              ANSWER SUBMITTED! PROCESSING...
             </div>
           )}
         </div>
@@ -117,15 +118,15 @@ export default function QuestionPage() {
               disabled={hasAnswered || timeLeft === 0}
               className={`
                 ${answer.color} ${answer.hoverColor}
-                text-white p-6 rounded-lg font-bold text-lg
+                text-white p-6 rounded font-bold text-lg uppercase tracking-wide
                 flex items-center justify-between
-                transition-all duration-200 transform
-                ${selectedAnswer === answer.id ? "ring-4 ring-white scale-105" : ""}
-                ${hasAnswered || timeLeft === 0 ? "opacity-60 cursor-not-allowed" : "hover:scale-105 active:scale-95"}
+                transition-all duration-200 transform border-4 border-transparent
+                ${selectedAnswer === answer.id ? "border-white scale-105 shadow-xl" : ""}
+                ${hasAnswered || timeLeft === 0 ? "opacity-60 cursor-not-allowed" : "hover:scale-105 active:scale-95 shadow-lg"}
               `}
             >
               <div className="flex items-center space-x-4">
-                <div className="text-2xl font-bold bg-white bg-opacity-20 rounded-full w-12 h-12 flex items-center justify-center">
+                <div className="text-2xl font-bold bg-white bg-opacity-20 rounded w-12 h-12 flex items-center justify-center">
                   {getAnswerIcon(answer.id)}
                 </div>
                 <span>{answer.text}</span>
@@ -138,15 +139,15 @@ export default function QuestionPage() {
         </div>
 
         {/* Player Info */}
-        <div className="mt-8 text-white text-center">
-          <div className="text-sm opacity-80">Playing as</div>
-          <div className="text-lg font-semibold">{playerName}</div>
+        <div className="mt-8 bg-white rounded-lg p-4 shadow border-2 border-gray-200 text-center">
+          <div className="text-sm text-gray-500 uppercase tracking-wide font-medium">PARTICIPANT</div>
+          <div className="text-lg font-bold text-gray-900 uppercase tracking-wide">{playerName}</div>
         </div>
 
         {/* Time up message */}
         {timeLeft === 0 && !hasAnswered && (
-          <div className="mt-4 bg-red-500 text-white px-6 py-3 rounded-lg font-semibold">
-            Time's up! No answer submitted.
+          <div className="mt-4 bg-red-600 text-white px-6 py-3 rounded font-bold uppercase tracking-wide border-2 border-red-600">
+            TIME EXPIRED - NO RESPONSE RECORDED
           </div>
         )}
       </div>
