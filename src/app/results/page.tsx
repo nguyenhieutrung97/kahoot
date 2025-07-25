@@ -168,7 +168,7 @@ export default function ResultsPage() {
 
           <button
             onClick={handleContinue}
-            className="px-8 py-3 bg-white text-purple-600 rounded-lg font-bold text-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-purple-600 transition-colors"
+            className="px-8 py-3 bg-white text-black-600 rounded-lg font-bold text-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-purple-600 transition-colors"
           >
             Continue
           </button>
