@@ -24,6 +24,14 @@ export default function ResultsPage() {
     ],
   };
 
+  // Mock answer distribution data (normally would come from server)
+  const answerStats = [
+    { id: 1, count: 12, percentage: 24 },
+    { id: 2, count: 30, percentage: 60 },
+    { id: 3, count: 5, percentage: 10 },
+    { id: 4, count: 3, percentage: 6 },
+  ];
+
   const isCorrect = userAnswer === question.correctAnswer;
   const userAnswerText =
     question.answers.find((a) => a.id === userAnswer)?.text || "No answer";
