@@ -46,7 +46,7 @@ export default function ResultsPage() {
 
   // Mock - determine if this is the final question
   const currentQuestionNumber = parseInt(searchParams.get("questionNumber") || "1");
-  const totalQuestions = 10;
+  const totalQuestions = 1;
   const isFinalQuestion = currentQuestionNumber >= totalQuestions;
 
   const handleContinue = () => {
