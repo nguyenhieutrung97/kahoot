@@ -30,7 +30,7 @@ export default function LeaderboardPage() {
       correctAnswers: 7,
       totalQuestions: 10,
       avatar: "🥈",
-      badge: "⭐"
+      badge: "🥈"
     },
     {
       rank: 3,
@@ -39,7 +39,7 @@ export default function LeaderboardPage() {
       correctAnswers: 6,
       totalQuestions: 10,
       avatar: "🥉",
-      badge: "🎯"
+      badge: "🥉"
     }
   ];
 
