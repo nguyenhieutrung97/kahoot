@@ -17,10 +17,10 @@ export default function ResultsPage() {
     text: "What is the capital of France?",
     correctAnswer: 2, // Paris is the correct answer
     answers: [
-      { id: 1, text: "London", color: "bg-red-500", icon: "▲" },
-      { id: 2, text: "Paris", color: "bg-green-500", icon: "●" },
-      { id: 3, text: "Berlin", color: "bg-yellow-500", icon: "■" },
-      { id: 4, text: "Madrid", color: "bg-blue-500", icon: "♦" },
+      { id: 1, text: "London", color: "bg-red-500", icon: "🌟" },
+      { id: 2, text: "Paris", color: "bg-green-500", icon: "🔥" },
+      { id: 3, text: "Berlin", color: "bg-yellow-500", icon: "💧" },
+      { id: 4, text: "Madrid", color: "bg-blue-500", icon: "🌪️" },
     ],
   };
 
