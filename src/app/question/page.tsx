@@ -76,11 +76,7 @@ export default function QuestionPage() {
 
   const getQuestionIconTheme = (questionNumber: number) => {
     const themes = [
-      { 1: "🌟", 2: "🔥", 3: "💧", 4: "🌪️" }, // Elements
-      { 1: "🎵", 2: "🎨", 3: "📚", 4: "⚽" }, // Activities
-      { 1: "🚀", 2: "🌙", 3: "⭐", 4: "🌍" }, // Space
-      { 1: "🔶", 2: "🔷", 3: "🔴", 4: "🟢" }, // Colored shapes
-      { 1: "💎", 2: "👑", 3: "🗝️", 4: "⚔️" }, // Treasures
+      { 1: "🌟", 2: "🔥", 3: "💧", 4: "🌪️" }
     ];
 
     return themes[questionNumber % themes.length];
