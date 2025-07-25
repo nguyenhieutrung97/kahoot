@@ -165,6 +165,70 @@ export default function ResultsPage() {
           ))}
         </div>
 
+        {/* Answer Distribution Chart */}
+        <div
+          className={`bg-white rounded-lg p-6 mb-8 max-w-4xl w-full shadow-lg transition-all duration-1000 delay-1000 ${showResults ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
+        >
+          <h3 className="text-xl font-bold text-gray-800 mb-6 text-center">
+            Answer Distribution ({answerStats.reduce((sum, stat) => sum + stat.count, 0)} players)
+          </h3>
+
+          <div className="space-y-4">
+            {question.answers.map((answer) => {
+              const stat = answerStats.find(s => s.id === answer.id);
+              const isCorrect = answer.id === question.correctAnswer;
+              const isUserAnswer = answer.id === userAnswer;
+
+              return (
+                <div key={answer.id} className="flex items-center space-x-4">
+                  {/* Answer Icon */}
+                  <div className={`${answer.color} text-white rounded-lg p-2 flex items-center justify-center min-w-[48px] h-12`}>
+                    <span className="text-lg font-bold">{answer.icon}</span>
+                  </div>
+
+                  {/* Answer Text */}
+                  <div className="min-w-[100px] text-sm font-medium text-gray-700">
+                    {answer.text}
+                    {isCorrect && <span className="text-green-600 ml-2">✓</span>}
+                    {isUserAnswer && !isCorrect && <span className="text-red-600 ml-2">✗</span>}
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="flex-1 bg-gray-200 rounded-full h-8 relative overflow-hidden">
+                    <div
+                      className={`h-full transition-all duration-1000 delay-1500 ${
+                        isCorrect
+                          ? 'bg-green-500'
+                          : answer.color.replace('bg-', 'bg-').replace('-500', '-400')
+                      } ${showResults ? '' : 'w-0'}`}
+                      style={{ width: showResults ? `${stat?.percentage || 0}%` : '0%' }}
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-sm font-bold text-gray-700">
+                        {stat?.count || 0} ({stat?.percentage || 0}%)
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Legend */}
+          <div className="mt-6 flex flex-wrap gap-4 justify-center text-sm">
+            <div className="flex items-center space-x-2">
+              <div className="w-4 h-4 bg-green-500 rounded"></div>
+              <span className="text-gray-600">Correct Answer</span>
+            </div>
+            {userAnswer > 0 && userAnswer !== question.correctAnswer && (
+              <div className="flex items-center space-x-2">
+                <span className="text-red-600">✗</span>
+                <span className="text-gray-600">Your Answer</span>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Player Info and Continue Button */}
         <div
           className={`text-center transition-all duration-1000 delay-1000 ${showResults ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
