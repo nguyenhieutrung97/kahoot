@@ -4,16 +4,16 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 const AVATAR_COLORS = [
-  "bg-red-500",
-  "bg-blue-500",
-  "bg-green-500",
-  "bg-yellow-500",
-  "bg-purple-500",
-  "bg-pink-500",
-  "bg-indigo-500",
-  "bg-teal-500",
-  "bg-orange-500",
-  "bg-cyan-500",
+  "bg-red-600",
+  "bg-gray-600",
+  "bg-blue-600",
+  "bg-green-600",
+  "bg-orange-600",
+  "bg-purple-600",
+  "bg-indigo-600",
+  "bg-teal-600",
+  "bg-pink-600",
+  "bg-yellow-600",
 ];
 
 const getRandomAvatar = (name: string) => {
@@ -67,20 +67,24 @@ export default function JoinRoom() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="p-6">
-        <h1 className="text-2xl font-bold text-blue-600">DASHBOARD</h1>
+      <header className="bg-white shadow-sm p-6 border-b-4 border-red-600">
+        <h1 className="text-2xl font-bold text-red-600 uppercase tracking-wide">PLAYER REGISTRATION</h1>
       </header>
 
       <main className="flex items-center justify-center min-h-[calc(100vh-120px)]">
-        <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full mx-4">
-          <h2 className="text-xl font-semibold text-gray-800 mb-6 text-center">
-            Enter Your Name
-          </h2>
+        <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full mx-4 border-2 border-gray-200">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 uppercase tracking-wide mb-4">
+              ENTER YOUR NAME
+            </h2>
+            <div className="w-16 h-1 bg-red-600 mx-auto mb-4"></div>
+            <p className="text-gray-600 font-medium">Precision starts with identity</p>
+          </div>
 
           {avatar && (
             <div className="flex justify-center mb-6">
               <div
-                className={`w-20 h-20 ${avatar.color} rounded-full flex items-center justify-center text-white text-2xl font-bold`}
+                className={`w-20 h-20 ${avatar.color} rounded-full flex items-center justify-center text-white text-2xl font-bold border-4 border-gray-200`}
               >
                 {avatar.initials}
               </div>
@@ -93,8 +97,8 @@ export default function JoinRoom() {
                 type="text"
                 value={name}
                 onChange={handleNameChange}
-                placeholder="Your name"
-                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center"
+                placeholder="YOUR NAME"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded font-medium text-center uppercase tracking-wide focus:outline-none focus:border-red-600 focus:ring-0 transition-colors"
                 autoFocus
               />
             </div>
@@ -103,16 +107,16 @@ export default function JoinRoom() {
               <button
                 type="button"
                 onClick={handleBack}
-                className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
+                className="flex-1 px-4 py-3 border-2 border-gray-300 text-gray-700 rounded font-bold uppercase tracking-wide hover:bg-gray-50 transition-colors"
               >
-                Back
+                BACK
               </button>
               <button
                 type="submit"
                 disabled={!name.trim()}
-                className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-3 bg-red-600 text-white rounded font-bold uppercase tracking-wide hover:bg-red-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed border-2 border-red-600 disabled:border-gray-300"
               >
-                Join Game
+                JOIN GAME
               </button>
             </div>
           </form>
