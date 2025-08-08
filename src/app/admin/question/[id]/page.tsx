@@ -562,7 +562,7 @@ export default function QuestionEditPage() {
                 </div>
 
                 {/* Answers Section */}
-                <div className="absolute bottom-8 left-8 right-8">
+                <div className={`absolute left-8 right-8 ${currentSlideData.questionImage ? 'bottom-4' : 'bottom-8'}`}>
                   {currentSlideData.questionType === 'true-false' ? (
                     /* True/False Answers */
                     <div className="flex justify-center gap-8">
