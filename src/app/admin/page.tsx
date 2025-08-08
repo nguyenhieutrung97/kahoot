@@ -15,10 +15,10 @@ export default function AdminDashboard() {
   const allRooms = [
     { id: 1, name: "General Knowledge", players: 12, status: "live", timeAgo: "Started 10 min ago" },
     { id: 2, name: "Science Quiz", players: 8, status: "ready", timeAgo: "Waiting to start" },
-    { id: 3, name: "History Challenge", players: 15, status: "ready", timeAgo: "Waiting to start" },
+    { id: 3, name: "History Challenge", players: 15, status: "close", timeAgo: "Ended 5 min ago" },
     { id: 4, name: "Math Problems", players: 6, status: "ready", timeAgo: "Waiting to start" },
     { id: 5, name: "Geography Test", players: 11, status: "ready", timeAgo: "Waiting to start" },
-    { id: 6, name: "Literature Quiz", players: 9, status: "ready", timeAgo: "Waiting to start" },
+    { id: 6, name: "Literature Quiz", players: 9, status: "close", timeAgo: "Ended 15 min ago" },
     { id: 7, name: "Sports Trivia", players: 13, status: "ready", timeAgo: "Waiting to start" },
     { id: 8, name: "Movie Quiz", players: 7, status: "ready", timeAgo: "Waiting to start" },
     { id: 9, name: "Music Challenge", players: 10, status: "ready", timeAgo: "Waiting to start" },
