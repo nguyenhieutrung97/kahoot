@@ -383,7 +383,8 @@ export default function AdminDashboard() {
                                     <span className="ml-2 text-sm text-gray-700 capitalize">{status}</span>
                                     <span className={`ml-auto w-2 h-2 rounded-full ${
                                       status === 'active' ? 'bg-green-500' :
-                                      status === 'draft' ? 'bg-yellow-500' : 'bg-gray-500'
+                                      status === 'draft' ? 'bg-yellow-500' :
+                                      status === 'in-lobby' ? 'bg-purple-500' : 'bg-gray-500'
                                     }`}></span>
                                   </label>
                                 ))}
