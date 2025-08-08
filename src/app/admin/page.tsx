@@ -574,7 +574,8 @@ export default function AdminDashboard() {
                             </div>
 
                             {/* Dropdown Menu */}
-                            <div className="relative flex-shrink-0 z-30">
+                            <div className="relative flex-shrink-0 z-30 dropdown-menu"
+                                 onClick={(e) => e.stopPropagation()}>
                               <button
                                 onClick={() => setOpenQuestionDropdown(openQuestionDropdown === question.id ? null : question.id)}
                                 className="p-1 rounded hover:bg-gray-100 transition-colors"
