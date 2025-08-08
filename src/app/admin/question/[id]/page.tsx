@@ -2,13 +2,14 @@
 
 import { useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { 
-  ArrowLeft, 
-  Save, 
-  Eye, 
-  Play, 
-  Plus, 
-  Trash2, 
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import {
+  ArrowLeft,
+  Save,
+  Eye,
+  Play,
+  Plus,
+  Trash2,
   Image as ImageIcon,
   Type,
   Circle,
