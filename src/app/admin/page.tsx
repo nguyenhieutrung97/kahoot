@@ -29,6 +29,16 @@ export default function AdminDashboard() {
   const totalPages = Math.ceil(allRooms.length / roomsPerPage);
   const currentRooms = allRooms.slice((currentPage - 1) * roomsPerPage, currentPage * roomsPerPage);
 
+  const handleCloseRoom = (roomId: number) => {
+    console.log(`Closing room ${roomId}`);
+    setOpenDropdown(null);
+  };
+
+  const handleDeleteRoom = (roomId: number) => {
+    console.log(`Deleting room ${roomId}`);
+    setOpenDropdown(null);
+  };
+
   // Refs for sections
   const dashboardRef = useRef<HTMLElement>(null);
   const lobbyRef = useRef<HTMLElement>(null);
