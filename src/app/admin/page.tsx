@@ -936,13 +936,8 @@ export default function AdminDashboard() {
             <div className="p-6">
               <div className="flex flex-col items-center space-y-6">
                 {/* Avatar */}
-                <div className="relative">
-                  <div className="w-24 h-24 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center shadow-lg">
-                    <UserIcon className="h-12 w-12 text-white" />
-                  </div>
-                  <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-green-500 rounded-full border-4 border-white flex items-center justify-center">
-                    <div className="w-2 h-2 bg-white rounded-full"></div>
-                  </div>
+                <div className="w-20 h-20 bg-red-600 rounded-full flex items-center justify-center">
+                  <UserIcon className="h-10 w-10 text-white" />
                 </div>
 
                 {/* User Info */}
