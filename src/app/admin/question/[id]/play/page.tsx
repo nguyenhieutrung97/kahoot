@@ -183,7 +183,13 @@ export default function PlayAdminPage() {
   };
 
   const handleBackToEdit = () => {
-    router.push(`/admin/question/${params.id}`);
+    try {
+      router.push(`/admin/question/${params.id}`);
+    } catch (error) {
+      console.error('Navigation error:', error);
+      // Fallback to window navigation
+      window.location.href = `/admin/question/${params.id}`;
+    }
   };
 
   const renderLobby = () => (
