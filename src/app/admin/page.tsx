@@ -116,7 +116,7 @@ export default function AdminDashboard() {
   };
 
   const handleEditQuestion = (questionId: number) => {
-    console.log(`Editing question ${questionId}`);
+    handleEditQuestionNavigation(questionId);
     setOpenQuestionDropdown(null);
   };
 
