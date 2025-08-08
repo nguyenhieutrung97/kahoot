@@ -269,11 +269,34 @@ export default function NewQuestionPage() {
 
           <div className="flex items-center space-x-3">
             <button
+              onClick={() => {
+                // TODO: Implement history functionality
+                console.log('Opening history...');
+              }}
+              className="flex items-center space-x-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>History</span>
+            </button>
+            <button
               onClick={() => setShowPreview(true)}
               className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Eye className="h-4 w-4" />
               <span>Preview</span>
+            </button>
+            <button
+              onClick={() => {
+                // TODO: Implement start lobby functionality
+                console.log('Starting lobby...');
+                alert('Starting lobby with this question set!');
+              }}
+              className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              <Play className="h-4 w-4" />
+              <span>Start Lobby</span>
             </button>
             <button
               onClick={handleSave}
