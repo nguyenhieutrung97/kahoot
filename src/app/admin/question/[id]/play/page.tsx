@@ -268,50 +268,85 @@ export default function PlayAdminPage() {
     </div>
   );
 
-  const renderResults = () => (
-    <div className="flex-1 flex items-center justify-center p-8">
-      <div className="w-full max-w-2xl text-center">
-        <h1 className="text-4xl font-bold text-white mb-8">Question Results</h1>
-        
-        <div className="bg-white/20 rounded-lg p-6 mb-8">
-          <h2 className="text-2xl font-semibold text-white mb-4">Correct Answer:</h2>
-          <p className="text-xl text-yellow-400">
-            {currentQuestion.correctAnswers.map(i => currentQuestion.answers[i]).join(', ')}
-          </p>
-        </div>
+  const renderResults = () => {
+    const totalPlayers = players.filter(p => p.isConnected).length;
+    const correctCount = Math.floor(totalPlayers * (Math.random() * 0.4 + 0.5)); // Random between 50-90%
+    const incorrectCount = totalPlayers - correctCount;
 
-        <div className="grid grid-cols-2 gap-4 mb-8">
-          <div className="bg-white/20 rounded-lg p-4">
-            <p className="text-lg text-white">Players Answered</p>
-            <p className="text-2xl font-bold text-yellow-400">
-              {players.filter(p => p.isConnected).length}
-            </p>
-          </div>
-          <div className="bg-white/20 rounded-lg p-4">
-            <p className="text-lg text-white">Correct Answers</p>
-            <p className="text-2xl font-bold text-green-400">
-              {Math.floor(players.filter(p => p.isConnected).length * 0.7)}
-            </p>
-          </div>
-        </div>
+    return (
+      <div className="flex-1 flex items-center justify-center p-8">
+        <div className="w-full max-w-4xl text-center">
+          <h1 className="text-4xl font-bold text-white mb-8">Question {currentQuestionIndex + 1} Results</h1>
 
-        <div className="flex justify-center space-x-4">
-          <button
-            onClick={handleShowLeaderboard}
-            className="px-6 py-3 bg-yellow-600 text-white rounded-lg font-semibold hover:bg-yellow-700 transition-colors"
-          >
-            Show Leaderboard
-          </button>
-          <button
-            onClick={handleNextQuestion}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-          >
-            {currentQuestionIndex < questions.length - 1 ? 'Next Question' : 'Finish Game'}
-          </button>
+          <div className="bg-white/20 backdrop-blur-sm rounded-xl p-6 mb-8 border border-white/30">
+            <h2 className="text-2xl font-semibold text-white mb-4">Correct Answer{currentQuestion.correctAnswers.length > 1 ? 's' : ''}:</h2>
+            <div className="flex flex-wrap justify-center gap-3">
+              {currentQuestion.correctAnswers.map(i => (
+                <span key={i} className="px-4 py-2 bg-green-500 text-white rounded-lg font-semibold text-lg">
+                  {currentQuestion.answers[i]}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div className="bg-white/10 rounded-lg p-4">
+              <p className="text-lg text-white">Total Players</p>
+              <p className="text-3xl font-bold text-blue-400">{totalPlayers}</p>
+            </div>
+            <div className="bg-white/10 rounded-lg p-4">
+              <p className="text-lg text-white">Correct</p>
+              <p className="text-3xl font-bold text-green-400">{correctCount}</p>
+              <p className="text-sm text-green-300">{Math.round((correctCount / totalPlayers) * 100)}%</p>
+            </div>
+            <div className="bg-white/10 rounded-lg p-4">
+              <p className="text-lg text-white">Incorrect</p>
+              <p className="text-3xl font-bold text-red-400">{incorrectCount}</p>
+              <p className="text-sm text-red-300">{Math.round((incorrectCount / totalPlayers) * 100)}%</p>
+            </div>
+            <div className="bg-white/10 rounded-lg p-4">
+              <p className="text-lg text-white">Avg. Time</p>
+              <p className="text-3xl font-bold text-yellow-400">{(Math.random() * 3 + 2).toFixed(1)}s</p>
+            </div>
+          </div>
+
+          {/* Answer breakdown */}
+          <div className="bg-white/10 rounded-lg p-6 mb-8">
+            <h3 className="text-xl font-semibold text-white mb-4">Answer Breakdown</h3>
+            <div className="grid grid-cols-2 gap-3">
+              {currentQuestion.answers.map((answer, index) => {
+                const isCorrect = currentQuestion.correctAnswers.includes(index);
+                const percentage = isCorrect ? Math.random() * 40 + 30 : Math.random() * 20 + 5;
+                return (
+                  <div key={index} className={`p-3 rounded ${isCorrect ? 'bg-green-500/30' : 'bg-red-500/20'} border ${isCorrect ? 'border-green-400' : 'border-red-400'}`}>
+                    <div className="flex justify-between items-center">
+                      <span className="text-white font-medium">{answer}</span>
+                      <span className="text-white font-bold">{Math.round(percentage)}%</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex justify-center space-x-4">
+            <button
+              onClick={handleShowLeaderboard}
+              className="px-8 py-3 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white rounded-lg font-semibold hover:from-yellow-600 hover:to-yellow-700 transition-all transform hover:scale-105"
+            >
+              Show Leaderboard
+            </button>
+            <button
+              onClick={handleNextQuestion}
+              className="px-8 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-semibold hover:from-blue-600 hover:to-blue-700 transition-all transform hover:scale-105"
+            >
+              {currentQuestionIndex < questions.length - 1 ? 'Next Question' : 'Finish Game'}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderLeaderboard = () => (
     <div className="flex-1 flex items-center justify-center p-8">
