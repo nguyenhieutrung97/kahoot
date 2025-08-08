@@ -546,7 +546,16 @@ export default function AdminDashboard() {
                     ) : (
                       <div className="space-y-2 mb-6">
                         {currentQuestions.map((question) => (
-                          <div key={question.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                          <div
+                            key={question.id}
+                            className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
+                            onClick={(e) => {
+                              // Prevent navigation when clicking on dropdown
+                              if (!(e.target as Element).closest('.dropdown-menu')) {
+                                handleQuestionCardClick(question.id);
+                              }
+                            }}
+                          >
                             <div className="flex-1">
                               <h3 className="font-medium text-gray-900">{question.title}</h3>
                               <div className="flex items-center space-x-4 mt-1">
