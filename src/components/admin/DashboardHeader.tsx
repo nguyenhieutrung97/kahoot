@@ -56,7 +56,7 @@ export function DashboardHeader({ onMenuClick, sidebarOpen }: DashboardHeaderPro
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm kiếm..."
+              placeholder="Search..."
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
             />
           </div>
@@ -94,7 +94,7 @@ export function DashboardHeader({ onMenuClick, sidebarOpen }: DashboardHeaderPro
                 className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2 transition-colors"
               >
                 <Settings className="h-4 w-4" />
-                <span>Cài đặt</span>
+                <span>Settings</span>
               </button>
               
               <hr className="my-1 border-gray-100" />
@@ -104,7 +104,7 @@ export function DashboardHeader({ onMenuClick, sidebarOpen }: DashboardHeaderPro
                 className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2 transition-colors"
               >
                 <LogOut className="h-4 w-4" />
-                <span>Đăng xuất</span>
+                <span>Logout</span>
               </button>
             </div>
           </>
