@@ -667,31 +667,93 @@ export default function AdminDashboard() {
                   <BarChart3 className="h-6 w-6 text-purple-600" />
                   <h2 className="text-2xl font-bold text-gray-900">Analytics</h2>
                 </div>
-                <div className="p-6">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance Metrics</h3>
-                      <div className="space-y-4">
-                        <div className="p-4 bg-blue-50 rounded-lg">
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-700">Average Score</span>
-                            <span className="text-xl font-bold text-blue-600">78.5%</span>
-                          </div>
+                <div className="p-6 space-y-8">
+                  {/* Performance Metrics with Charts */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance Metrics</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      {/* Average Score Chart */}
+                      <div className="p-4 bg-blue-50 rounded-lg">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-gray-700">Average Score</span>
+                          <span className="text-xl font-bold text-blue-600">78.5%</span>
                         </div>
-                        <div className="p-4 bg-green-50 rounded-lg">
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-700">Completion Rate</span>
-                            <span className="text-xl font-bold text-green-600">92.3%</span>
-                          </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div className="bg-blue-600 h-2 rounded-full" style={{width: '78.5%'}}></div>
                         </div>
-                        <div className="p-4 bg-purple-50 rounded-lg">
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-700">User Engagement</span>
-                            <span className="text-xl font-bold text-purple-600">85.7%</span>
-                          </div>
+                      </div>
+
+                      {/* Completion Rate Chart */}
+                      <div className="p-4 bg-green-50 rounded-lg">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-gray-700">Completion Rate</span>
+                          <span className="text-xl font-bold text-green-600">92.3%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div className="bg-green-600 h-2 rounded-full" style={{width: '92.3%'}}></div>
+                        </div>
+                      </div>
+
+                      {/* User Engagement Chart */}
+                      <div className="p-4 bg-purple-50 rounded-lg">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-gray-700">User Engagement</span>
+                          <span className="text-xl font-bold text-purple-600">85.7%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div className="bg-purple-600 h-2 rounded-full" style={{width: '85.7%'}}></div>
                         </div>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Daily Activity Chart */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Daily Activity (Last 7 Days)</h3>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <div className="flex items-end justify-between h-40 space-x-2">
+                        {[65, 45, 72, 88, 94, 67, 89].map((value, index) => (
+                          <div key={index} className="flex flex-col items-center flex-1">
+                            <div
+                              className="bg-blue-600 rounded-t w-full transition-all duration-300 hover:bg-blue-700"
+                              style={{height: `${value}%`}}
+                            ></div>
+                            <span className="text-xs text-gray-600 mt-2">
+                              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][index]}
+                            </span>
+                            <span className="text-xs font-semibold text-gray-800">{value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Usage Statistics */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Category Performance</h3>
+                      <div className="space-y-3">
+                        {[
+                          {name: 'General Knowledge', percentage: 89, color: 'bg-blue-600'},
+                          {name: 'Science', percentage: 76, color: 'bg-green-600'},
+                          {name: 'History', percentage: 82, color: 'bg-purple-600'},
+                          {name: 'Geography', percentage: 71, color: 'bg-yellow-600'},
+                          {name: 'Literature', percentage: 68, color: 'bg-red-600'}
+                        ].map((category) => (
+                          <div key={category.name} className="flex items-center space-x-3">
+                            <span className="text-sm text-gray-700 w-24 flex-shrink-0">{category.name}</span>
+                            <div className="flex-1 bg-gray-200 rounded-full h-2">
+                              <div
+                                className={`${category.color} h-2 rounded-full transition-all duration-300`}
+                                style={{width: `${category.percentage}%`}}
+                              ></div>
+                            </div>
+                            <span className="text-sm font-semibold text-gray-800 w-12">{category.percentage}%</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900 mb-4">Usage Trends</h3>
                       <div className="space-y-4">
@@ -707,9 +769,13 @@ export default function AdminDashboard() {
                           <span className="text-gray-600">Average session time:</span>
                           <span className="font-semibold">8.5 minutes</span>
                         </div>
-                        <div className="flex justify-between py-2">
+                        <div className="flex justify-between py-2 border-b">
                           <span className="text-gray-600">Return rate:</span>
                           <span className="font-semibold">67.2%</span>
+                        </div>
+                        <div className="flex justify-between py-2">
+                          <span className="text-gray-600">Total sessions today:</span>
+                          <span className="font-semibold">1,247</span>
                         </div>
                       </div>
                     </div>
