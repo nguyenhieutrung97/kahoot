@@ -19,6 +19,9 @@ import {
 interface DashboardSidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  isCollapsed: boolean;
+  onToggleCollapse: () => void;
+  onMenuClick: (sectionId: string) => void;
 }
 
 interface MenuItem {
