@@ -187,24 +187,48 @@ export default function PlayAdminPage() {
   };
 
   const renderLobby = () => (
-    <div className="flex-1 flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-6xl font-bold text-white mb-8">Ready to Play?</h1>
-        <div className="bg-white/20 rounded-lg p-8 mb-8">
-          <p className="text-2xl text-white mb-4">Join at: kahoot.it</p>
-          <p className="text-4xl font-bold text-yellow-400">{lobbyCode}</p>
+    <div className="flex-1 flex items-center justify-center p-8">
+      <div className="text-center max-w-4xl w-full">
+        <h1 className="text-6xl font-bold text-white mb-4">Geography Quiz Challenge</h1>
+        <p className="text-2xl text-white/80 mb-12">Get ready for an exciting quiz adventure!</p>
+
+        <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-8 mb-8 border border-white/30">
+          <p className="text-2xl text-white mb-4">Join at: <span className="font-bold">kahoot.it</span></p>
+          <div className="bg-white/30 rounded-xl p-6 mb-4">
+            <p className="text-6xl font-bold text-yellow-300 tracking-wider">{lobbyCode}</p>
+          </div>
+          <p className="text-lg text-white/80">Or use your phone to scan QR code</p>
         </div>
-        <div className="flex items-center justify-center space-x-4 text-white mb-8">
-          <Users className="h-6 w-6" />
-          <span className="text-xl">{players.filter(p => p.isConnected).length} players joined</span>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white/10 rounded-lg p-4">
+            <Users className="h-8 w-8 text-blue-300 mx-auto mb-2" />
+            <p className="text-2xl font-bold text-white">{players.filter(p => p.isConnected).length}</p>
+            <p className="text-white/80">Players Joined</p>
+          </div>
+          <div className="bg-white/10 rounded-lg p-4">
+            <Trophy className="h-8 w-8 text-yellow-300 mx-auto mb-2" />
+            <p className="text-2xl font-bold text-white">{questions.length}</p>
+            <p className="text-white/80">Questions</p>
+          </div>
+          <div className="bg-white/10 rounded-lg p-4">
+            <Timer className="h-8 w-8 text-green-300 mx-auto mb-2" />
+            <p className="text-2xl font-bold text-white">~{Math.round(questions.reduce((sum, q) => sum + q.timeLimit, 0) / 60)}</p>
+            <p className="text-white/80">Minutes</p>
+          </div>
         </div>
+
         <button
           onClick={handleStartGame}
           disabled={players.filter(p => p.isConnected).length === 0}
-          className="px-8 py-4 bg-green-600 text-white rounded-lg text-xl font-semibold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="px-12 py-4 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl text-2xl font-bold hover:from-green-600 hover:to-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 shadow-lg"
         >
-          Start Game
+          Start Game ({players.filter(p => p.isConnected).length} players)
         </button>
+
+        {players.filter(p => p.isConnected).length === 0 && (
+          <p className="text-yellow-300 mt-4">Waiting for players to join...</p>
+        )}
       </div>
     </div>
   );
