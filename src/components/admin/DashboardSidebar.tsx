@@ -71,29 +71,29 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
     },
     {
       id: "analytics",
-      label: "Thống kê",
+      label: "Analytics",
       icon: <BarChart3 className="h-5 w-5" />,
       href: "/admin/analytics"
     },
     {
       id: "leaderboard",
-      label: "Bảng xếp hạng",
+      label: "Leaderboard",
       icon: <Trophy className="h-5 w-5" />,
       href: "/admin/leaderboard"
     },
     {
       id: "events",
-      label: "Sự kiện",
+      label: "Events",
       icon: <Calendar className="h-5 w-5" />,
       href: "/admin/events"
     },
     {
       id: "security",
-      label: "Bảo mật",
+      label: "Security",
       icon: <Shield className="h-5 w-5" />,
       children: [
-        { id: "access-logs", label: "Nhật ký truy cập", icon: <></>, href: "/admin/security/logs" },
-        { id: "permissions", label: "Phân quyền", icon: <></>, href: "/admin/security/permissions" }
+        { id: "access-logs", label: "Access Logs", icon: <></>, href: "/admin/security/logs" },
+        { id: "permissions", label: "Permissions", icon: <></>, href: "/admin/security/permissions" }
       ]
     },
     {
