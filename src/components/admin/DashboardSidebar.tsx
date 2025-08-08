@@ -35,18 +35,18 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
   const menuItems: MenuItem[] = [
     {
       id: "dashboard",
-      label: "Trang chủ",
+      label: "Dashboard",
       icon: <Home className="h-5 w-5" />,
       href: "/admin"
     },
     {
       id: "rooms",
-      label: "Quản lý phòng",
+      label: "Room Management",
       icon: <Users className="h-5 w-5" />,
       children: [
-        { id: "all-rooms", label: "Tất cả phòng", icon: <></>, href: "/admin/rooms" },
-        { id: "active-rooms", label: "Phòng đang hoạt động", icon: <></>, href: "/admin/rooms/active" },
-        { id: "create-room", label: "Tạo phòng mới", icon: <></>, href: "/admin/rooms/create" }
+        { id: "all-rooms", label: "All Rooms", icon: <></>, href: "/admin/rooms" },
+        { id: "active-rooms", label: "Active Rooms", icon: <></>, href: "/admin/rooms/active" },
+        { id: "create-room", label: "Create Room", icon: <></>, href: "/admin/rooms/create" }
       ]
     },
     {
