@@ -164,6 +164,87 @@ export default function AdminDashboard() {
               </div>
             </section>
 
+            {/* Lobby Section */}
+            <section ref={lobbyRef} id="lobby" className="scroll-mt-6">
+              <div className="bg-white rounded-lg shadow">
+                <div className="px-6 py-4 border-b border-gray-200 flex items-center space-x-3">
+                  <Users className="h-6 w-6 text-blue-600" />
+                  <h2 className="text-2xl font-bold text-gray-900">Lobby</h2>
+                </div>
+                <div className="p-6">
+                  {/* Rooms Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                    {currentRooms.map((room) => (
+                      <div
+                        key={room.id}
+                        className={`p-4 rounded-lg border-2 transition-colors ${
+                          room.status === "live"
+                            ? "bg-green-50 border-green-200"
+                            : "bg-blue-50 border-blue-200"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="font-medium text-gray-900 truncate">{room.name}</h3>
+                          <span
+                            className={`text-xs font-medium px-2 py-1 rounded ${
+                              room.status === "live"
+                                ? "bg-green-600 text-white"
+                                : "bg-blue-600 text-white"
+                            }`}
+                          >
+                            {room.status === "live" ? "Live" : "Ready"}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-600">
+                          {room.players} players • {room.timeAgo}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Pagination */}
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-gray-500">
+                      Showing {((currentPage - 1) * roomsPerPage) + 1} to {Math.min(currentPage * roomsPerPage, allRooms.length)} of {allRooms.length} rooms
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                      >
+                        Previous
+                      </button>
+
+                      <div className="flex space-x-1">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                          <button
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            className={`px-3 py-1 text-sm border rounded ${
+                              currentPage === page
+                                ? "bg-blue-600 text-white border-blue-600"
+                                : "border-gray-300 hover:bg-gray-50"
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        ))}
+                      </div>
+
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
             {/* Analytics Section */}
             <section ref={analyticsRef} id="analytics" className="scroll-mt-6">
               <div className="bg-white rounded-lg shadow">
