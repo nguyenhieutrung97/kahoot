@@ -1,15 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { 
-  Home, 
-  Users, 
-  FileQuestion, 
-  BarChart3, 
-  Settings, 
+import {
+  Home,
+  Users,
+  FileQuestion,
+  BarChart3,
+  Settings,
   HelpCircle,
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
   Trophy,
   Calendar,
   Shield,
