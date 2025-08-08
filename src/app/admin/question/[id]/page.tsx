@@ -501,8 +501,27 @@ export default function QuestionEditPage() {
                     className={`w-full bg-transparent border-2 border-dashed border-gray-300 rounded p-4 ${currentSlideData.fontSize} font-bold text-center resize-none focus:border-blue-500 focus:outline-none`}
                     style={{ color: currentSlideData.textColor }}
                     placeholder="Enter your question here..."
-                    rows={3}
+                    rows={2}
                   />
+
+                  {/* Question Image */}
+                  {currentSlideData.questionImage && (
+                    <div className="mt-4 flex justify-center">
+                      <div className="relative">
+                        <img
+                          src={currentSlideData.questionImage}
+                          alt="Question"
+                          className="max-w-xs max-h-32 object-contain rounded-lg shadow-lg"
+                        />
+                        <button
+                          onClick={() => updateSlide(currentSlide, { questionImage: undefined })}
+                          className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Answers Section */}
