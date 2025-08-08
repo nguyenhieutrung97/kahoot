@@ -331,10 +331,10 @@ export default function QuestionEditPage() {
       </header>
 
       <div className="flex flex-1">
-        {/* Sidebar - Slide Navigation */}
+        {/* Sidebar - Question Navigation */}
         <div className="w-64 bg-white border-r border-gray-200 p-4">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-900">Slides</h3>
+            <h3 className="font-semibold text-gray-900">Questions</h3>
             <button
               onClick={addSlide}
               className="p-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
