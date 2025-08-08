@@ -503,15 +503,17 @@ export default function QuestionEditPage() {
                     placeholder="Enter your question here..."
                     rows={2}
                   />
+                </div>
 
-                  {/* Question Image */}
-                  {currentSlideData.questionImage && (
-                    <div className="mt-4 flex justify-center">
+                {/* Question Image Section - Center of slide */}
+                <div className="absolute top-1/2 left-8 right-8 transform -translate-y-1/2">
+                  {currentSlideData.questionImage ? (
+                    <div className="flex justify-center">
                       <div className="relative">
                         <img
                           src={currentSlideData.questionImage}
                           alt="Question"
-                          className="max-w-xs max-h-32 object-contain rounded-lg shadow-lg"
+                          className="max-w-md max-h-48 object-contain rounded-lg shadow-lg border-2 border-dashed border-blue-300"
                         />
                         <button
                           onClick={() => updateSlide(currentSlide, { questionImage: undefined })}
@@ -520,6 +522,17 @@ export default function QuestionEditPage() {
                           <X className="h-3 w-3" />
                         </button>
                       </div>
+                    </div>
+                  ) : (
+                    <div className="flex justify-center">
+                      <button
+                        onClick={() => questionImageInputRef.current?.click()}
+                        className="px-6 py-4 border-2 border-dashed border-gray-400 rounded-lg text-gray-600 hover:border-blue-500 hover:text-blue-600 transition-colors flex items-center space-x-2"
+                        style={{ color: currentSlideData.textColor }}
+                      >
+                        <ImageIcon className="h-6 w-6" />
+                        <span className="font-medium">Click to add question image</span>
+                      </button>
                     </div>
                   )}
                 </div>
