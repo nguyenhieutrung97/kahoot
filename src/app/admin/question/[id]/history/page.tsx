@@ -150,13 +150,8 @@ export default function QuestionHistoryPage() {
   ];
 
   const handleBackToEdit = () => {
-    try {
-      router.push(`/admin/question/${params.id}`);
-    } catch (error) {
-      console.error('Navigation error:', error);
-      // Fallback to window navigation
-      window.location.href = `/admin/question/${params.id}`;
-    }
+    // Use window.location for more reliable navigation
+    window.location.href = `/admin/question/${params.id}`;
   };
 
   const handleViewSession = (sessionId: string) => {
