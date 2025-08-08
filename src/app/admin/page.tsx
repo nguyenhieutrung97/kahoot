@@ -303,9 +303,10 @@ export default function AdminDashboard() {
                             </div>
                           </div>
                         </div>
-                        <p className="text-sm text-gray-600">
-                          {room.players} players • {room.timeAgo}
-                        </p>
+                        <div className="text-sm text-gray-600 space-y-1">
+                          <p>{room.players} players • {room.timeAgo}</p>
+                          <p>Created: {new Date(room.createdDate).toLocaleDateString()}</p>
+                        </div>
                       </div>
                     ))}
                   </div>
