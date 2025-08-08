@@ -44,7 +44,7 @@ export default function QuestionHistoryPage() {
   const sessions: LobbySession[] = [
     {
       id: '1',
-      name: 'Geography Quiz Session',
+      name: 'Geography Quiz Championship',
       date: '2024-01-20',
       duration: '15:30',
       totalPlayers: 24,
@@ -56,6 +56,9 @@ export default function QuestionHistoryPage() {
         { id: '3', name: 'David Chen', score: 4650, correctAnswers: 4, totalAnswers: 5, avgResponseTime: 1.9 },
         { id: '4', name: 'Sarah Wilson', score: 4580, correctAnswers: 4, totalAnswers: 5, avgResponseTime: 2.1 },
         { id: '5', name: 'Mike Brown', score: 4200, correctAnswers: 4, totalAnswers: 5, avgResponseTime: 3.2 },
+        { id: '6', name: 'Jennifer Lee', score: 4100, correctAnswers: 3, totalAnswers: 5, avgResponseTime: 3.8 },
+        { id: '7', name: 'Robert Taylor', score: 3950, correctAnswers: 3, totalAnswers: 5, avgResponseTime: 4.1 },
+        { id: '8', name: 'Lisa Anderson', score: 3800, correctAnswers: 3, totalAnswers: 5, avgResponseTime: 4.5 }
       ]
     },
     {
@@ -67,11 +70,12 @@ export default function QuestionHistoryPage() {
       status: 'completed',
       questionsUsed: 4,
       leaderboard: [
-        { id: '6', name: 'Emma Davis', score: 3890, correctAnswers: 4, totalAnswers: 4, avgResponseTime: 2.5 },
-        { id: '7', name: 'John Smith', score: 3750, correctAnswers: 3, totalAnswers: 4, avgResponseTime: 2.8 },
-        { id: '8', name: 'Lisa Wang', score: 3680, correctAnswers: 3, totalAnswers: 4, avgResponseTime: 3.1 },
-        { id: '9', name: 'Tom Miller', score: 3420, correctAnswers: 3, totalAnswers: 4, avgResponseTime: 3.5 },
-        { id: '10', name: 'Anna Lee', score: 3200, correctAnswers: 2, totalAnswers: 4, avgResponseTime: 4.2 },
+        { id: '9', name: 'Emma Davis', score: 3890, correctAnswers: 4, totalAnswers: 4, avgResponseTime: 2.5 },
+        { id: '10', name: 'John Smith', score: 3750, correctAnswers: 3, totalAnswers: 4, avgResponseTime: 2.8 },
+        { id: '11', name: 'Lisa Wang', score: 3680, correctAnswers: 3, totalAnswers: 4, avgResponseTime: 3.1 },
+        { id: '12', name: 'Tom Miller', score: 3420, correctAnswers: 3, totalAnswers: 4, avgResponseTime: 3.5 },
+        { id: '13', name: 'Anna Lee', score: 3200, correctAnswers: 2, totalAnswers: 4, avgResponseTime: 4.2 },
+        { id: '14', name: 'Kevin Park', score: 2980, correctAnswers: 2, totalAnswers: 4, avgResponseTime: 4.8 }
       ]
     },
     {
@@ -83,9 +87,64 @@ export default function QuestionHistoryPage() {
       status: 'completed',
       questionsUsed: 3,
       leaderboard: [
-        { id: '11', name: 'Chris Taylor', score: 2950, correctAnswers: 3, totalAnswers: 3, avgResponseTime: 1.8 },
-        { id: '12', name: 'Rachel Green', score: 2850, correctAnswers: 3, totalAnswers: 3, avgResponseTime: 2.2 },
-        { id: '13', name: 'Mark Johnson', score: 2700, correctAnswers: 2, totalAnswers: 3, avgResponseTime: 2.5 },
+        { id: '15', name: 'Chris Taylor', score: 2950, correctAnswers: 3, totalAnswers: 3, avgResponseTime: 1.8 },
+        { id: '16', name: 'Rachel Green', score: 2850, correctAnswers: 3, totalAnswers: 3, avgResponseTime: 2.2 },
+        { id: '17', name: 'Mark Johnson', score: 2700, correctAnswers: 2, totalAnswers: 3, avgResponseTime: 2.5 },
+        { id: '18', name: 'Sophie Chen', score: 2650, correctAnswers: 2, totalAnswers: 3, avgResponseTime: 2.8 },
+        { id: '19', name: 'Jake Williams', score: 2400, correctAnswers: 2, totalAnswers: 3, avgResponseTime: 3.2 }
+      ]
+    },
+    {
+      id: '4',
+      name: 'Monday Morning Geography',
+      date: '2024-01-12',
+      duration: '18:15',
+      totalPlayers: 32,
+      status: 'completed',
+      questionsUsed: 6,
+      leaderboard: [
+        { id: '20', name: 'Oliver Martinez', score: 5940, correctAnswers: 6, totalAnswers: 6, avgResponseTime: 2.1 },
+        { id: '21', name: 'Isabella Rodriguez', score: 5820, correctAnswers: 6, totalAnswers: 6, avgResponseTime: 2.4 },
+        { id: '22', name: 'Ethan Thompson', score: 5750, correctAnswers: 5, totalAnswers: 6, avgResponseTime: 1.9 },
+        { id: '23', name: 'Sophia Kim', score: 5680, correctAnswers: 5, totalAnswers: 6, avgResponseTime: 2.2 },
+        { id: '24', name: 'Lucas Wright', score: 5520, correctAnswers: 5, totalAnswers: 6, avgResponseTime: 2.7 },
+        { id: '25', name: 'Ava Mitchell', score: 5400, correctAnswers: 4, totalAnswers: 6, avgResponseTime: 3.1 },
+        { id: '26', name: 'Noah Garcia', score: 5200, correctAnswers: 4, totalAnswers: 6, avgResponseTime: 3.5 }
+      ]
+    },
+    {
+      id: '5',
+      name: 'Geography Expert Challenge',
+      date: '2024-01-10',
+      duration: '22:40',
+      totalPlayers: 45,
+      status: 'completed',
+      questionsUsed: 8,
+      leaderboard: [
+        { id: '27', name: 'Madison Cooper', score: 7850, correctAnswers: 8, totalAnswers: 8, avgResponseTime: 1.8 },
+        { id: '28', name: 'Carter Adams', score: 7720, correctAnswers: 8, totalAnswers: 8, avgResponseTime: 2.1 },
+        { id: '29', name: 'Zoe Bennett', score: 7650, correctAnswers: 7, totalAnswers: 8, avgResponseTime: 1.9 },
+        { id: '30', name: 'Logan Foster', score: 7580, correctAnswers: 7, totalAnswers: 8, avgResponseTime: 2.3 },
+        { id: '31', name: 'Lily Hayes', score: 7420, correctAnswers: 7, totalAnswers: 8, avgResponseTime: 2.6 },
+        { id: '32', name: 'Mason Brooks', score: 7200, correctAnswers: 6, totalAnswers: 8, avgResponseTime: 2.9 },
+        { id: '33', name: 'Harper Powell', score: 7100, correctAnswers: 6, totalAnswers: 8, avgResponseTime: 3.2 },
+        { id: '34', name: 'Jackson Reed', score: 6950, correctAnswers: 6, totalAnswers: 8, avgResponseTime: 3.5 }
+      ]
+    },
+    {
+      id: '6',
+      name: 'Friday Fun Geography',
+      date: '2024-01-08',
+      duration: '10:25',
+      totalPlayers: 19,
+      status: 'completed',
+      questionsUsed: 4,
+      leaderboard: [
+        { id: '35', name: 'Scarlett Torres', score: 3920, correctAnswers: 4, totalAnswers: 4, avgResponseTime: 2.2 },
+        { id: '36', name: 'Hunter Murphy', score: 3850, correctAnswers: 4, totalAnswers: 4, avgResponseTime: 2.5 },
+        { id: '37', name: 'Layla Rivera', score: 3780, correctAnswers: 3, totalAnswers: 4, avgResponseTime: 2.8 },
+        { id: '38', name: 'Grayson Cook', score: 3650, correctAnswers: 3, totalAnswers: 4, avgResponseTime: 3.1 },
+        { id: '39', name: 'Victoria Bailey', score: 3520, correctAnswers: 3, totalAnswers: 4, avgResponseTime: 3.4 }
       ]
     }
   ];
