@@ -156,13 +156,26 @@ export default function QuestionEditPage() {
     router.push('/admin');
   };
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBackgroundImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
         updateSlide(currentSlide, {
           backgroundImage: e.target?.result as string
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleQuestionImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        updateSlide(currentSlide, {
+          questionImage: e.target?.result as string
         });
       };
       reader.readAsDataURL(file);
