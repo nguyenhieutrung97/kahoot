@@ -71,7 +71,7 @@ export default function QuestionEditPage() {
       backgroundColor: '#ffffff',
       textColor: '#000000',
       fontSize: 'text-2xl',
-      questionType: 'multiple-choice',
+      questionType: 'single-choice',
       timeLimit: 30,
       points: 100
     }
