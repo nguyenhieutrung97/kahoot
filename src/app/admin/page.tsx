@@ -234,9 +234,18 @@ export default function AdminDashboard() {
             {/* Questions Section */}
             <section ref={questionsRef} id="questions" className="scroll-mt-6">
               <div className="bg-white rounded-lg shadow">
-                <div className="px-6 py-4 border-b border-gray-200 flex items-center space-x-3">
-                  <FileQuestion className="h-6 w-6 text-green-600" />
-                  <h2 className="text-2xl font-bold text-gray-900">Question</h2>
+                <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <FileQuestion className="h-6 w-6 text-green-600" />
+                    <h2 className="text-2xl font-bold text-gray-900">Question</h2>
+                  </div>
+                  <button
+                    onClick={handleCreateQuestion}
+                    className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    <FileQuestion className="h-4 w-4" />
+                    <span>Create Question</span>
+                  </button>
                 </div>
                 <div className="p-6 space-y-8">
                   {/* Recent Questions Subsection */}
