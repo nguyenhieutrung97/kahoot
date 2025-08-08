@@ -100,12 +100,21 @@ export default function PlayAdminPage() {
 
   // Sample players - in real app, this would be live data
   const [players, setPlayers] = useState<Player[]>([
-    { id: '1', name: 'Alex', score: 2450, isConnected: true },
-    { id: '2', name: 'Maria', score: 2380, isConnected: true },
-    { id: '3', name: 'David', score: 2200, isConnected: true },
-    { id: '4', name: 'Sarah', score: 2100, isConnected: false },
-    { id: '5', name: 'Mike', score: 1950, isConnected: true },
-    { id: '6', name: 'Emma', score: 1800, isConnected: true },
+    { id: '1', name: 'AlexTheGenius', score: 2450, isConnected: true },
+    { id: '2', name: 'MariaQuizMaster', score: 2380, isConnected: true },
+    { id: '3', name: 'DavidBrainiac', score: 2200, isConnected: true },
+    { id: '4', name: 'SarahSmart', score: 2100, isConnected: false },
+    { id: '5', name: 'MikeTheThinker', score: 1950, isConnected: true },
+    { id: '6', name: 'EmmaExpert', score: 1800, isConnected: true },
+    { id: '7', name: 'QuizNinja', score: 1750, isConnected: true },
+    { id: '8', name: 'BrainStorm', score: 1690, isConnected: true },
+    { id: '9', name: 'SmartCookie', score: 1620, isConnected: true },
+    { id: '10', name: 'ThinkFast', score: 1580, isConnected: true },
+    { id: '11', name: 'KnowledgeSeeker', score: 1520, isConnected: false },
+    { id: '12', name: 'QuizHero', score: 1450, isConnected: true },
+    { id: '13', name: 'BrainPower', score: 1380, isConnected: true },
+    { id: '14', name: 'MindReader', score: 1320, isConnected: true },
+    { id: '15', name: 'QuickThink', score: 1250, isConnected: true },
   ]);
 
   const currentQuestion = questions[currentQuestionIndex];
