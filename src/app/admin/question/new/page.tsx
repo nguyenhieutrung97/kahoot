@@ -52,7 +52,9 @@ export default function NewQuestionPage() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [selectedTool, setSelectedTool] = useState('select');
   const [showPreview, setShowPreview] = useState(false);
+  const [previewSlideIndex, setPreviewSlideIndex] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const questionImageInputRef = useRef<HTMLInputElement>(null);
 
   // New question with default values
   const [slides, setSlides] = useState<QuestionSlide[]>([
@@ -68,7 +70,7 @@ export default function NewQuestionPage() {
       backgroundColor: '#ffffff',
       textColor: '#000000',
       fontSize: 'text-2xl',
-      questionType: 'multiple-choice',
+      questionType: 'single-choice',
       timeLimit: 30,
       points: 100
     }
