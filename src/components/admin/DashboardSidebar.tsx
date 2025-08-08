@@ -132,8 +132,9 @@ export function DashboardSidebar({ isOpen, onClose, isCollapsed, onToggleCollaps
       
       {/* Sidebar */}
       <aside className={`
-        fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out
+        fixed lg:static inset-y-0 left-0 z-50 bg-white border-r border-gray-200 transform transition-all duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        ${isCollapsed ? 'lg:w-16' : 'lg:w-64'} w-64
       `}>
         {/* Sidebar header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 lg:hidden">
