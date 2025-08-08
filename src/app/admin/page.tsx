@@ -10,7 +10,32 @@ export default function AdminDashboard() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [openDropdown, setOpenDropdown] = useState<number | null>(null);
+  const [currentQuestionPage, setCurrentQuestionPage] = useState(1);
+  const [openQuestionDropdown, setOpenQuestionDropdown] = useState<number | null>(null);
   const roomsPerPage = 6;
+  const questionsPerPage = 6;
+
+  // Sample question data
+  const recentQuestions = [
+    { id: 1, title: "What is the capital of Vietnam?", status: "active", createdDate: "2024-01-15", modifiedDate: "2024-01-15", image: "/api/placeholder/300/200" },
+    { id: 2, title: "Which planet is known as the Red Planet?", status: "draft", createdDate: "2024-01-14", modifiedDate: "2024-01-14", image: "/api/placeholder/300/200" },
+    { id: 3, title: "Who wrote Romeo and Juliet?", status: "active", createdDate: "2024-01-13", modifiedDate: "2024-01-13", image: "/api/placeholder/300/200" },
+  ];
+
+  const questionBank = [
+    { id: 4, title: "What is photosynthesis?", status: "active", createdDate: "2024-01-12", modifiedDate: "2024-01-14", image: "/api/placeholder/300/200" },
+    { id: 5, title: "Explain Newton's first law", status: "inactive", createdDate: "2024-01-11", modifiedDate: "2024-01-12", image: "/api/placeholder/300/200" },
+    { id: 6, title: "What is machine learning?", status: "active", createdDate: "2024-01-10", modifiedDate: "2024-01-13", image: "/api/placeholder/300/200" },
+    { id: 7, title: "History of World War II", status: "draft", createdDate: "2024-01-09", modifiedDate: "2024-01-10", image: "/api/placeholder/300/200" },
+    { id: 8, title: "Basics of Chemistry", status: "active", createdDate: "2024-01-08", modifiedDate: "2024-01-11", image: "/api/placeholder/300/200" },
+    { id: 9, title: "Geography of Asia", status: "inactive", createdDate: "2024-01-07", modifiedDate: "2024-01-09", image: "/api/placeholder/300/200" },
+    { id: 10, title: "Introduction to Programming", status: "active", createdDate: "2024-01-06", modifiedDate: "2024-01-08", image: "/api/placeholder/300/200" },
+    { id: 11, title: "Art History Renaissance", status: "draft", createdDate: "2024-01-05", modifiedDate: "2024-01-07", image: "/api/placeholder/300/200" },
+    { id: 12, title: "Mathematics Calculus", status: "active", createdDate: "2024-01-04", modifiedDate: "2024-01-06", image: "/api/placeholder/300/200" },
+  ];
+
+  const totalQuestionPages = Math.ceil(questionBank.length / questionsPerPage);
+  const currentQuestions = questionBank.slice((currentQuestionPage - 1) * questionsPerPage, currentQuestionPage * questionsPerPage);
 
   // Sample room data
   const allRooms = [
