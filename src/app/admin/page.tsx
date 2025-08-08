@@ -169,56 +169,217 @@ export default function AdminDashboard() {
             </section>
 
             {/* Questions Section */}
-            <section ref={questionsRef} id="questions" className="scroll-mt-6">
+            <section ref={questionsRef} id="questions" className="scroll-mt-6 space-y-8">
+              {/* Recent Questions */}
               <div className="bg-white rounded-lg shadow">
                 <div className="px-6 py-4 border-b border-gray-200 flex items-center space-x-3">
                   <FileQuestion className="h-6 w-6 text-green-600" />
-                  <h2 className="text-2xl font-bold text-gray-900">Question</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">Recent Questions</h2>
                 </div>
                 <div className="p-6">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Question Bank</h3>
-                      <div className="space-y-3">
-                        <div className="p-4 bg-gray-50 rounded-lg">
-                          <div className="flex justify-between items-center mb-2">
-                            <h4 className="font-medium text-gray-900">General Knowledge</h4>
-                            <span className="text-sm text-gray-500">156 questions</span>
-                          </div>
-                          <p className="text-sm text-gray-600">Last updated: 2 hours ago</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {recentQuestions.map((question) => (
+                      <div key={question.id} className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+                        {/* Question Image */}
+                        <div className="h-32 bg-gray-200 flex items-center justify-center">
+                          <FileQuestion className="h-12 w-12 text-gray-400" />
                         </div>
-                        <div className="p-4 bg-gray-50 rounded-lg">
-                          <div className="flex justify-between items-center mb-2">
-                            <h4 className="font-medium text-gray-900">Science & Technology</h4>
-                            <span className="text-sm text-gray-500">89 questions</span>
+
+                        {/* Question Info */}
+                        <div className="p-4">
+                          <div className="flex items-start justify-between mb-2">
+                            <h3 className="font-medium text-gray-900 text-sm line-clamp-2 flex-1 pr-2">{question.title}</h3>
+
+                            {/* Dropdown Menu */}
+                            <div className="relative flex-shrink-0">
+                              <button
+                                onClick={() => setOpenQuestionDropdown(openQuestionDropdown === question.id ? null : question.id)}
+                                className="p-1 rounded hover:bg-gray-100 transition-colors"
+                              >
+                                <MoreVertical className="h-4 w-4 text-gray-600" />
+                              </button>
+
+                              {openQuestionDropdown === question.id && (
+                                <>
+                                  <div
+                                    className="fixed inset-0 z-10"
+                                    onClick={() => setOpenQuestionDropdown(null)}
+                                  />
+
+                                  <div className="absolute right-0 top-full mt-1 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                                    <button
+                                      onClick={() => handleEditQuestion(question.id)}
+                                      className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                      <span>Edit</span>
+                                    </button>
+
+                                    <button
+                                      onClick={() => handleToggleQuestionStatus(question.id)}
+                                      className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                                    >
+                                      {question.status === 'active' ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                      <span>{question.status === 'active' ? 'Deactivate' : 'Activate'}</span>
+                                    </button>
+
+                                    <button
+                                      onClick={() => handleDeleteQuestion(question.id)}
+                                      className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                      <span>Delete</span>
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
                           </div>
-                          <p className="text-sm text-gray-600">Last updated: 1 day ago</p>
-                        </div>
-                        <div className="p-4 bg-gray-50 rounded-lg">
-                          <div className="flex justify-between items-center mb-2">
-                            <h4 className="font-medium text-gray-900">History</h4>
-                            <span className="text-sm text-gray-500">124 questions</span>
+
+                          <div className="space-y-2">
+                            <span className={`inline-block px-2 py-1 text-xs rounded ${
+                              question.status === 'active' ? 'bg-green-100 text-green-800' :
+                              question.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {question.status.charAt(0).toUpperCase() + question.status.slice(1)}
+                            </span>
+
+                            <div className="text-xs text-gray-500 space-y-1">
+                              <p>Created: {new Date(question.createdDate).toLocaleDateString()}</p>
+                              <p>Modified: {new Date(question.modifiedDate).toLocaleDateString()}</p>
+                            </div>
                           </div>
-                          <p className="text-sm text-gray-600">Last updated: 3 days ago</p>
                         </div>
                       </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Question Bank */}
+              <div className="bg-white rounded-lg shadow">
+                <div className="px-6 py-4 border-b border-gray-200 flex items-center space-x-3">
+                  <FileQuestion className="h-6 w-6 text-green-600" />
+                  <h2 className="text-2xl font-bold text-gray-900">Question Bank</h2>
+                </div>
+                <div className="p-6">
+                  {/* Questions Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                    {currentQuestions.map((question) => (
+                      <div key={question.id} className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+                        {/* Question Image */}
+                        <div className="h-32 bg-gray-200 flex items-center justify-center">
+                          <FileQuestion className="h-12 w-12 text-gray-400" />
+                        </div>
+
+                        {/* Question Info */}
+                        <div className="p-4">
+                          <div className="flex items-start justify-between mb-2">
+                            <h3 className="font-medium text-gray-900 text-sm line-clamp-2 flex-1 pr-2">{question.title}</h3>
+
+                            {/* Dropdown Menu */}
+                            <div className="relative flex-shrink-0">
+                              <button
+                                onClick={() => setOpenQuestionDropdown(openQuestionDropdown === question.id ? null : question.id)}
+                                className="p-1 rounded hover:bg-gray-100 transition-colors"
+                              >
+                                <MoreVertical className="h-4 w-4 text-gray-600" />
+                              </button>
+
+                              {openQuestionDropdown === question.id && (
+                                <>
+                                  <div
+                                    className="fixed inset-0 z-10"
+                                    onClick={() => setOpenQuestionDropdown(null)}
+                                  />
+
+                                  <div className="absolute right-0 top-full mt-1 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                                    <button
+                                      onClick={() => handleEditQuestion(question.id)}
+                                      className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                      <span>Edit</span>
+                                    </button>
+
+                                    <button
+                                      onClick={() => handleToggleQuestionStatus(question.id)}
+                                      className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                                    >
+                                      {question.status === 'active' ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                      <span>{question.status === 'active' ? 'Deactivate' : 'Activate'}</span>
+                                    </button>
+
+                                    <button
+                                      onClick={() => handleDeleteQuestion(question.id)}
+                                      className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                      <span>Delete</span>
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <span className={`inline-block px-2 py-1 text-xs rounded ${
+                              question.status === 'active' ? 'bg-green-100 text-green-800' :
+                              question.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {question.status.charAt(0).toUpperCase() + question.status.slice(1)}
+                            </span>
+
+                            <div className="text-xs text-gray-500 space-y-1">
+                              <p>Created: {new Date(question.createdDate).toLocaleDateString()}</p>
+                              <p>Modified: {new Date(question.modifiedDate).toLocaleDateString()}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Pagination for Question Bank */}
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-gray-500">
+                      Showing {((currentQuestionPage - 1) * questionsPerPage) + 1} to {Math.min(currentQuestionPage * questionsPerPage, questionBank.length)} of {questionBank.length} questions
                     </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Questions</h3>
-                      <div className="space-y-3">
-                        <div className="p-3 border border-gray-200 rounded">
-                          <p className="font-medium text-sm">What is the capital of Vietnam?</p>
-                          <p className="text-xs text-gray-500 mt-1">Category: Geography • Added 1 hour ago</p>
-                        </div>
-                        <div className="p-3 border border-gray-200 rounded">
-                          <p className="font-medium text-sm">Which planet is known as the Red Planet?</p>
-                          <p className="text-xs text-gray-500 mt-1">Category: Science • Added 3 hours ago</p>
-                        </div>
-                        <div className="p-3 border border-gray-200 rounded">
-                          <p className="font-medium text-sm">Who wrote "Romeo and Juliet"?</p>
-                          <p className="text-xs text-gray-500 mt-1">Category: Literature • Added 5 hours ago</p>
-                        </div>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => setCurrentQuestionPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentQuestionPage === 1}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                      >
+                        Previous
+                      </button>
+
+                      <div className="flex space-x-1">
+                        {Array.from({ length: totalQuestionPages }, (_, i) => i + 1).map((page) => (
+                          <button
+                            key={page}
+                            onClick={() => setCurrentQuestionPage(page)}
+                            className={`px-3 py-1 text-sm border rounded ${
+                              currentQuestionPage === page
+                                ? "bg-blue-600 text-white border-blue-600"
+                                : "border-gray-300 hover:bg-gray-50"
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        ))}
                       </div>
+
+                      <button
+                        onClick={() => setCurrentQuestionPage(prev => Math.min(prev + 1, totalQuestionPages))}
+                        disabled={currentQuestionPage === totalQuestionPages}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                      >
+                        Next
+                      </button>
                     </div>
                   </div>
                 </div>
