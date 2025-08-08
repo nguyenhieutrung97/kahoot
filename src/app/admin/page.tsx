@@ -95,47 +95,6 @@ export default function AdminDashboard() {
                 </div>
               </div>
               
-              {/* Recent activity */}
-              <div className="bg-white rounded-lg shadow">
-                <div className="px-6 py-4 border-b border-gray-200">
-                  <h2 className="text-xl font-semibold text-gray-900">
-                    Recent Activity
-                  </h2>
-                </div>
-                <div className="p-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                      <div>
-                        <p className="font-medium text-gray-900">New room created</p>
-                        <p className="text-sm text-gray-500">Room "General Knowledge" - 5 minutes ago</p>
-                      </div>
-                      <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">
-                        New
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                      <div>
-                        <p className="font-medium text-gray-900">Players joined</p>
-                        <p className="text-sm text-gray-500">15 new players in the last hour</p>
-                      </div>
-                      <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
-                        Active
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-center justify-between py-3">
-                      <div>
-                        <p className="font-medium text-gray-900">System update</p>
-                        <p className="text-sm text-gray-500">Version 2.1.0 has been deployed</p>
-                      </div>
-                      <span className="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded">
-                        Completed
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </section>
 
             {/* Lobby Section */}
