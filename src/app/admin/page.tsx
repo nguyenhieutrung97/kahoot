@@ -143,18 +143,33 @@ export default function AdminDashboard() {
   };
 
   const handleCreateQuestion = () => {
-    // Navigate to create new question page
-    router.push('/admin/question/new');
+    try {
+      // Navigate to create new question page
+      router.push('/admin/question/new');
+    } catch (error) {
+      console.error('Navigation error:', error);
+      window.location.href = '/admin/question/new';
+    }
   };
 
   const handleEditQuestionNavigation = (questionId: number) => {
-    // Navigate to edit question page
-    router.push(`/admin/question/${questionId}`);
+    try {
+      // Navigate to edit question page
+      router.push(`/admin/question/${questionId}`);
+    } catch (error) {
+      console.error('Navigation error:', error);
+      window.location.href = `/admin/question/${questionId}`;
+    }
   };
 
   const handleQuestionCardClick = (questionId: number) => {
-    // Navigate to edit question page when clicking on card
-    router.push(`/admin/question/${questionId}`);
+    try {
+      // Navigate to edit question page when clicking on card
+      router.push(`/admin/question/${questionId}`);
+    } catch (error) {
+      console.error('Navigation error:', error);
+      window.location.href = `/admin/question/${questionId}`;
+    }
   };
 
   // Refs for sections
