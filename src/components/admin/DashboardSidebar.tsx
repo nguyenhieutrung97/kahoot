@@ -104,7 +104,7 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
     },
     {
       id: "help",
-      label: "Trợ giúp",
+      label: "Help",
       icon: <HelpCircle className="h-5 w-5" />,
       href: "/admin/help"
     }
