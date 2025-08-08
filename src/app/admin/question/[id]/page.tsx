@@ -73,7 +73,8 @@ export default function QuestionEditPage() {
       fontSize: 'text-2xl',
       questionType: 'single-choice',
       timeLimit: 30,
-      points: 100
+      points: 100,
+      questionImage: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzNjNzBmNCIvPjx0ZXh0IHg9IjE1MCIgeT0iMTAwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOHB4IiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkhhbm9pIENpdHkgSW1hZ2U8L3RleHQ+PC9zdmc+'
     }
   ]);
 
