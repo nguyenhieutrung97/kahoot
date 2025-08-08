@@ -123,9 +123,11 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <DashboardHeader 
+      <DashboardHeader
         onMenuClick={() => setSidebarOpen(!sidebarOpen)}
         sidebarOpen={sidebarOpen}
+        onProfileClick={() => setShowProfilePopup(true)}
+        onSettingsClick={() => setShowSettingsPopup(true)}
       />
       
       {/* Main layout với sidebar và content */}
