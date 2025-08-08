@@ -154,7 +154,13 @@ export default function QuestionEditPage() {
   };
 
   const handleBackToAdmin = () => {
-    router.push('/admin');
+    try {
+      router.push('/admin');
+    } catch (error) {
+      console.error('Navigation error:', error);
+      // Fallback to window navigation
+      window.location.href = '/admin';
+    }
   };
 
   const handleBackgroundImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
