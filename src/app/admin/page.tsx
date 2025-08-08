@@ -125,8 +125,13 @@ export default function AdminDashboard() {
     setOpenQuestionDropdown(null);
   };
 
-  const handleToggleQuestionStatus = (questionId: number) => {
-    console.log(`Toggling question status ${questionId}`);
+  const handleCloseQuestion = (questionId: number) => {
+    console.log(`Closing question ${questionId}`);
+    setOpenQuestionDropdown(null);
+  };
+
+  const handleReactiveQuestion = (questionId: number) => {
+    console.log(`Reactivating question ${questionId}`);
     setOpenQuestionDropdown(null);
   };
 
@@ -371,7 +376,7 @@ export default function AdminDashboard() {
                                   { value: 'created_asc', label: 'Created: Oldest First' },
                                   { value: 'modified_desc', label: 'Modified: Newest First' },
                                   { value: 'modified_asc', label: 'Modified: Oldest First' },
-                                  { value: 'title_asc', label: 'Title: A �� Z' },
+                                  { value: 'title_asc', label: 'Title: A → Z' },
                                   { value: 'title_desc', label: 'Title: Z → A' }
                                 ].map((option) => (
                                   <button
