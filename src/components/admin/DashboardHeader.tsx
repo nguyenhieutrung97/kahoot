@@ -6,6 +6,8 @@ import { Search, Menu, Settings, LogOut, User } from "lucide-react";
 interface DashboardHeaderProps {
   onMenuClick: () => void;
   sidebarOpen: boolean;
+  onProfileClick: () => void;
+  onSettingsClick: () => void;
 }
 
 export function DashboardHeader({ onMenuClick, sidebarOpen }: DashboardHeaderProps) {
