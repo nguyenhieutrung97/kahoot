@@ -371,7 +371,7 @@ export default function AdminDashboard() {
                                   { value: 'created_asc', label: 'Created: Oldest First' },
                                   { value: 'modified_desc', label: 'Modified: Newest First' },
                                   { value: 'modified_asc', label: 'Modified: Oldest First' },
-                                  { value: 'title_asc', label: 'Title: A → Z' },
+                                  { value: 'title_asc', label: 'Title: A �� Z' },
                                   { value: 'title_desc', label: 'Title: Z → A' }
                                 ].map((option) => (
                                   <button
@@ -885,32 +885,66 @@ export default function AdminDashboard() {
                   <h2 className="text-2xl font-bold text-gray-900">Settings</h2>
                 </div>
                 <div className="p-6">
-                  <div className="max-w-md">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">General Settings</h3>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {/* General Settings */}
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">General Settings</h3>
 
-                    {/* Theme Toggle */}
-                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        {darkMode ? <Moon className="h-5 w-5 text-gray-600" /> : <Sun className="h-5 w-5 text-gray-600" />}
-                        <div>
-                          <p className="font-medium text-gray-900">Theme</p>
-                          <p className="text-sm text-gray-500">
-                            {darkMode ? 'Dark mode is enabled' : 'Light mode is enabled'}
-                          </p>
+                      {/* Theme Toggle */}
+                      <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          {darkMode ? <Moon className="h-5 w-5 text-gray-600" /> : <Sun className="h-5 w-5 text-gray-600" />}
+                          <div>
+                            <p className="font-medium text-gray-900">Theme</p>
+                            <p className="text-sm text-gray-500">
+                              {darkMode ? 'Dark mode is enabled' : 'Light mode is enabled'}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setDarkMode(!darkMode)}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            darkMode ? 'bg-blue-600' : 'bg-gray-300'
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              darkMode ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* System Information */}
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">System Information</h3>
+                      <div className="space-y-4">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Version:</span>
+                          <span className="font-semibold">2.1.0</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Last update:</span>
+                          <span className="font-semibold">Today, 10:30 AM</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Server status:</span>
+                          <span className="text-green-600 font-semibold">Online</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Database status:</span>
+                          <span className="text-green-600 font-semibold">Connected</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Uptime:</span>
+                          <span className="font-semibold">7 days, 14 hours</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Memory usage:</span>
+                          <span className="font-semibold">68%</span>
                         </div>
                       </div>
-                      <button
-                        onClick={() => setDarkMode(!darkMode)}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                          darkMode ? 'bg-blue-600' : 'bg-gray-300'
-                        }`}
-                      >
-                        <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                            darkMode ? 'translate-x-6' : 'translate-x-1'
-                          }`}
-                        />
-                      </button>
                     </div>
                   </div>
                 </div>
