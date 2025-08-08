@@ -50,7 +50,19 @@ export default function PlayAdminPage() {
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [showAnswers, setShowAnswers] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [lobbyCode] = useState('ABC123');
+  const [lobbyCode] = useState(() => {
+    // Generate random lobby code
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const numbers = '0123456789';
+    let code = '';
+    for (let i = 0; i < 3; i++) {
+      code += letters.charAt(Math.floor(Math.random() * letters.length));
+    }
+    for (let i = 0; i < 3; i++) {
+      code += numbers.charAt(Math.floor(Math.random() * numbers.length));
+    }
+    return code;
+  });
   
   // Sample questions - in real app, fetch based on question set ID
   const questions: Question[] = [
