@@ -137,15 +137,29 @@ export function DashboardSidebar({ isOpen, onClose, isCollapsed, onToggleCollaps
         ${isCollapsed ? 'lg:w-16' : 'lg:w-64'} w-64
       `}>
         {/* Sidebar header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 lg:hidden">
-          <h2 className="text-lg font-semibold text-gray-900">Menu</h2>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-md hover:bg-gray-100 transition-colors"
-            aria-label="Close menu"
-          >
-            <X className="h-5 w-5 text-gray-500" />
-          </button>
+        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          {!isCollapsed && (
+            <h2 className="text-lg font-semibold text-gray-900 lg:block hidden">Menu</h2>
+          )}
+          <div className="flex items-center space-x-2">
+            {/* Collapse button - only visible on desktop */}
+            <button
+              onClick={onToggleCollapse}
+              className="hidden lg:flex p-2 rounded-md hover:bg-gray-100 transition-colors"
+              aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              <ChevronLeft className={`h-5 w-5 text-gray-500 transition-transform ${isCollapsed ? 'rotate-180' : ''}`} />
+            </button>
+
+            {/* Close button - only visible on mobile */}
+            <button
+              onClick={onClose}
+              className="lg:hidden p-2 rounded-md hover:bg-gray-100 transition-colors"
+              aria-label="Close menu"
+            >
+              <X className="h-5 w-5 text-gray-500" />
+            </button>
+          </div>
         </div>
 
         {/* Navigation menu */}
