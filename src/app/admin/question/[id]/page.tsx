@@ -381,7 +381,7 @@ export default function QuestionEditPage() {
         <div className="flex-1 flex flex-col">
           {/* Toolbar */}
           <div className="bg-white border-b border-gray-200 p-4">
-            <div className="flex items-center space-x-6">
+            <div className="flex items-center space-x-6 flex-wrap gap-y-3">
               {/* Question Type */}
               <div className="flex items-center space-x-2">
                 <label className="text-sm font-medium text-gray-700">Type:</label>
@@ -390,9 +390,9 @@ export default function QuestionEditPage() {
                   onChange={(e) => updateSlide(currentSlide, { questionType: e.target.value as any })}
                   className="px-3 py-1 border border-gray-300 rounded text-sm"
                 >
+                  <option value="single-choice">Single Choice</option>
                   <option value="multiple-choice">Multiple Choice</option>
                   <option value="true-false">True/False</option>
-                  <option value="text">Text Answer</option>
                 </select>
               </div>
 
