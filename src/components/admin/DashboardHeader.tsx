@@ -90,15 +90,26 @@ export function DashboardHeader({ onMenuClick, sidebarOpen }: DashboardHeaderPro
             {/* Menu dropdown */}
             <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
               <button
+                onClick={() => {
+                  console.log("Opening profile...");
+                  setAvatarMenuOpen(false);
+                }}
+                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2 transition-colors"
+              >
+                <User className="h-4 w-4" />
+                <span>Profile</span>
+              </button>
+
+              <button
                 onClick={handleSettings}
                 className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2 transition-colors"
               >
                 <Settings className="h-4 w-4" />
                 <span>Settings</span>
               </button>
-              
+
               <hr className="my-1 border-gray-100" />
-              
+
               <button
                 onClick={handleLogout}
                 className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2 transition-colors"
