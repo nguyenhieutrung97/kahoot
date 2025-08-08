@@ -270,10 +270,11 @@ export default function NewQuestionPage() {
           <div className="flex items-center space-x-3">
             <button
               onClick={() => {
-                // TODO: Implement history functionality
-                console.log('Opening history...');
+                // For new questions, redirect to a general history page or disable
+                alert('Save the question first to view history');
               }}
-              className="flex items-center space-x-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              className="flex items-center space-x-2 px-4 py-2 bg-gray-500 text-white rounded-lg cursor-not-allowed opacity-50"
+              disabled
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
