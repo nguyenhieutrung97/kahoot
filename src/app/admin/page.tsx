@@ -139,17 +139,17 @@ export default function AdminDashboard() {
 
   const handleCreateQuestion = () => {
     // Navigate to create new question page
-    window.location.href = '/admin/question/new';
+    router.push('/admin/question/new-question');
   };
 
   const handleEditQuestionNavigation = (questionId: number) => {
     // Navigate to edit question page
-    window.location.href = `/admin/question/${questionId}`;
+    router.push(`/admin/question/${questionId}`);
   };
 
   const handleQuestionCardClick = (questionId: number) => {
     // Navigate to edit question page when clicking on card
-    window.location.href = `/admin/question/${questionId}`;
+    router.push(`/admin/question/${questionId}`);
   };
 
   // Refs for sections
