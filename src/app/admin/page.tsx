@@ -17,7 +17,7 @@ export default function AdminDashboard() {
   const [showProfilePopup, setShowProfilePopup] = useState(false);
   const [showSettingsPopup, setShowSettingsPopup] = useState(false);
   const [questionViewMode, setQuestionViewMode] = useState<'card' | 'list'>('card');
-  const [questionFilter, setQuestionFilter] = useState<string[]>(['active', 'draft', 'inactive']);
+  const [questionFilter, setQuestionFilter] = useState<string[]>(['active', 'draft', 'inactive', 'in-lobby']);
   const [questionSort, setQuestionSort] = useState('created_desc');
   const [darkMode, setDarkMode] = useState(false);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
