@@ -51,12 +51,12 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
     },
     {
       id: "questions",
-      label: "Ngân hàng câu hỏi",
+      label: "Question Bank",
       icon: <FileQuestion className="h-5 w-5" />,
       children: [
-        { id: "all-questions", label: "Tất cả câu hỏi", icon: <></>, href: "/admin/questions" },
-        { id: "categories", label: "Danh mục", icon: <></>, href: "/admin/questions/categories" },
-        { id: "create-question", label: "Tạo câu hỏi", icon: <></>, href: "/admin/questions/create" }
+        { id: "all-questions", label: "All Questions", icon: <></>, href: "/admin/questions" },
+        { id: "categories", label: "Categories", icon: <></>, href: "/admin/questions/categories" },
+        { id: "create-question", label: "Create Question", icon: <></>, href: "/admin/questions/create" }
       ]
     },
     {
