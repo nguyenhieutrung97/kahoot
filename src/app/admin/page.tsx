@@ -308,47 +308,102 @@ export default function AdminDashboard() {
 
                       {/* Controls */}
                       <div className="flex items-center space-x-4">
-                        {/* Filter */}
+                        {/* Filter Dropdown */}
                         <div className="relative">
-                          <select
-                            value={questionFilter}
-                            onChange={(e) => setQuestionFilter(e.target.value)}
-                            className="px-3 py-2 pr-8 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          <button
+                            onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+                            className="flex items-center space-x-2 px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
                           >
-                            <option value="all">All Status</option>
-                            <option value="active">Active</option>
-                            <option value="draft">Draft</option>
-                            <option value="inactive">Inactive</option>
-                          </select>
-                          <Filter className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                            <Filter className="h-4 w-4 text-gray-500" />
+                            <span>Filter ({questionFilter.length})</span>
+                            <ChevronDown className="h-4 w-4 text-gray-500" />
+                          </button>
+
+                          {showFilterDropdown && (
+                            <>
+                              <div
+                                className="fixed inset-0 z-10"
+                                onClick={() => setShowFilterDropdown(false)}
+                              />
+                              <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                                <div className="px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wide">Status Filter</div>
+                                {['active', 'draft', 'inactive'].map((status) => (
+                                  <label key={status} className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer">
+                                    <input
+                                      type="checkbox"
+                                      checked={questionFilter.includes(status)}
+                                      onChange={() => handleFilterChange(status)}
+                                      className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                    />
+                                    <span className="ml-2 text-sm text-gray-700 capitalize">{status}</span>
+                                    <span className={`ml-auto w-2 h-2 rounded-full ${
+                                      status === 'active' ? 'bg-green-500' :
+                                      status === 'draft' ? 'bg-yellow-500' : 'bg-gray-500'
+                                    }`}></span>
+                                  </label>
+                                ))}
+                              </div>
+                            </>
+                          )}
                         </div>
 
-                        {/* Sort */}
+                        {/* Sort Dropdown */}
                         <div className="relative">
-                          <select
-                            value={questionSort}
-                            onChange={(e) => setQuestionSort(e.target.value)}
-                            className="px-3 py-2 pr-8 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          <button
+                            onClick={() => setShowSortDropdown(!showSortDropdown)}
+                            className="flex items-center space-x-2 px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
                           >
-                            <option value="newest">Newest First</option>
-                            <option value="oldest">Oldest First</option>
-                            <option value="title">Title A-Z</option>
-                            <option value="modified">Last Modified</option>
-                          </select>
-                          <ArrowUpDown className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                            <ArrowUpDown className="h-4 w-4 text-gray-500" />
+                            <span>Sort</span>
+                            <ChevronDown className="h-4 w-4 text-gray-500" />
+                          </button>
+
+                          {showSortDropdown && (
+                            <>
+                              <div
+                                className="fixed inset-0 z-10"
+                                onClick={() => setShowSortDropdown(false)}
+                              />
+                              <div className="absolute right-0 top-full mt-1 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                                <div className="px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wide">Sort Options</div>
+                                {[
+                                  { value: 'created_desc', label: 'Created: Newest First' },
+                                  { value: 'created_asc', label: 'Created: Oldest First' },
+                                  { value: 'modified_desc', label: 'Modified: Newest First' },
+                                  { value: 'modified_asc', label: 'Modified: Oldest First' },
+                                  { value: 'title_asc', label: 'Title: A → Z' },
+                                  { value: 'title_desc', label: 'Title: Z → A' }
+                                ].map((option) => (
+                                  <button
+                                    key={option.value}
+                                    onClick={() => {
+                                      setQuestionSort(option.value);
+                                      setShowSortDropdown(false);
+                                      setCurrentQuestionPage(1);
+                                    }}
+                                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 ${
+                                      questionSort === option.value ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'
+                                    }`}
+                                  >
+                                    {option.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </>
+                          )}
                         </div>
 
                         {/* View Mode Toggle */}
                         <div className="flex border border-gray-300 rounded-md">
                           <button
                             onClick={() => setQuestionViewMode('card')}
-                            className={`p-2 ${questionViewMode === 'card' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+                            className={`p-2 transition-colors ${questionViewMode === 'card' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
                           >
                             <Grid3X3 className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => setQuestionViewMode('list')}
-                            className={`p-2 ${questionViewMode === 'list' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+                            className={`p-2 transition-colors ${questionViewMode === 'list' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
                           >
                             <List className="h-4 w-4" />
                           </button>
