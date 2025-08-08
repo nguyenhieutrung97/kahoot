@@ -143,7 +143,7 @@ export default function AdminDashboard() {
               <div className="bg-white rounded-lg shadow">
                 <div className="px-6 py-4 border-b border-gray-200 flex items-center space-x-3">
                   <FileQuestion className="h-6 w-6 text-green-600" />
-                  <h2 className="text-2xl font-bold text-gray-900">Question Management</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">Question</h2>
                 </div>
                 <div className="p-6">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
