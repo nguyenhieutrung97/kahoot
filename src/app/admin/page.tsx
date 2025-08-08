@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { DashboardHeader } from "@/components/admin/DashboardHeader";
 import { DashboardSidebar } from "@/components/admin/DashboardSidebar";
 import { Users, FileQuestion, BarChart3, Settings as SettingsIcon, ChevronLeft, ChevronRight, MoreVertical, X, Trash2, LogIn, RotateCcw, Edit, Eye, EyeOff, Grid3X3, List, Filter, ArrowUpDown, Moon, Sun, User as UserIcon, Mail, Hash, ChevronDown } from "lucide-react";
