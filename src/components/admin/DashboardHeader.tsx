@@ -93,7 +93,7 @@ export function DashboardHeader({ onMenuClick, sidebarOpen, onProfileClick, onSe
             <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
               <button
                 onClick={() => {
-                  console.log("Opening profile...");
+                  onProfileClick();
                   setAvatarMenuOpen(false);
                 }}
                 className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2 transition-colors"
@@ -103,7 +103,10 @@ export function DashboardHeader({ onMenuClick, sidebarOpen, onProfileClick, onSe
               </button>
 
               <button
-                onClick={handleSettings}
+                onClick={() => {
+                  onSettingsClick();
+                  setAvatarMenuOpen(false);
+                }}
                 className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2 transition-colors"
               >
                 <Settings className="h-4 w-4" />
