@@ -27,7 +27,7 @@ export default function AdminDashboard() {
 
   // Sample question data
   const recentQuestions = [
-    { id: 1, title: "What is the capital of Vietnam?", status: "active", createdDate: "2024-01-15", modifiedDate: "2024-01-15", image: "/api/placeholder/300/200" },
+    { id: 1, title: "What is the capital of Vietnam?", status: "in-lobby", createdDate: "2024-01-15", modifiedDate: "2024-01-15", image: "/api/placeholder/300/200", lobbyCode: "ABC123", playerCount: 8 },
     { id: 2, title: "Which planet is known as the Red Planet?", status: "draft", createdDate: "2024-01-14", modifiedDate: "2024-01-14", image: "/api/placeholder/300/200" },
     { id: 3, title: "Who wrote Romeo and Juliet?", status: "active", createdDate: "2024-01-13", modifiedDate: "2024-01-13", image: "/api/placeholder/300/200" },
   ];
