@@ -60,7 +60,7 @@ export default function PlayAdminPage() {
       answers: ['Ho Chi Minh City', 'Hanoi', 'Da Nang', 'Hue'],
       correctAnswers: [1],
       timeLimit: 30,
-      points: 100,
+      points: 1000,
       image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzNjNzBmNCIvPjx0ZXh0IHg9IjE1MCIgeT0iMTAwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOHB4IiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkhhbm9pIENpdHkgSW1hZ2U8L3RleHQ+PC9zdmc+'
     },
     {
@@ -69,15 +69,32 @@ export default function PlayAdminPage() {
       answers: ['Mars', 'Venus', 'Jupiter', 'Saturn'],
       correctAnswers: [0],
       timeLimit: 25,
-      points: 100
+      points: 800,
+      image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2U1MzMzNSIvPjx0ZXh0IHg9IjE1MCIgeT0iMTAwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOHB4IiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk1hcnMgUGxhbmV0PC90ZXh0Pjwvc3ZnPg=='
     },
     {
       id: '3',
       question: 'What year did World War II end?',
       answers: ['1944', '1945', '1946', '1947'],
       correctAnswers: [1],
-      timeLimit: 30,
-      points: 100
+      timeLimit: 20,
+      points: 600
+    },
+    {
+      id: '4',
+      question: 'Which of these are primary colors? (Multiple answers)',
+      answers: ['Red', 'Green', 'Blue', 'Yellow'],
+      correctAnswers: [0, 2, 3],
+      timeLimit: 35,
+      points: 1200
+    },
+    {
+      id: '5',
+      question: 'Mount Everest is the tallest mountain in the world.',
+      answers: ['True', 'False'],
+      correctAnswers: [0],
+      timeLimit: 15,
+      points: 400
     }
   ];
 
