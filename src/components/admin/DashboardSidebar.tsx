@@ -150,14 +150,6 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
           </div>
         </nav>
 
-        {/* Footer */}
-        <div className="border-t border-gray-200 p-4">
-          <div className="text-xs text-gray-500 text-center">
-            © 2024 Quiz Platform
-            <br />
-            Phiên bản 2.1.0
-          </div>
-        </div>
       </aside>
     </>
   );
