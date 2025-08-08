@@ -314,10 +314,7 @@ export default function QuestionEditPage() {
           
           <div className="flex items-center space-x-3">
             <button
-              onClick={() => {
-                // TODO: Implement history functionality
-                console.log('Opening history...');
-              }}
+              onClick={() => router.push(`/admin/question/${params.id}/history`)}
               className="flex items-center space-x-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
