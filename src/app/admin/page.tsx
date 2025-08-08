@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { DashboardHeader } from "@/components/admin/DashboardHeader";
 import { DashboardSidebar } from "@/components/admin/DashboardSidebar";
-import { Users, FileQuestion, BarChart3, Settings as SettingsIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { Users, FileQuestion, BarChart3, Settings as SettingsIcon, ChevronLeft, ChevronRight, MoreVertical, X, Trash2 } from "lucide-react";
 
 export default function AdminDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
