@@ -98,7 +98,7 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
     },
     {
       id: "settings",
-      label: "Cài đặt",
+      label: "Settings",
       icon: <Settings className="h-5 w-5" />,
       href: "/admin/settings"
     },
