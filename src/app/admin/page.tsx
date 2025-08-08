@@ -19,8 +19,8 @@ export default function AdminDashboard() {
   const scrollToSection = (sectionId: string) => {
     const refs = {
       dashboard: dashboardRef,
-      lobby: lobbyRef,
       questions: questionsRef,
+      lobby: lobbyRef,
       analytics: analyticsRef,
       settings: settingsRef,
     };
