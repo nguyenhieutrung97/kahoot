@@ -518,11 +518,11 @@ export default function QuestionEditPage() {
                 }}
               >
                 {/* Question Input */}
-                <div className="absolute top-8 left-8 right-8">
+                <div className="absolute top-4 left-8 right-8">
                   <textarea
                     value={currentSlideData.question}
                     onChange={(e) => updateSlide(currentSlide, { question: e.target.value })}
-                    className={`w-full bg-transparent border-2 border-dashed border-gray-300 rounded p-4 ${currentSlideData.fontSize} font-bold text-center resize-none focus:border-blue-500 focus:outline-none`}
+                    className={`w-full bg-transparent border-2 border-dashed border-gray-300 rounded p-3 ${currentSlideData.fontSize} font-bold text-center resize-none focus:border-blue-500 focus:outline-none`}
                     style={{ color: currentSlideData.textColor }}
                     placeholder="Enter your question here..."
                     rows={2}
@@ -530,14 +530,14 @@ export default function QuestionEditPage() {
                 </div>
 
                 {/* Question Image Section - Center of slide */}
-                <div className="absolute top-1/2 left-8 right-8 transform -translate-y-1/2">
+                <div className={`absolute left-8 right-8 ${currentSlideData.questionImage ? 'top-24' : 'top-32'}`}>
                   {currentSlideData.questionImage ? (
-                    <div className="flex justify-center">
+                    <div className="flex justify-center mb-4">
                       <div className="relative">
                         <img
                           src={currentSlideData.questionImage}
                           alt="Question"
-                          className="max-w-md max-h-48 object-contain rounded-lg shadow-lg border-2 border-dashed border-blue-300"
+                          className="max-w-sm max-h-40 object-contain rounded-lg shadow-lg border-2 border-dashed border-blue-300"
                         />
                         <button
                           onClick={() => updateSlide(currentSlide, { questionImage: undefined })}
