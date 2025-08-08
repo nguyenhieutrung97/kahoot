@@ -269,8 +269,8 @@ export default function AdminDashboard() {
                                         onClick={() => question.status === 'active' ? handleCloseQuestion(question.id) : handleReactiveQuestion(question.id)}
                                         className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
                                       >
-                                        {question.status === 'active' ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                        <span>{question.status === 'active' ? 'Deactivate' : 'Activate'}</span>
+                                        {question.status === 'active' ? <X className="h-4 w-4" /> : <RotateCcw className="h-4 w-4" />}
+                                        <span>{question.status === 'active' ? 'Close' : 'Re-active'}</span>
                                       </button>
 
                                       <button
@@ -460,8 +460,8 @@ export default function AdminDashboard() {
                                           onClick={() => question.status === 'active' ? handleCloseQuestion(question.id) : handleReactiveQuestion(question.id)}
                                           className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
                                         >
-                                          {question.status === 'active' ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                          <span>{question.status === 'active' ? 'Deactivate' : 'Activate'}</span>
+                                          {question.status === 'active' ? <X className="h-4 w-4" /> : <RotateCcw className="h-4 w-4" />}
+                                        <span>{question.status === 'active' ? 'Close' : 'Re-active'}</span>
                                         </button>
 
                                         <button
