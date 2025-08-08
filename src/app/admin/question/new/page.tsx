@@ -41,7 +41,8 @@ interface QuestionSlide {
   textColor: string;
   fontSize: string;
   backgroundImage?: string;
-  questionType: 'multiple-choice' | 'true-false' | 'text';
+  questionImage?: string;
+  questionType: 'single-choice' | 'multiple-choice' | 'true-false';
   timeLimit: number;
   points: number;
 }
