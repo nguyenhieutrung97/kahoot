@@ -247,7 +247,7 @@ export default function AdminDashboard() {
                                 {openQuestionDropdown === question.id && (
                                   <>
                                     <div
-                                      className="fixed inset-0 z-40"
+                                      className="fixed inset-0 z-[60]"
                                       onClick={() => setOpenQuestionDropdown(null)}
                                     />
 
@@ -438,7 +438,7 @@ export default function AdminDashboard() {
                                   {openQuestionDropdown === question.id && (
                                     <>
                                       <div
-                                        className="fixed inset-0 z-40"
+                                        className="fixed inset-0 z-[60]"
                                         onClick={() => setOpenQuestionDropdown(null)}
                                       />
 
@@ -521,7 +521,7 @@ export default function AdminDashboard() {
                               {openQuestionDropdown === question.id && (
                                 <>
                                   <div
-                                    className="fixed inset-0 z-40"
+                                    className="fixed inset-0 z-[60]"
                                     onClick={() => setOpenQuestionDropdown(null)}
                                   />
 
