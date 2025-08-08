@@ -290,11 +290,11 @@ export default function NewQuestionPage() {
             </button>
             <button
               onClick={() => {
-                // TODO: Implement start lobby functionality
-                console.log('Starting lobby...');
-                alert('Starting lobby with this question set!');
+                // For new questions, save first then redirect
+                alert('Save the question first to start a lobby');
               }}
-              className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              className="flex items-center space-x-2 px-4 py-2 bg-purple-500 text-white rounded-lg cursor-not-allowed opacity-50"
+              disabled
             >
               <Play className="h-4 w-4" />
               <span>Start Lobby</span>
