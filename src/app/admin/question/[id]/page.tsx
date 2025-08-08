@@ -234,7 +234,7 @@ export default function QuestionEditPage() {
               <span>Back to Admin</span>
             </button>
             <h1 className="text-xl font-semibold text-gray-900">
-              {params.id === 'new' ? 'Create New Question' : `Edit Question #${params.id}`}
+              {params.id === 'new' ? 'Create New Question' : `Edit Question: ${currentSlideData.question}`}
             </h1>
           </div>
           
