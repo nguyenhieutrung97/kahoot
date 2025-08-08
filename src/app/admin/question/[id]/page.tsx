@@ -185,49 +185,106 @@ export default function QuestionEditPage() {
   const currentSlideData = slides[currentSlide];
 
   if (showPreview) {
+    const previewQuestion = slides[previewSlideIndex];
+
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
         <div className="max-w-4xl w-full">
           {/* Preview Header */}
           <div className="bg-white p-4 rounded-t-lg flex items-center justify-between">
-            <h2 className="text-xl font-bold">Preview Mode</h2>
-            <button
-              onClick={() => setShowPreview(false)}
-              className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
-            >
-              Exit Preview
-            </button>
+            <div className="flex items-center space-x-4">
+              <h2 className="text-xl font-bold">Preview Mode</h2>
+              <span className="text-gray-500">Question {previewSlideIndex + 1} of {slides.length}</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setPreviewSlideIndex(prev => Math.max(0, prev - 1))}
+                disabled={previewSlideIndex === 0}
+                className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setPreviewSlideIndex(prev => Math.min(slides.length - 1, prev + 1))}
+                disabled={previewSlideIndex === slides.length - 1}
+                className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+              <button
+                onClick={() => {
+                  setShowPreview(false);
+                  setPreviewSlideIndex(0);
+                }}
+                className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+              >
+                Exit Preview
+              </button>
+            </div>
           </div>
-          
-          {/* Preview Slide */}
-          <div 
+
+          {/* Preview Question */}
+          <div
             className="relative aspect-video rounded-b-lg overflow-hidden"
-            style={{ 
-              backgroundColor: currentSlideData.backgroundColor,
-              backgroundImage: currentSlideData.backgroundImage ? `url(${currentSlideData.backgroundImage})` : undefined,
+            style={{
+              backgroundColor: previewQuestion.backgroundColor,
+              backgroundImage: previewQuestion.backgroundImage ? `url(${previewQuestion.backgroundImage})` : undefined,
               backgroundSize: 'cover',
               backgroundPosition: 'center'
             }}
           >
             <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center">
-              <h1 
-                className={`${currentSlideData.fontSize} font-bold mb-8`}
-                style={{ color: currentSlideData.textColor }}
-              >
-                {currentSlideData.question}
-              </h1>
-              
-              <div className="grid grid-cols-2 gap-4 w-full max-w-2xl">
-                {currentSlideData.answers.map((answer, index) => (
-                  <button
-                    key={answer.id}
-                    className={`p-4 rounded-lg text-white font-semibold text-lg transition-colors hover:opacity-80 ${
-                      ['bg-red-500', 'bg-blue-500', 'bg-yellow-500', 'bg-green-500'][index % 4]
-                    }`}
-                  >
-                    {answer.text}
+              {/* Question Text */}
+              <div className="mb-8">
+                <h1
+                  className={`${previewQuestion.fontSize} font-bold mb-4`}
+                  style={{ color: previewQuestion.textColor }}
+                >
+                  {previewQuestion.question}
+                </h1>
+
+                {/* Question Image */}
+                {previewQuestion.questionImage && (
+                  <div className="flex justify-center mb-4">
+                    <img
+                      src={previewQuestion.questionImage}
+                      alt="Question"
+                      className="max-w-md max-h-48 object-contain rounded-lg shadow-lg"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Answers */}
+              {previewQuestion.questionType === 'true-false' ? (
+                <div className="flex gap-8">
+                  <button className="px-8 py-4 bg-green-500 text-white font-semibold text-lg rounded-lg hover:opacity-80 transition-colors">
+                    True
                   </button>
-                ))}
+                  <button className="px-8 py-4 bg-red-500 text-white font-semibold text-lg rounded-lg hover:opacity-80 transition-colors">
+                    False
+                  </button>
+                </div>
+              ) : (
+                <div className={`grid gap-4 w-full max-w-2xl ${
+                  previewQuestion.answers.length <= 2 ? 'grid-cols-1' : 'grid-cols-2'
+                }`}>
+                  {previewQuestion.answers.map((answer, index) => (
+                    <button
+                      key={answer.id}
+                      className={`p-4 rounded-lg text-white font-semibold text-lg transition-colors hover:opacity-80 ${
+                        ['bg-red-500', 'bg-blue-500', 'bg-yellow-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500'][index % 6]
+                      }`}
+                    >
+                      {answer.text}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Question Info */}
+              <div className="absolute top-4 right-4 bg-black/70 text-white px-3 py-1 rounded-lg text-sm">
+                {previewQuestion.timeLimit}s • {previewQuestion.points} pts
               </div>
             </div>
           </div>
