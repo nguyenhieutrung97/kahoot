@@ -927,43 +927,94 @@ export default function AdminDashboard() {
 
       {/* Settings Popup */}
       {showSettingsPopup && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">Settings</h3>
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-t-xl">
+              <h3 className="text-xl font-bold">Settings</h3>
               <button
                 onClick={() => setShowSettingsPopup(false)}
-                className="p-1 rounded hover:bg-gray-100"
+                className="p-2 rounded-full hover:bg-white hover:bg-opacity-20 transition-colors"
               >
-                <X className="h-5 w-5 text-gray-500" />
+                <X className="h-5 w-5" />
               </button>
             </div>
             <div className="p-6">
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* General Settings */}
                 <div>
-                  <h4 className="text-md font-medium text-gray-900 mb-3">General Settings</h4>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <SettingsIcon className="h-5 w-5 mr-2 text-purple-600" />
+                    General Settings
+                  </h4>
 
                   {/* Theme Toggle */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      {darkMode ? <Moon className="h-5 w-5 text-gray-600" /> : <Sun className="h-5 w-5 text-gray-600" />}
-                      <div>
-                        <p className="font-medium text-gray-900">Theme</p>
-                        <p className="text-sm text-gray-500">{darkMode ? 'Dark mode' : 'Light mode'}</p>
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        {darkMode ? <Moon className="h-6 w-6 text-indigo-600" /> : <Sun className="h-6 w-6 text-amber-500" />}
+                        <div>
+                          <p className="font-semibold text-gray-900">Appearance</p>
+                          <p className="text-sm text-gray-600">{darkMode ? 'Dark mode enabled' : 'Light mode enabled'}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setDarkMode(!darkMode)}
+                        className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${
+                          darkMode ? 'bg-indigo-600' : 'bg-gray-300'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform shadow-lg ${
+                            darkMode ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* System Information */}
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <BarChart3 className="h-5 w-5 mr-2 text-green-600" />
+                    System Information
+                  </h4>
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-700 font-medium">Version:</span>
+                      <span className="font-bold text-gray-900 bg-blue-100 px-2 py-1 rounded text-sm">2.1.0</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-700 font-medium">Last update:</span>
+                      <span className="font-semibold text-gray-900">Today, 10:30 AM</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-700 font-medium">Server status:</span>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span className="text-green-700 font-semibold">Online</span>
                       </div>
                     </div>
-                    <button
-                      onClick={() => setDarkMode(!darkMode)}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                        darkMode ? 'bg-blue-600' : 'bg-gray-300'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          darkMode ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-700 font-medium">Database status:</span>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span className="text-green-700 font-semibold">Connected</span>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-700 font-medium">Uptime:</span>
+                      <span className="font-semibold text-gray-900">7 days, 14 hours</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-700 font-medium">Memory usage:</span>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-16 bg-gray-200 rounded-full h-2">
+                          <div className="bg-blue-600 h-2 rounded-full" style={{width: '68%'}}></div>
+                        </div>
+                        <span className="font-semibold text-gray-900 text-sm">68%</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
