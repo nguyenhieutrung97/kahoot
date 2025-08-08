@@ -335,10 +335,17 @@ export default function AdminDashboard() {
                                 {question.status === 'in-lobby' ? 'In Lobby' : question.status.charAt(0).toUpperCase() + question.status.slice(1)}
                               </span>
 
-                              <div className="text-xs text-gray-500 space-y-1">
-                                <p>Created: {new Date(question.createdDate).toLocaleDateString()}</p>
-                                <p>Modified: {new Date(question.modifiedDate).toLocaleDateString()}</p>
-                              </div>
+                              {question.status === 'in-lobby' ? (
+                                <div className="text-xs text-purple-600 space-y-1">
+                                  <p>Code: {question.lobbyCode}</p>
+                                  <p>{question.playerCount} players joined</p>
+                                </div>
+                              ) : (
+                                <div className="text-xs text-gray-500 space-y-1">
+                                  <p>Created: {new Date(question.createdDate).toLocaleDateString()}</p>
+                                  <p>Modified: {new Date(question.modifiedDate).toLocaleDateString()}</p>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -541,10 +548,17 @@ export default function AdminDashboard() {
                                   {question.status === 'in-lobby' ? 'In Lobby' : question.status.charAt(0).toUpperCase() + question.status.slice(1)}
                                 </span>
 
+                                {question.status === 'in-lobby' ? (
+                                <div className="text-xs text-purple-600 space-y-1">
+                                  <p>Code: {question.lobbyCode}</p>
+                                  <p>{question.playerCount} players joined</p>
+                                </div>
+                              ) : (
                                 <div className="text-xs text-gray-500 space-y-1">
                                   <p>Created: {new Date(question.createdDate).toLocaleDateString()}</p>
                                   <p>Modified: {new Date(question.modifiedDate).toLocaleDateString()}</p>
                                 </div>
+                              )}
                               </div>
                             </div>
                           </div>
