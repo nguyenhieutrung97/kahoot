@@ -8,6 +8,25 @@ import { Users, FileQuestion, BarChart3, Settings as SettingsIcon } from "lucide
 export default function AdminDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const roomsPerPage = 6;
+
+  // Sample room data
+  const allRooms = [
+    { id: 1, name: "General Knowledge", players: 12, status: "live", timeAgo: "Started 10 min ago" },
+    { id: 2, name: "Science Quiz", players: 8, status: "ready", timeAgo: "Waiting to start" },
+    { id: 3, name: "History Challenge", players: 15, status: "ready", timeAgo: "Waiting to start" },
+    { id: 4, name: "Math Problems", players: 6, status: "ready", timeAgo: "Waiting to start" },
+    { id: 5, name: "Geography Test", players: 11, status: "ready", timeAgo: "Waiting to start" },
+    { id: 6, name: "Literature Quiz", players: 9, status: "ready", timeAgo: "Waiting to start" },
+    { id: 7, name: "Sports Trivia", players: 13, status: "ready", timeAgo: "Waiting to start" },
+    { id: 8, name: "Movie Quiz", players: 7, status: "ready", timeAgo: "Waiting to start" },
+    { id: 9, name: "Music Challenge", players: 10, status: "ready", timeAgo: "Waiting to start" },
+    { id: 10, name: "Art & Culture", players: 14, status: "ready", timeAgo: "Waiting to start" },
+  ];
+
+  const totalPages = Math.ceil(allRooms.length / roomsPerPage);
+  const currentRooms = allRooms.slice((currentPage - 1) * roomsPerPage, currentPage * roomsPerPage);
 
   // Refs for sections
   const dashboardRef = useRef<HTMLElement>(null);
