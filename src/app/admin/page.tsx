@@ -64,6 +64,31 @@ export default function AdminDashboard() {
     setOpenDropdown(null);
   };
 
+  const handleJoinRoom = (roomId: number) => {
+    console.log(`Joining room ${roomId}`);
+    setOpenDropdown(null);
+  };
+
+  const handleReactiveRoom = (roomId: number) => {
+    console.log(`Reactivating room ${roomId}`);
+    setOpenDropdown(null);
+  };
+
+  const handleEditQuestion = (questionId: number) => {
+    console.log(`Editing question ${questionId}`);
+    setOpenQuestionDropdown(null);
+  };
+
+  const handleDeleteQuestion = (questionId: number) => {
+    console.log(`Deleting question ${questionId}`);
+    setOpenQuestionDropdown(null);
+  };
+
+  const handleToggleQuestionStatus = (questionId: number) => {
+    console.log(`Toggling question status ${questionId}`);
+    setOpenQuestionDropdown(null);
+  };
+
   // Refs for sections
   const dashboardRef = useRef<HTMLElement>(null);
   const lobbyRef = useRef<HTMLElement>(null);
