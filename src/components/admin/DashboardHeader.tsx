@@ -10,7 +10,7 @@ interface DashboardHeaderProps {
   onSettingsClick: () => void;
 }
 
-export function DashboardHeader({ onMenuClick, sidebarOpen }: DashboardHeaderProps) {
+export function DashboardHeader({ onMenuClick, sidebarOpen, onProfileClick, onSettingsClick }: DashboardHeaderProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
 
