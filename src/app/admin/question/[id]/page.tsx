@@ -446,6 +446,22 @@ export default function QuestionEditPage() {
                 />
               </div>
 
+              {/* Question Image */}
+              <button
+                onClick={() => questionImageInputRef.current?.click()}
+                className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+              >
+                <ImageIcon className="h-4 w-4" />
+                <span className="text-sm">Question Image</span>
+              </button>
+              <input
+                ref={questionImageInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleQuestionImageUpload}
+                className="hidden"
+              />
+
               {/* Background Image */}
               <button
                 onClick={() => fileInputRef.current?.click()}
@@ -458,7 +474,7 @@ export default function QuestionEditPage() {
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
-                onChange={handleImageUpload}
+                onChange={handleBackgroundImageUpload}
                 className="hidden"
               />
             </div>
