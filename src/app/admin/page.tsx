@@ -561,7 +561,10 @@ export default function AdminDashboard() {
                     {/* Pagination for Question Bank */}
                     <div className="flex items-center justify-between">
                       <div className="text-sm text-gray-500">
-                        Showing {((currentQuestionPage - 1) * questionsPerPage) + 1} to {Math.min(currentQuestionPage * questionsPerPage, questionBank.length)} of {questionBank.length} questions
+                        Showing {((currentQuestionPage - 1) * questionsPerPage) + 1} to {Math.min(currentQuestionPage * questionsPerPage, sortedQuestions.length)} of {sortedQuestions.length} questions
+                        {sortedQuestions.length !== questionBank.length && (
+                          <span className="text-blue-600 ml-1">(filtered from {questionBank.length})</span>
+                        )}
                       </div>
                       <div className="flex items-center space-x-2">
                         <button
