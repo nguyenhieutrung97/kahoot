@@ -137,6 +137,11 @@ export default function AdminDashboard() {
     setOpenQuestionDropdown(null);
   };
 
+  const handleToggleQuestionStatus = (questionId: number) => {
+    console.log(`Toggling status for question ${questionId}`);
+    setOpenQuestionDropdown(null);
+  };
+
   const handleCreateQuestion = () => {
     // Navigate to create new question page
     router.push('/admin/question/new');
