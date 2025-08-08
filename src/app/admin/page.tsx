@@ -188,23 +188,70 @@ export default function AdminDashboard() {
                     {currentRooms.map((room) => (
                       <div
                         key={room.id}
-                        className={`p-4 rounded-lg border-2 transition-colors ${
+                        className={`p-4 rounded-lg border-2 transition-colors relative ${
                           room.status === "live"
                             ? "bg-green-50 border-green-200"
-                            : "bg-blue-50 border-blue-200"
+                            : room.status === "ready"
+                            ? "bg-blue-50 border-blue-200"
+                            : "bg-gray-50 border-gray-200"
                         }`}
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <h3 className="font-medium text-gray-900 truncate">{room.name}</h3>
-                          <span
-                            className={`text-xs font-medium px-2 py-1 rounded ${
-                              room.status === "live"
-                                ? "bg-green-600 text-white"
-                                : "bg-blue-600 text-white"
-                            }`}
-                          >
-                            {room.status === "live" ? "Live" : "Ready"}
-                          </span>
+                          <h3 className="font-medium text-gray-900 truncate pr-2">{room.name}</h3>
+                          <div className="flex items-center space-x-2">
+                            <span
+                              className={`text-xs font-medium px-2 py-1 rounded ${
+                                room.status === "live"
+                                  ? "bg-green-600 text-white"
+                                  : room.status === "ready"
+                                  ? "bg-blue-600 text-white"
+                                  : "bg-gray-600 text-white"
+                              }`}
+                            >
+                              {room.status === "live" ? "Live" : room.status === "ready" ? "Ready" : "Close"}
+                            </span>
+
+                            {/* Dropdown Menu */}
+                            <div className="relative">
+                              <button
+                                onClick={() => setOpenDropdown(openDropdown === room.id ? null : room.id)}
+                                className="p-1 rounded hover:bg-gray-200 transition-colors"
+                              >
+                                <MoreVertical className="h-4 w-4 text-gray-600" />
+                              </button>
+
+                              {openDropdown === room.id && (
+                                <>
+                                  {/* Overlay to close dropdown */}
+                                  <div
+                                    className="fixed inset-0 z-10"
+                                    onClick={() => setOpenDropdown(null)}
+                                  />
+
+                                  {/* Dropdown Menu */}
+                                  <div className="absolute right-0 top-full mt-1 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                                    {(room.status === "live" || room.status === "ready") && (
+                                      <button
+                                        onClick={() => handleCloseRoom(room.id)}
+                                        className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                                      >
+                                        <X className="h-4 w-4" />
+                                        <span>Close</span>
+                                      </button>
+                                    )}
+
+                                    <button
+                                      onClick={() => handleDeleteRoom(room.id)}
+                                      className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                      <span>Delete</span>
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          </div>
                         </div>
                         <p className="text-sm text-gray-600">
                           {room.players} players • {room.timeAgo}
