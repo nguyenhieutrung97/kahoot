@@ -792,65 +792,32 @@ export default function AdminDashboard() {
                   <h2 className="text-2xl font-bold text-gray-900">Settings</h2>
                 </div>
                 <div className="p-6">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">General Settings</h3>
-                      <div className="space-y-4">
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <p className="font-medium">Default room capacity</p>
-                            <p className="text-sm text-gray-500">Maximum players per room</p>
-                          </div>
-                          <input 
-                            type="number" 
-                            defaultValue="20" 
-                            className="w-20 px-3 py-2 border border-gray-300 rounded-md"
-                          />
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <p className="font-medium">Question time limit</p>
-                            <p className="text-sm text-gray-500">Seconds per question</p>
-                          </div>
-                          <input 
-                            type="number" 
-                            defaultValue="30" 
-                            className="w-20 px-3 py-2 border border-gray-300 rounded-md"
-                          />
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <p className="font-medium">Auto-start rooms</p>
-                            <p className="text-sm text-gray-500">Start when minimum players join</p>
-                          </div>
-                          <input 
-                            type="checkbox" 
-                            defaultChecked 
-                            className="w-5 h-5 text-blue-600"
-                          />
+                  <div className="max-w-md">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">General Settings</h3>
+
+                    {/* Theme Toggle */}
+                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        {darkMode ? <Moon className="h-5 w-5 text-gray-600" /> : <Sun className="h-5 w-5 text-gray-600" />}
+                        <div>
+                          <p className="font-medium text-gray-900">Theme</p>
+                          <p className="text-sm text-gray-500">
+                            {darkMode ? 'Dark mode is enabled' : 'Light mode is enabled'}
+                          </p>
                         </div>
                       </div>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">System Information</h3>
-                      <div className="space-y-4">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Version:</span>
-                          <span className="font-semibold">2.1.0</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Last update:</span>
-                          <span className="font-semibold">Today, 10:30 AM</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Server status:</span>
-                          <span className="text-green-600 font-semibold">Online</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Database status:</span>
-                          <span className="text-green-600 font-semibold">Connected</span>
-                        </div>
-                      </div>
+                      <button
+                        onClick={() => setDarkMode(!darkMode)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          darkMode ? 'bg-blue-600' : 'bg-gray-300'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            darkMode ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
                     </div>
                   </div>
                 </div>
