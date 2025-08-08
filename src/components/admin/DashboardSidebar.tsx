@@ -85,29 +85,41 @@ export function DashboardSidebar({ isOpen, onClose, isCollapsed, onToggleCollaps
       <div key={item.id}>
         <div
           className={`
-            flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors
+            flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors relative group
             ${level > 0 ? 'pl-12' : ''}
+            ${isCollapsed ? 'justify-center' : ''}
           `}
           onClick={() => {
             if (hasChildren) {
               toggleExpanded(item.id);
             } else if (item.href) {
-              // Handle navigation here
-              console.log(`Navigating to: ${item.href}`);
+              // Handle scroll to section
+              onMenuClick(item.id);
               onClose(); // Close sidebar on mobile after navigation
             }
           }}
         >
-          <span className="mr-3">{item.icon}</span>
-          <span className="flex-1">{item.label}</span>
-          {hasChildren && (
-            <span className="ml-auto">
-              {isExpanded ? (
-                <ChevronDown className="h-4 w-4" />
-              ) : (
-                <ChevronRight className="h-4 w-4" />
+          <span className={`${isCollapsed ? '' : 'mr-3'}`}>{item.icon}</span>
+          {!isCollapsed && (
+            <>
+              <span className="flex-1">{item.label}</span>
+              {hasChildren && (
+                <span className="ml-auto">
+                  {isExpanded ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  )}
+                </span>
               )}
-            </span>
+            </>
+          )}
+
+          {/* Tooltip for collapsed state */}
+          {isCollapsed && (
+            <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity whitespace-nowrap z-50">
+              {item.label}
+            </div>
           )}
         </div>
         
