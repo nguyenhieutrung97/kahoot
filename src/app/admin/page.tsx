@@ -998,13 +998,13 @@ export default function AdminDashboard() {
       {showSettingsPopup && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-t-xl">
-              <h3 className="text-xl font-bold">Settings</h3>
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-gray-900">Settings</h3>
               <button
                 onClick={() => setShowSettingsPopup(false)}
-                className="p-2 rounded-full hover:bg-white hover:bg-opacity-20 transition-colors"
+                className="p-2 rounded-full hover:bg-gray-100 transition-colors"
               >
-                <X className="h-5 w-5" />
+                <X className="h-5 w-5 text-gray-500" />
               </button>
             </div>
             <div className="p-6">
