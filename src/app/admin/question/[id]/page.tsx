@@ -526,58 +526,129 @@ export default function QuestionEditPage() {
 
                 {/* Answers Section */}
                 <div className="absolute bottom-8 left-8 right-8">
-                  <div className="grid grid-cols-2 gap-4">
-                    {currentSlideData.answers.map((answer, index) => (
-                      <div key={answer.id} className="relative group">
-                        <div 
-                          className={`p-4 rounded-lg border-2 border-dashed border-gray-300 ${
-                            ['bg-red-500/20', 'bg-blue-500/20', 'bg-yellow-500/20', 'bg-green-500/20'][index % 4]
-                          }`}
-                        >
-                          <input
-                            type="text"
-                            value={answer.text}
-                            onChange={(e) => updateAnswer(answer.id, e.target.value)}
-                            className="w-full bg-transparent text-center font-semibold focus:outline-none"
-                            style={{ color: currentSlideData.textColor }}
-                            placeholder={`Answer ${index + 1}`}
-                          />
-                          
-                          {/* Correct Answer Toggle */}
+                  {currentSlideData.questionType === 'true-false' ? (
+                    /* True/False Answers */
+                    <div className="flex justify-center gap-8">
+                      <div className="relative group">
+                        <div className="p-4 rounded-lg border-2 border-dashed border-gray-300 bg-green-500/20 min-w-[120px]">
+                          <div className="text-center font-semibold" style={{ color: currentSlideData.textColor }}>
+                            True
+                          </div>
                           <button
-                            onClick={() => toggleCorrectAnswer(answer.id)}
+                            onClick={() => {
+                              updateSlide(currentSlide, {
+                                answers: [
+                                  { id: 'true', text: 'True', isCorrect: true },
+                                  { id: 'false', text: 'False', isCorrect: false }
+                                ]
+                              });
+                            }}
                             className={`absolute top-2 right-2 p-1 rounded-full transition-colors ${
-                              answer.isCorrect 
-                                ? 'bg-green-500 text-white' 
+                              currentSlideData.answers.find(a => a.id === 'true')?.isCorrect
+                                ? 'bg-green-500 text-white'
                                 : 'bg-gray-300 text-gray-600 hover:bg-gray-400'
                             }`}
                           >
                             <Check className="h-3 w-3" />
                           </button>
-
-                          {/* Remove Answer */}
-                          {currentSlideData.answers.length > 2 && (
-                            <button
-                              onClick={() => removeAnswer(answer.id)}
-                              className="absolute top-2 left-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          )}
                         </div>
                       </div>
-                    ))}
-                    
-                    {/* Add Answer Button */}
-                    {currentSlideData.answers.length < 6 && (
-                      <button
-                        onClick={addAnswer}
-                        className="p-4 border-2 border-dashed border-gray-400 rounded-lg text-gray-600 hover:border-gray-600 hover:text-gray-800 transition-colors flex items-center justify-center"
-                      >
-                        <Plus className="h-6 w-6" />
-                      </button>
-                    )}
-                  </div>
+
+                      <div className="relative group">
+                        <div className="p-4 rounded-lg border-2 border-dashed border-gray-300 bg-red-500/20 min-w-[120px]">
+                          <div className="text-center font-semibold" style={{ color: currentSlideData.textColor }}>
+                            False
+                          </div>
+                          <button
+                            onClick={() => {
+                              updateSlide(currentSlide, {
+                                answers: [
+                                  { id: 'true', text: 'True', isCorrect: false },
+                                  { id: 'false', text: 'False', isCorrect: true }
+                                ]
+                              });
+                            }}
+                            className={`absolute top-2 right-2 p-1 rounded-full transition-colors ${
+                              currentSlideData.answers.find(a => a.id === 'false')?.isCorrect
+                                ? 'bg-green-500 text-white'
+                                : 'bg-gray-300 text-gray-600 hover:bg-gray-400'
+                            }`}
+                          >
+                            <Check className="h-3 w-3" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Multiple Choice / Single Choice Answers */
+                    <div className={`grid gap-4 ${
+                      currentSlideData.answers.length <= 2 ? 'grid-cols-1' : 'grid-cols-2'
+                    }`}>
+                      {currentSlideData.answers.map((answer, index) => (
+                        <div key={answer.id} className="relative group">
+                          <div
+                            className={`p-4 rounded-lg border-2 border-dashed border-gray-300 ${
+                              ['bg-red-500/20', 'bg-blue-500/20', 'bg-yellow-500/20', 'bg-green-500/20', 'bg-purple-500/20', 'bg-orange-500/20'][index % 6]
+                            }`}
+                          >
+                            <input
+                              type="text"
+                              value={answer.text}
+                              onChange={(e) => updateAnswer(answer.id, e.target.value)}
+                              className="w-full bg-transparent text-center font-semibold focus:outline-none"
+                              style={{ color: currentSlideData.textColor }}
+                              placeholder={`Answer ${index + 1}`}
+                            />
+
+                            {/* Correct Answer Toggle */}
+                            <button
+                              onClick={() => {
+                                if (currentSlideData.questionType === 'single-choice') {
+                                  // For single choice, only one answer can be correct
+                                  updateSlide(currentSlide, {
+                                    answers: currentSlideData.answers.map(a => ({
+                                      ...a,
+                                      isCorrect: a.id === answer.id
+                                    }))
+                                  });
+                                } else {
+                                  // For multiple choice, multiple answers can be correct
+                                  toggleCorrectAnswer(answer.id);
+                                }
+                              }}
+                              className={`absolute top-2 right-2 p-1 rounded-full transition-colors ${
+                                answer.isCorrect
+                                  ? 'bg-green-500 text-white'
+                                  : 'bg-gray-300 text-gray-600 hover:bg-gray-400'
+                              }`}
+                            >
+                              <Check className="h-3 w-3" />
+                            </button>
+
+                            {/* Remove Answer */}
+                            {currentSlideData.answers.length > 2 && (
+                              <button
+                                onClick={() => removeAnswer(answer.id)}
+                                className="absolute top-2 left-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Add Answer Button */}
+                      {currentSlideData.answers.length < 6 && currentSlideData.questionType !== 'true-false' && (
+                        <button
+                          onClick={addAnswer}
+                          className="p-4 border-2 border-dashed border-gray-400 rounded-lg text-gray-600 hover:border-gray-600 hover:text-gray-800 transition-colors flex items-center justify-center"
+                        >
+                          <Plus className="h-6 w-6" />
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
