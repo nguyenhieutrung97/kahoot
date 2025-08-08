@@ -829,69 +829,93 @@ export default function AdminDashboard() {
 
       {/* Profile Popup */}
       {showProfilePopup && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">User Profile</h3>
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-t-xl">
+              <h3 className="text-xl font-bold">User Profile</h3>
               <button
                 onClick={() => setShowProfilePopup(false)}
-                className="p-1 rounded hover:bg-gray-100"
+                className="p-2 rounded-full hover:bg-white hover:bg-opacity-20 transition-colors"
               >
-                <X className="h-5 w-5 text-gray-500" />
+                <X className="h-5 w-5" />
               </button>
             </div>
             <div className="p-6">
-              <div className="flex flex-col items-center space-y-4">
+              <div className="flex flex-col items-center space-y-6">
                 {/* Avatar */}
-                <div className="w-20 h-20 bg-red-600 rounded-full flex items-center justify-center">
-                  <UserIcon className="h-10 w-10 text-white" />
+                <div className="relative">
+                  <div className="w-24 h-24 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center shadow-lg">
+                    <UserIcon className="h-12 w-12 text-white" />
+                  </div>
+                  <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-green-500 rounded-full border-4 border-white flex items-center justify-center">
+                    <div className="w-2 h-2 bg-white rounded-full"></div>
+                  </div>
                 </div>
 
                 {/* User Info */}
                 <div className="w-full space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-                    <input
-                      type="text"
-                      value="John"
-                      readOnly
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600"
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">First Name</label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value="John"
+                          readOnly
+                          className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-800 font-medium"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Last Name</label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value="Doe"
+                          readOnly
+                          className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-800 font-medium"
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-                    <input
-                      type="text"
-                      value="Doe"
-                      readOnly
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">User ID</label>
-                    <div className="flex items-center space-x-2">
-                      <Hash className="h-4 w-4 text-gray-400" />
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">User ID</label>
+                    <div className="relative">
+                      <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                       <input
                         type="text"
                         value="ADM001"
                         readOnly
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-800 font-medium"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <div className="flex items-center space-x-2">
-                      <Mail className="h-4 w-4 text-gray-400" />
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                       <input
                         type="email"
                         value="john.doe@admin.com"
                         readOnly
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-800 font-medium"
                       />
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-gray-100">
+                    <div className="grid grid-cols-2 gap-4 text-center">
+                      <div className="bg-blue-50 rounded-lg p-3">
+                        <div className="text-2xl font-bold text-blue-600">Admin</div>
+                        <div className="text-sm text-gray-600">Role</div>
+                      </div>
+                      <div className="bg-green-50 rounded-lg p-3">
+                        <div className="text-2xl font-bold text-green-600">Active</div>
+                        <div className="text-sm text-gray-600">Status</div>
+                      </div>
                     </div>
                   </div>
                 </div>
