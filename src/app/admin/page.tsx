@@ -135,6 +135,21 @@ export default function AdminDashboard() {
     setOpenQuestionDropdown(null);
   };
 
+  const handleCreateQuestion = () => {
+    // Navigate to create new question page
+    window.location.href = '/admin/question/new';
+  };
+
+  const handleEditQuestionNavigation = (questionId: number) => {
+    // Navigate to edit question page
+    window.location.href = `/admin/question/${questionId}`;
+  };
+
+  const handleQuestionCardClick = (questionId: number) => {
+    // Navigate to edit question page when clicking on card
+    window.location.href = `/admin/question/${questionId}`;
+  };
+
   // Refs for sections
   const dashboardRef = useRef<HTMLElement>(null);
   const lobbyRef = useRef<HTMLElement>(null);
