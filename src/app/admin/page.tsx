@@ -942,68 +942,49 @@ export default function AdminDashboard() {
 
                 {/* User Info */}
                 <div className="w-full space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">First Name</label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          value="John"
-                          readOnly
-                          className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-800 font-medium"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Last Name</label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          value="Doe"
-                          readOnly
-                          className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-800 font-medium"
-                        />
-                      </div>
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                    <input
+                      type="text"
+                      value="John"
+                      readOnly
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600"
+                    />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">User ID</label>
-                    <div className="relative">
-                      <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                    <input
+                      type="text"
+                      value="Doe"
+                      readOnly
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">User ID</label>
+                    <div className="flex items-center space-x-2">
+                      <Hash className="h-4 w-4 text-gray-400" />
                       <input
                         type="text"
                         value="ADM001"
                         readOnly
-                        className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-800 font-medium"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <div className="flex items-center space-x-2">
+                      <Mail className="h-4 w-4 text-gray-400" />
                       <input
                         type="email"
                         value="john.doe@admin.com"
                         readOnly
-                        className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-800 font-medium"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600"
                       />
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t border-gray-100">
-                    <div className="grid grid-cols-2 gap-4 text-center">
-                      <div className="bg-blue-50 rounded-lg p-3">
-                        <div className="text-2xl font-bold text-blue-600">Admin</div>
-                        <div className="text-sm text-gray-600">Role</div>
-                      </div>
-                      <div className="bg-green-50 rounded-lg p-3">
-                        <div className="text-2xl font-bold text-green-600">Active</div>
-                        <div className="text-sm text-gray-600">Status</div>
-                      </div>
                     </div>
                   </div>
                 </div>
