@@ -330,11 +330,7 @@ export default function QuestionEditPage() {
               <span>Preview</span>
             </button>
             <button
-              onClick={() => {
-                // TODO: Implement start lobby functionality
-                console.log('Starting lobby...');
-                alert('Starting lobby with this question set!');
-              }}
+              onClick={() => router.push(`/admin/question/${params.id}/play`)}
               className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
             >
               <Play className="h-4 w-4" />
