@@ -28,10 +28,10 @@ export default function AdminDashboard() {
           <div className="max-w-7xl mx-auto">
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Dashboard Quản Trị
+                Admin Dashboard
               </h1>
               <p className="text-gray-600">
-                Chào mừng bạn đến với bảng điều khiển quản trị hệ thống
+                Welcome to the system administration control panel
               </p>
             </div>
             
@@ -39,26 +39,26 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
               <div className="bg-white rounded-lg shadow p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Tổng số phòng
+                  Total Rooms
                 </h3>
                 <p className="text-3xl font-bold text-blue-600">24</p>
-                <p className="text-sm text-gray-500">+12% so với tháng trước</p>
+                <p className="text-sm text-gray-500">+12% from last month</p>
               </div>
               
               <div className="bg-white rounded-lg shadow p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Người chơi hoạt động
+                  Active Players
                 </h3>
                 <p className="text-3xl font-bold text-green-600">1,234</p>
-                <p className="text-sm text-gray-500">+5% so với tuần trước</p>
+                <p className="text-sm text-gray-500">+5% from last week</p>
               </div>
               
               <div className="bg-white rounded-lg shadow p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Câu hỏi đã tạo
+                  Questions Created
                 </h3>
                 <p className="text-3xl font-bold text-purple-600">567</p>
-                <p className="text-sm text-gray-500">+25 câu hỏi mới</p>
+                <p className="text-sm text-gray-500">+25 new questions</p>
               </div>
             </div>
             
