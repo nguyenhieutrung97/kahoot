@@ -139,7 +139,7 @@ export default function AdminDashboard() {
 
   const handleCreateQuestion = () => {
     // Navigate to create new question page
-    router.push('/admin/question/new-question');
+    router.push('/admin/question/new');
   };
 
   const handleEditQuestionNavigation = (questionId: number) => {
