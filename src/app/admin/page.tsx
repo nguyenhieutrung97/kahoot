@@ -42,8 +42,41 @@ export default function AdminDashboard() {
     { id: 12, title: "Mathematics Calculus", status: "active", createdDate: "2024-01-04", modifiedDate: "2024-01-06", image: "/api/placeholder/300/200" },
   ];
 
-  const totalQuestionPages = Math.ceil(questionBank.length / questionsPerPage);
-  const currentQuestions = questionBank.slice((currentQuestionPage - 1) * questionsPerPage, currentQuestionPage * questionsPerPage);
+  // Filter and sort logic
+  const filteredQuestions = questionBank.filter(question =>
+    questionFilter.includes(question.status)
+  );
+
+  const sortedQuestions = [...filteredQuestions].sort((a, b) => {
+    switch (questionSort) {
+      case 'created_asc':
+        return new Date(a.createdDate).getTime() - new Date(b.createdDate).getTime();
+      case 'created_desc':
+        return new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime();
+      case 'modified_asc':
+        return new Date(a.modifiedDate).getTime() - new Date(b.modifiedDate).getTime();
+      case 'modified_desc':
+        return new Date(b.modifiedDate).getTime() - new Date(a.modifiedDate).getTime();
+      case 'title_asc':
+        return a.title.localeCompare(b.title);
+      case 'title_desc':
+        return b.title.localeCompare(a.title);
+      default:
+        return 0;
+    }
+  });
+
+  const totalQuestionPages = Math.ceil(sortedQuestions.length / questionsPerPage);
+  const currentQuestions = sortedQuestions.slice((currentQuestionPage - 1) * questionsPerPage, currentQuestionPage * questionsPerPage);
+
+  const handleFilterChange = (status: string) => {
+    setQuestionFilter(prev =>
+      prev.includes(status)
+        ? prev.filter(s => s !== status)
+        : [...prev, status]
+    );
+    setCurrentQuestionPage(1); // Reset to first page when filter changes
+  };
 
   // Sample room data
   const allRooms = [
