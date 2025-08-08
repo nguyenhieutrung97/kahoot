@@ -253,7 +253,11 @@ export default function AdminDashboard() {
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Questions</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {recentQuestions.map((question) => (
-                        <div key={question.id} className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden relative z-10">
+                        <div
+                          key={question.id}
+                          className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden relative z-10 cursor-pointer hover:shadow-md transition-shadow"
+                          onClick={() => handleQuestionCardClick(question.id)}
+                        >
                           {/* Question Image */}
                           <div className="h-32 bg-gray-200 flex items-center justify-center">
                             <FileQuestion className="h-12 w-12 text-gray-400" />
