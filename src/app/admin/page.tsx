@@ -329,9 +329,10 @@ export default function AdminDashboard() {
                               <span className={`inline-block px-2 py-1 text-xs rounded ${
                                 question.status === 'active' ? 'bg-green-100 text-green-800' :
                                 question.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
+                                question.status === 'in-lobby' ? 'bg-purple-100 text-purple-800' :
                                 'bg-gray-100 text-gray-800'
                               }`}>
-                                {question.status.charAt(0).toUpperCase() + question.status.slice(1)}
+                                {question.status === 'in-lobby' ? 'In Lobby' : question.status.charAt(0).toUpperCase() + question.status.slice(1)}
                               </span>
 
                               <div className="text-xs text-gray-500 space-y-1">
@@ -532,10 +533,11 @@ export default function AdminDashboard() {
                               <div className="space-y-2">
                                 <span className={`inline-block px-2 py-1 text-xs rounded ${
                                   question.status === 'active' ? 'bg-green-100 text-green-800' :
-                                  question.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
-                                  'bg-gray-100 text-gray-800'
+                                question.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
+                                question.status === 'in-lobby' ? 'bg-purple-100 text-purple-800' :
+                                'bg-gray-100 text-gray-800'
                                 }`}>
-                                  {question.status.charAt(0).toUpperCase() + question.status.slice(1)}
+                                  {question.status === 'in-lobby' ? 'In Lobby' : question.status.charAt(0).toUpperCase() + question.status.slice(1)}
                                 </span>
 
                                 <div className="text-xs text-gray-500 space-y-1">
@@ -565,10 +567,11 @@ export default function AdminDashboard() {
                               <div className="flex items-center space-x-4 mt-1">
                                 <span className={`px-2 py-1 text-xs rounded ${
                                   question.status === 'active' ? 'bg-green-100 text-green-800' :
-                                  question.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
-                                  'bg-gray-100 text-gray-800'
+                                question.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
+                                question.status === 'in-lobby' ? 'bg-purple-100 text-purple-800' :
+                                'bg-gray-100 text-gray-800'
                                 }`}>
-                                  {question.status.charAt(0).toUpperCase() + question.status.slice(1)}
+                                  {question.status === 'in-lobby' ? 'In Lobby' : question.status.charAt(0).toUpperCase() + question.status.slice(1)}
                                 </span>
                                 <span className="text-xs text-gray-500">Created: {new Date(question.createdDate).toLocaleDateString()}</span>
                                 <span className="text-xs text-gray-500">Modified: {new Date(question.modifiedDate).toLocaleDateString()}</span>
