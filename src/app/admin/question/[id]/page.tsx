@@ -2,7 +2,6 @@
 
 import { useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
 import {
   ArrowLeft,
   Save,
