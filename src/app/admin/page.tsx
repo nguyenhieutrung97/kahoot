@@ -15,9 +15,11 @@ export default function AdminDashboard() {
   const [showProfilePopup, setShowProfilePopup] = useState(false);
   const [showSettingsPopup, setShowSettingsPopup] = useState(false);
   const [questionViewMode, setQuestionViewMode] = useState<'card' | 'list'>('card');
-  const [questionFilter, setQuestionFilter] = useState('all');
-  const [questionSort, setQuestionSort] = useState('newest');
+  const [questionFilter, setQuestionFilter] = useState<string[]>(['active', 'draft', 'inactive']);
+  const [questionSort, setQuestionSort] = useState('created_desc');
   const [darkMode, setDarkMode] = useState(false);
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+  const [showSortDropdown, setShowSortDropdown] = useState(false);
   const roomsPerPage = 6;
   const questionsPerPage = 6;
 
