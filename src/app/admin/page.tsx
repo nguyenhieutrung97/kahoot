@@ -259,7 +259,11 @@ export default function AdminDashboard() {
                                     <div className="absolute right-0 top-full mt-1 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-[70]">
                                       <button
                                         onClick={() => handleEditQuestion(question.id)}
-                                        className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                                        className={`w-full px-3 py-2 text-left text-sm flex items-center space-x-2 ${
+                                          question.status === 'active'
+                                            ? 'text-gray-700 hover:bg-gray-50'
+                                            : 'text-green-600 hover:bg-green-50'
+                                        }`}
                                       >
                                         <Edit className="h-4 w-4" />
                                         <span>Edit</span>
@@ -267,7 +271,11 @@ export default function AdminDashboard() {
 
                                       <button
                                         onClick={() => question.status === 'active' ? handleCloseQuestion(question.id) : handleReactiveQuestion(question.id)}
-                                        className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                                        className={`w-full px-3 py-2 text-left text-sm flex items-center space-x-2 ${
+                                          question.status === 'active'
+                                            ? 'text-gray-700 hover:bg-gray-50'
+                                            : 'text-green-600 hover:bg-green-50'
+                                        }`}
                                       >
                                         {question.status === 'active' ? <X className="h-4 w-4" /> : <RotateCcw className="h-4 w-4" />}
                                         <span>{question.status === 'active' ? 'Close' : 'Re-active'}</span>
@@ -450,7 +458,11 @@ export default function AdminDashboard() {
                                       <div className="absolute right-0 top-full mt-1 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-[70]">
                                         <button
                                           onClick={() => handleEditQuestion(question.id)}
-                                          className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                                          className={`w-full px-3 py-2 text-left text-sm flex items-center space-x-2 ${
+                                          question.status === 'active'
+                                            ? 'text-gray-700 hover:bg-gray-50'
+                                            : 'text-green-600 hover:bg-green-50'
+                                        }`}
                                         >
                                           <Edit className="h-4 w-4" />
                                           <span>Edit</span>
@@ -458,7 +470,11 @@ export default function AdminDashboard() {
 
                                         <button
                                           onClick={() => question.status === 'active' ? handleCloseQuestion(question.id) : handleReactiveQuestion(question.id)}
-                                          className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                                          className={`w-full px-3 py-2 text-left text-sm flex items-center space-x-2 ${
+                                          question.status === 'active'
+                                            ? 'text-gray-700 hover:bg-gray-50'
+                                            : 'text-green-600 hover:bg-green-50'
+                                        }`}
                                         >
                                           {question.status === 'active' ? <X className="h-4 w-4" /> : <RotateCcw className="h-4 w-4" />}
                                         <span>{question.status === 'active' ? 'Close' : 'Re-active'}</span>
@@ -676,7 +692,11 @@ export default function AdminDashboard() {
                                         </button>
                                         <button
                                           onClick={() => handleCloseRoom(room.id)}
-                                          className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                                          className={`w-full px-3 py-2 text-left text-sm flex items-center space-x-2 ${
+                                          question.status === 'active'
+                                            ? 'text-gray-700 hover:bg-gray-50'
+                                            : 'text-green-600 hover:bg-green-50'
+                                        }`}
                                         >
                                           <X className="h-4 w-4" />
                                           <span>Close</span>
