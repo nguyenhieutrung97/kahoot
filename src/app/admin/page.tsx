@@ -279,14 +279,33 @@ export default function AdminDashboard() {
                                   />
 
                                   {/* Dropdown Menu */}
-                                  <div className="absolute right-0 top-full mt-1 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                                  <div className="absolute right-0 top-full mt-1 w-36 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
                                     {(room.status === "live" || room.status === "ready") && (
+                                      <>
+                                        <button
+                                          onClick={() => handleJoinRoom(room.id)}
+                                          className="w-full px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center space-x-2"
+                                        >
+                                          <LogIn className="h-4 w-4" />
+                                          <span>Join</span>
+                                        </button>
+                                        <button
+                                          onClick={() => handleCloseRoom(room.id)}
+                                          className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                                        >
+                                          <X className="h-4 w-4" />
+                                          <span>Close</span>
+                                        </button>
+                                      </>
+                                    )}
+
+                                    {room.status === "close" && (
                                       <button
-                                        onClick={() => handleCloseRoom(room.id)}
-                                        className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                                        onClick={() => handleReactiveRoom(room.id)}
+                                        className="w-full px-3 py-2 text-left text-sm text-green-600 hover:bg-green-50 flex items-center space-x-2"
                                       >
-                                        <X className="h-4 w-4" />
-                                        <span>Close</span>
+                                        <RotateCcw className="h-4 w-4" />
+                                        <span>Re-active</span>
                                       </button>
                                     )}
 
