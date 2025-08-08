@@ -40,34 +40,16 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
       href: "/admin"
     },
     {
-      id: "rooms",
-      label: "Room Management",
+      id: "lobby",
+      label: "Lobby",
       icon: <Users className="h-5 w-5" />,
-      children: [
-        { id: "all-rooms", label: "All Rooms", icon: <></>, href: "/admin/rooms" },
-        { id: "active-rooms", label: "Active Rooms", icon: <></>, href: "/admin/rooms/active" },
-        { id: "create-room", label: "Create Room", icon: <></>, href: "/admin/rooms/create" }
-      ]
+      href: "/admin/lobby"
     },
     {
       id: "questions",
-      label: "Question Bank",
+      label: "Question",
       icon: <FileQuestion className="h-5 w-5" />,
-      children: [
-        { id: "all-questions", label: "All Questions", icon: <></>, href: "/admin/questions" },
-        { id: "categories", label: "Categories", icon: <></>, href: "/admin/questions/categories" },
-        { id: "create-question", label: "Create Question", icon: <></>, href: "/admin/questions/create" }
-      ]
-    },
-    {
-      id: "users",
-      label: "Users",
-      icon: <Users className="h-5 w-5" />,
-      children: [
-        { id: "all-users", label: "All Users", icon: <></>, href: "/admin/users" },
-        { id: "online-users", label: "Online Users", icon: <></>, href: "/admin/users/online" },
-        { id: "user-reports", label: "Reports", icon: <></>, href: "/admin/users/reports" }
-      ]
+      href: "/admin/questions"
     },
     {
       id: "analytics",
@@ -76,37 +58,10 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
       href: "/admin/analytics"
     },
     {
-      id: "leaderboard",
-      label: "Leaderboard",
-      icon: <Trophy className="h-5 w-5" />,
-      href: "/admin/leaderboard"
-    },
-    {
-      id: "events",
-      label: "Events",
-      icon: <Calendar className="h-5 w-5" />,
-      href: "/admin/events"
-    },
-    {
-      id: "security",
-      label: "Security",
-      icon: <Shield className="h-5 w-5" />,
-      children: [
-        { id: "access-logs", label: "Access Logs", icon: <></>, href: "/admin/security/logs" },
-        { id: "permissions", label: "Permissions", icon: <></>, href: "/admin/security/permissions" }
-      ]
-    },
-    {
       id: "settings",
       label: "Settings",
       icon: <Settings className="h-5 w-5" />,
       href: "/admin/settings"
-    },
-    {
-      id: "help",
-      label: "Help",
-      icon: <HelpCircle className="h-5 w-5" />,
-      href: "/admin/help"
     }
   ];
 
