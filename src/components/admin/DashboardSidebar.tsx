@@ -61,12 +61,12 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
     },
     {
       id: "users",
-      label: "Người dùng",
+      label: "Users",
       icon: <Users className="h-5 w-5" />,
       children: [
-        { id: "all-users", label: "Tất cả người dùng", icon: <></>, href: "/admin/users" },
-        { id: "online-users", label: "Đang online", icon: <></>, href: "/admin/users/online" },
-        { id: "user-reports", label: "Báo cáo", icon: <></>, href: "/admin/users/reports" }
+        { id: "all-users", label: "All Users", icon: <></>, href: "/admin/users" },
+        { id: "online-users", label: "Online Users", icon: <></>, href: "/admin/users/online" },
+        { id: "user-reports", label: "Reports", icon: <></>, href: "/admin/users/reports" }
       ]
     },
     {
