@@ -127,13 +127,39 @@ export default function NewQuestionPage() {
       backgroundColor: '#ffffff',
       textColor: '#000000',
       fontSize: 'text-2xl',
-      questionType: 'multiple-choice',
+      questionType: 'single-choice',
       timeLimit: 30,
       points: 100
     };
 
     setSlides(prev => [...prev, newSlide]);
     setCurrentSlide(slides.length);
+  };
+
+  const handleBackgroundImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        updateSlide(currentSlide, {
+          backgroundImage: e.target?.result as string
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleQuestionImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        updateSlide(currentSlide, {
+          questionImage: e.target?.result as string
+        });
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const removeSlide = (slideIndex: number) => {
