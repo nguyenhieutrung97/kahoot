@@ -251,7 +251,7 @@ export default function AdminDashboard() {
                                       onClick={() => setOpenQuestionDropdown(null)}
                                     />
 
-                                    <div className="absolute right-0 top-full mt-1 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                                    <div className="absolute right-0 top-full mt-1 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-[70]">
                                       <button
                                         onClick={() => handleEditQuestion(question.id)}
                                         className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
@@ -325,7 +325,7 @@ export default function AdminDashboard() {
                                 className="fixed inset-0 z-10"
                                 onClick={() => setShowFilterDropdown(false)}
                               />
-                              <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                              <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-[70]">
                                 <div className="px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wide">Status Filter</div>
                                 {['active', 'draft', 'inactive'].map((status) => (
                                   <label key={status} className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer">
@@ -364,7 +364,7 @@ export default function AdminDashboard() {
                                 className="fixed inset-0 z-10"
                                 onClick={() => setShowSortDropdown(false)}
                               />
-                              <div className="absolute right-0 top-full mt-1 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                              <div className="absolute right-0 top-full mt-1 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-[70]">
                                 <div className="px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wide">Sort Options</div>
                                 {[
                                   { value: 'created_desc', label: 'Created: Newest First' },
@@ -442,7 +442,7 @@ export default function AdminDashboard() {
                                         onClick={() => setOpenQuestionDropdown(null)}
                                       />
 
-                                      <div className="absolute right-0 top-full mt-1 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                                      <div className="absolute right-0 top-full mt-1 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-[70]">
                                         <button
                                           onClick={() => handleEditQuestion(question.id)}
                                           className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
@@ -525,7 +525,7 @@ export default function AdminDashboard() {
                                     onClick={() => setOpenQuestionDropdown(null)}
                                   />
 
-                                  <div className="absolute right-0 top-full mt-1 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                                  <div className="absolute right-0 top-full mt-1 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-[70]">
                                     <button
                                       onClick={() => handleEditQuestion(question.id)}
                                       className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
@@ -922,7 +922,7 @@ export default function AdminDashboard() {
 
       {/* Profile Popup */}
       {showProfilePopup && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[70] p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-t-xl">
               <h3 className="text-xl font-bold">User Profile</h3>
@@ -1020,7 +1020,7 @@ export default function AdminDashboard() {
 
       {/* Settings Popup */}
       {showSettingsPopup && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[70] p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-t-xl">
               <h3 className="text-xl font-bold">Settings</h3>
