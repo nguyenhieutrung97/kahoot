@@ -32,7 +32,7 @@ interface MenuItem {
   children?: MenuItem[];
 }
 
-export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
+export function DashboardSidebar({ isOpen, onClose, isCollapsed, onToggleCollapse, onMenuClick }: DashboardSidebarProps) {
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   const menuItems: MenuItem[] = [
