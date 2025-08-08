@@ -107,56 +107,6 @@ export default function AdminDashboard() {
               
             </section>
 
-            {/* Lobby Section */}
-            <section ref={lobbyRef} id="lobby" className="scroll-mt-6">
-              <div className="bg-white rounded-lg shadow">
-                <div className="px-6 py-4 border-b border-gray-200 flex items-center space-x-3">
-                  <Users className="h-6 w-6 text-blue-600" />
-                  <h2 className="text-2xl font-bold text-gray-900">Lobby</h2>
-                </div>
-                <div className="p-6">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Active Rooms</h3>
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
-                          <div>
-                            <p className="font-medium text-gray-900">General Knowledge</p>
-                            <p className="text-sm text-gray-600">12 players • Started 10 min ago</p>
-                          </div>
-                          <span className="bg-green-600 text-white text-xs font-medium px-2 py-1 rounded">Live</span>
-                        </div>
-                        <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
-                          <div>
-                            <p className="font-medium text-gray-900">Science Quiz</p>
-                            <p className="text-sm text-gray-600">8 players • Waiting to start</p>
-                          </div>
-                          <span className="bg-blue-600 text-white text-xs font-medium px-2 py-1 rounded">Ready</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Room Statistics</h3>
-                      <div className="space-y-4">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Total rooms today:</span>
-                          <span className="font-semibold">15</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Peak concurrent rooms:</span>
-                          <span className="font-semibold">7</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Average room duration:</span>
-                          <span className="font-semibold">12 min</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </section>
-
             {/* Questions Section */}
             <section ref={questionsRef} id="questions" className="scroll-mt-6">
               <div className="bg-white rounded-lg shadow">
