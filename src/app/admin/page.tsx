@@ -269,7 +269,8 @@ export default function AdminDashboard() {
                               <h3 className="font-medium text-gray-900 text-sm line-clamp-2 flex-1 pr-2">{question.title}</h3>
 
                               {/* Dropdown Menu */}
-                              <div className="relative flex-shrink-0 z-30">
+                              <div className="relative flex-shrink-0 z-30 dropdown-menu"
+                                   onClick={(e) => e.stopPropagation()}>
                                 <button
                                   onClick={() => setOpenQuestionDropdown(openQuestionDropdown === question.id ? null : question.id)}
                                   className="p-1 rounded hover:bg-gray-100 transition-colors"
