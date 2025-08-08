@@ -53,7 +53,9 @@ export default function QuestionEditPage() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [selectedTool, setSelectedTool] = useState('select');
   const [showPreview, setShowPreview] = useState(false);
+  const [previewSlideIndex, setPreviewSlideIndex] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const questionImageInputRef = useRef<HTMLInputElement>(null);
 
   // Sample question data - in real app, this would come from API based on params.id
   const [slides, setSlides] = useState<QuestionSlide[]>([
