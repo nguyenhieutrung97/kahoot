@@ -59,15 +59,6 @@ export default function AdminDashboard() {
             
             {/* Dashboard Section */}
             <section ref={dashboardRef} id="dashboard" className="scroll-mt-6">
-              <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                  Admin Dashboard
-                </h1>
-                <p className="text-gray-600">
-                  Welcome to the system administration control panel
-                </p>
-              </div>
-              
               {/* Dashboard stats */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <div className="bg-white rounded-lg shadow p-6">
