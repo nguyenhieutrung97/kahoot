@@ -372,7 +372,7 @@ export default function AdminDashboard() {
                               />
                               <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-[70]">
                                 <div className="px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wide">Status Filter</div>
-                                {['active', 'draft', 'inactive'].map((status) => (
+                                {['active', 'draft', 'inactive', 'in-lobby'].map((status) => (
                                   <label key={status} className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer">
                                     <input
                                       type="checkbox"
