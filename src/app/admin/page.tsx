@@ -922,7 +922,7 @@ export default function AdminDashboard() {
 
       {/* Profile Popup */}
       {showProfilePopup && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[70] p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-t-xl">
               <h3 className="text-xl font-bold">User Profile</h3>
@@ -1020,7 +1020,7 @@ export default function AdminDashboard() {
 
       {/* Settings Popup */}
       {showSettingsPopup && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-[70] p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-t-xl">
               <h3 className="text-xl font-bold">Settings</h3>
