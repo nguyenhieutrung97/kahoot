@@ -1,156 +1,260 @@
 "use client";
 
-import { useSearchParams, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import React, { useEffect, useState, useRef } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { GameHeader } from '@/components/ui/GameHeader';
+import { GameButton } from '@/components/ui/GameButton';
+import { useGameHub } from '@/hooks/useGameHub';
+import { useFinalResult } from '@/context/FinalResultContext';
+
+type Answer = {
+  id: string;
+  text: string;
+};
 
 export default function QuestionPage() {
+  const { setResult } = useFinalResult();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const roomId = searchParams.get("roomId") || "ROOM123";
-  const playerName = searchParams.get("name") || "Player";
+  const gameId = searchParams.get('gameId') || '';
+  const playerName = searchParams.get('name') || '';
+  const questionNumber = Number(searchParams.get('questionNumber') || '1');
 
-  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
-  const [timeLeft, setTimeLeft] = useState(20);
-  const [hasAnswered, setHasAnswered] = useState(false);
+  const [questionText, setQuestionText] = useState('');
+  const [answers, setAnswers] = useState<Answer[]>([]);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]); // for MultipleChoice
+  const [isMultipleChoice, setIsMultipleChoice] = useState(false);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [showResult, setShowResult] = useState<{ correct: boolean; message: string } | null>(null);
+  const [correctAnswers, setCorrectAnswers] = useState<string[]>([]);
+  const timerRef = useRef<number | null>(null);
 
-  // Mock question data
-  const question = {
-    text: "What is the capital of France?",
-    answers: [
-      {
-        id: 1,
-        text: "London",
-        color: "bg-red-500",
-        hoverColor: "hover:bg-red-600",
-      },
-      {
-        id: 2,
-        text: "Paris",
-        color: "bg-green-500",
-        hoverColor: "hover:bg-green-600",
-      },
-      {
-        id: 3,
-        text: "Berlin",
-        color: "bg-yellow-500",
-        hoverColor: "hover:bg-yellow-600",
-      },
-      {
-        id: 4,
-        text: "Madrid",
-        color: "bg-blue-500",
-        hoverColor: "hover:bg-blue-600",
-      },
-    ],
-  };
+  const { connected, client, submitAnswer, submitMultipleAnswers } = useGameHub({
+    onFinalResults: (payload) => {
+      setResult(payload);
+      router.push('/final');
+    },
+    onNewQuestion: (payload) => {
+      try {
+        // Robustly extract question text from common payload shapes
+        const qText = payload?.questionText || payload?.question?.text || payload?.text || payload?.question || '';
+        setQuestionText(typeof qText === 'string' ? qText : JSON.stringify(qText));
 
-  // Timer countdown
+        // Helper to extract display text from answer objects or strings
+        const extractAnswerText = (a: any) => {
+          if (a == null) return '';
+          if (typeof a === 'string') return a;
+          if (typeof a === 'number') return String(a);
+          // common fields
+          const candidates = [a.title, a.text, a.answer, a.value, a.label, a.display, a.content];
+          for (const c of candidates) {
+            if (c == null) continue;
+            if (typeof c === 'string') return c;
+            if (typeof c === 'number') return String(c);
+            if (typeof c === 'object' && c.text) return String(c.text);
+          }
+          // fallback to JSON so we don't render [object Object]
+          try { return JSON.stringify(a); } catch { return String(a); }
+        };
+
+        const opts = (payload?.answers || payload?.choices || []).map((a: any, idx: number) => ({ id: String(a?.id ?? a?.answerId ?? a?.key ?? idx), text: extractAnswerText(a) }));
+        setAnswers(opts);
+        // set multiple choice flag if server indicates
+        const multi = !!(
+          payload?.isMultipleChoice ||
+          payload?.isMultiple ||
+          payload?.isMultipleAnswers ||
+          payload?.multiple ||
+          payload?.questionType === 'MultipleChoice' ||
+          payload?.type === 'MultipleChoice'
+        );
+        setIsMultipleChoice(multi);
+        setSelectedIds([]);
+        setHasSubmitted(false);
+        setSelected(null);
+        // time in seconds
+        const t = payload?.timeLimit || payload?.time || 20;
+        setTimeLeft(Number(t));
+        // start ticking
+        if (timerRef.current) window.clearInterval(timerRef.current);
+        timerRef.current = window.setInterval(() => {
+          setTimeLeft((prev) => {
+            if (prev === null) return null;
+            if (prev <= 1) {
+              if (timerRef.current) window.clearInterval(timerRef.current);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000) as any;
+      } catch (e) {
+        console.error('Failed to handle NewQuestion', e);
+      }
+    },
+    onQuestionTimeEnded: (payload) => {
+      setTimeLeft(0);
+      // If player hasn't submitted, show result/feedback if available
+      if (!hasSubmitted) {
+        // Try to extract correctness, message, and correct answers from payload
+        let correct = false;
+        let message = 'Time is up!';
+        let correctAns: string[] = [];
+        if (payload && typeof payload === 'object') {
+          if ('correct' in payload) correct = !!payload.correct;
+          if ('isCorrect' in payload) correct = !!payload.isCorrect;
+          if ('message' in payload && typeof payload.message === 'string') message = payload.message;
+          // Try to extract correct answers (array of ids or texts)
+          if (Array.isArray(payload.correctAnswers)) {
+            correctAns = payload.correctAnswers.map((a: any) => typeof a === 'object' && a.id ? String(a.id) : String(a));
+          } else if (Array.isArray(payload.answers)) {
+            // fallback: look for answers with isCorrect flag
+            correctAns = payload.answers.filter((a: any) => a.isCorrect || a.correct).map((a: any) => String(a.id ?? a.answerId ?? a.key ?? a.text ?? a));
+          }
+        }
+        setShowResult({ correct, message });
+        setCorrectAnswers(correctAns);
+      }
+    },
+    onProceedingToNextQuestion: (payload) => {
+      try {
+        // Host told clients to proceed. Navigate to next question index if available.
+        const next = Number(payload?.nextQuestionIndex ?? (questionNumber + 1));
+        // Preserve gameId and name in query
+        const params = new URLSearchParams();
+        if (gameId) params.set('gameId', gameId);
+        if (playerName) params.set('name', playerName);
+        params.set('questionNumber', String(next));
+        router.push(`/question?${params.toString()}`);
+      } catch (e) {
+        console.warn('Failed to navigate to next question', e);
+      }
+    }
+  });
+
   useEffect(() => {
-    if (timeLeft > 0 && !hasAnswered) {
-      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
-      return () => clearTimeout(timer);
-    } else if (timeLeft === 0 && !hasAnswered) {
-      // Navigate to results when time runs out
-      setTimeout(() => {
-        router.push(
-          `/results?roomId=${encodeURIComponent(roomId)}&name=${encodeURIComponent(playerName)}&answer=0`,
-        );
-      }, 1000);
+    return () => {
+      if (timerRef.current) window.clearInterval(timerRef.current);
+    };
+  }, []);
+
+  const handleSelect = (id: string) => {
+    if (hasSubmitted || (timeLeft !== null && timeLeft <= 0)) return;
+    if (isMultipleChoice) {
+      if (selectedIds.includes(id)) return; // cannot deselect
+      setSelectedIds((prev) => [...prev, id]);
+      return;
     }
-  }, [timeLeft, hasAnswered, router, roomId, playerName]);
+    // SingleChoice: just select, do not submit yet
+    setSelected(id);
+  };
 
-  const handleAnswerSelect = (answerId: number) => {
-    if (!hasAnswered && timeLeft > 0) {
-      setSelectedAnswer(answerId);
-      setHasAnswered(true);
-      console.log(`Player ${playerName} selected answer ${answerId}`);
-
-      // Redirect to results page after 2 seconds
-      setTimeout(() => {
-        router.push(
-          `/results?roomId=${encodeURIComponent(roomId)}&name=${encodeURIComponent(playerName)}&answer=${answerId}`,
-        );
-      }, 2000);
+  const handleSubmitSingle = async () => {
+    if (hasSubmitted || !selected) return;
+    setHasSubmitted(true);
+    setShowResult(null);
+    if (timerRef.current) {
+      window.clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    try {
+      await submitAnswer(selected);
+    } catch (e) {
+      console.error('Submit failed', e);
+      setHasSubmitted(false);
     }
   };
 
-  const getQuestionIconTheme = (questionNumber: number) => {
-    const themes = [
-      { 1: "🌟", 2: "🔥", 3: "💧", 4: "🌪️" }
-    ];
-
-    return themes[questionNumber % themes.length];
-  };
-
-  const getAnswerIcon = (answerId: number, questionNumber: number = 1) => {
-    const themeIcons = getQuestionIconTheme(questionNumber);
-    return themeIcons[answerId as keyof typeof themeIcons];
+  const handleSubmitMultiple = async () => {
+    if (hasSubmitted || selectedIds.length === 0) return;
+    setHasSubmitted(true);
+    setShowResult(null);
+    if (timerRef.current) {
+      window.clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    try {
+      await submitMultipleAnswers(selectedIds);
+      // show confirmation (hasSubmitted already true)
+    } catch (e) {
+      console.error('Submit multiple failed', e);
+      setHasSubmitted(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header */}
-      <header className="bg-white shadow-sm p-6 flex justify-between items-center text-gray-800 border-b-4 border-red-600">
-        <div className="text-lg font-semibold text-gray-600">Room: {roomId}</div>
-        <div className="text-lg font-bold text-red-600 uppercase tracking-wide">TIME: {timeLeft}S</div>
-      </header>
+    <div className="min-h-screen bg-gray-50">
+      <GameHeader title="QUESTION" withSvgBorder />
+      <main className="px-6 py-6 max-w-3xl mx-auto">
+        <div className="bg-white rounded-lg p-6 shadow-lg border-2 border-gray-200">
+          <h2 className="text-xl font-bold mb-2">Question {questionNumber}</h2>
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-gray-700">{questionText || 'Waiting for question...'}</p>
+            <div className="text-sm px-2 py-1 rounded bg-blue-50 text-blue-700 border border-blue-100">{isMultipleChoice ? 'Multiple Choice' : 'Single Choice'}</div>
+          </div>
+          <div className="mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {answers.length > 0 ? answers.map((a) => {
+                const isSelected = selectedIds.includes(a.id) || selected === a.id;
+                const disabled = hasSubmitted || (timeLeft !== null && timeLeft <= 0) || (isMultipleChoice && isSelected);
+                return (
+                  <button
+                    key={a.id}
+                    onClick={() => handleSelect(a.id)}
+                    disabled={disabled}
+                    className={`p-4 rounded border-2 text-left ${isSelected ? 'border-green-600 bg-green-50' : 'border-gray-200 bg-white'}`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>{a.text}</div>
+                      {isSelected ? <div className="text-sm text-green-700 font-bold">✓</div> : null}
+                    </div>
+                  </button>
+                );
+              }) : (
+                <div className="text-gray-500 italic">No answers available</div>
+              )}
+            </div>
+          </div>
 
-      {/* Question Area */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6">
-        <div className="bg-white rounded-lg p-8 mb-8 max-w-4xl w-full text-center shadow-lg border-2 border-gray-200">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4 uppercase tracking-wide">
-            {question.text}
-          </h1>
-          <div className="w-24 h-1 bg-red-600 mx-auto mb-4"></div>
-          {hasAnswered && (
-            <div className="text-green-600 font-bold uppercase tracking-wide">
-              ANSWER SUBMITTED! PROCESSING...
+
+          {/* Submit control for both types */}
+          {isMultipleChoice ? (
+            <div className="mt-3">
+              <GameButton onClick={handleSubmitMultiple} disabled={hasSubmitted || selectedIds.length === 0}>
+                {hasSubmitted ? 'Submitted' : `Submit Selected (${selectedIds.length})`}
+              </GameButton>
+              {hasSubmitted ? <div className="text-sm text-green-600 mt-2">Answer submitted!</div> : null}
+            </div>
+          ) : (
+            <div className="mt-3">
+              <GameButton onClick={handleSubmitSingle} disabled={hasSubmitted || !selected}>
+                {hasSubmitted ? 'Submitted' : 'Submit'}
+              </GameButton>
+              {hasSubmitted ? <div className="text-sm text-green-600 mt-2">Answer submitted!</div> : null}
             </div>
           )}
-        </div>
 
-        {/* Answer Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl w-full">
-          {question.answers.map((answer) => (
-            <button
-              key={answer.id}
-              onClick={() => handleAnswerSelect(answer.id)}
-              disabled={hasAnswered || timeLeft === 0}
-              className={`
-                ${answer.color} ${answer.hoverColor}
-                text-white p-6 rounded font-bold text-lg uppercase tracking-wide
-                flex items-center justify-between
-                transition-all duration-200 transform border-4 border-transparent
-                ${selectedAnswer === answer.id ? "border-white scale-105 shadow-xl" : ""}
-                ${hasAnswered || timeLeft === 0 ? "opacity-60 cursor-not-allowed" : "hover:scale-105 active:scale-95 shadow-lg"}
-              `}
-            >
-              <div className="flex items-center space-x-4">
-                <div className="text-2xl font-bold bg-white bg-opacity-20 rounded w-12 h-12 flex items-center justify-center">
-                  {getAnswerIcon(answer.id)}
+          {/* Show result/feedback if time's up and not submitted */}
+          {showResult && (
+            <div className={`mt-4 p-3 rounded text-center font-bold ${showResult.correct ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+              {showResult.message}
+              {correctAnswers.length > 0 && (
+                <div className="mt-2 text-base font-normal">
+                  Correct answer{correctAnswers.length > 1 ? 's' : ''}: {answers.filter(a => correctAnswers.includes(a.id) || correctAnswers.includes(a.text)).map(a => a.text).join(', ')}
                 </div>
-                <span>{answer.text}</span>
-              </div>
-              <div className="text-2xl">
-                {selectedAnswer === answer.id ? "✓" : "○"}
-              </div>
-            </button>
-          ))}
-        </div>
+              )}
+            </div>
+          )}
 
-        {/* Player Info */}
-        <div className="mt-8 bg-white rounded-lg p-4 shadow border-2 border-gray-200 text-center">
-          <div className="text-sm text-gray-500 uppercase tracking-wide font-medium">PARTICIPANT</div>
-          <div className="text-lg font-bold text-gray-900 uppercase tracking-wide">{playerName}</div>
-        </div>
-
-        {/* Time up message */}
-        {timeLeft === 0 && !hasAnswered && (
-          <div className="mt-4 bg-red-600 text-white px-6 py-3 rounded font-bold uppercase tracking-wide border-2 border-red-600">
-            TIME EXPIRED - NO RESPONSE RECORDED
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-600">Player: {playerName || 'You'}</div>
+            <div className="text-sm font-bold text-red-600">Time: {timeLeft ?? '--'}</div>
           </div>
-        )}
-      </div>
+
+          {/* Removed Back to Lobby button as requested */}
+        </div>
+      </main>
     </div>
   );
 }

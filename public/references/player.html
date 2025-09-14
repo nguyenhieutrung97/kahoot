@@ -1,0 +1,2122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kahoot Advanced Game - Player</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .screen {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: none;
+        }
+
+            .screen.active {
+                display: block;
+            }
+
+        h1, h2, h3 {
+            color: #46178f;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+            input[type="text"]:focus {
+                border-color: #46178f;
+                outline: none;
+            }
+
+        .btn {
+            background: #46178f;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 5px;
+            transition: background 0.3s;
+        }
+
+            .btn:hover:not(:disabled) {
+                background: #5a1fa0;
+            }
+
+            .btn:disabled {
+                background: #ccc;
+                cursor: not-allowed;
+            }
+
+        .btn-group {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+
+            .status.success {
+                background: #d4edda;
+                color: #155724;
+                border: 1px solid #c3e6cb;
+            }
+
+            .status.error {
+                background: #f8d7da;
+                color: #721c24;
+                border: 1px solid #f5c6cb;
+            }
+
+            .status.info {
+                background: #d1ecf1;
+                color: #0c5460;
+                border: 1px solid #bee5eb;
+            }
+
+        .connection-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            z-index: 1000;
+        }
+
+        .connected {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .question-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .question-text {
+            font-size: 24px;
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 5px solid #46178f;
+        }
+
+        .timer {
+            font-size: 48px;
+            color: #e74c3c;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .answers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .answer-btn {
+            padding: 20px;
+            font-size: 18px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+            .answer-btn:hover:not(:disabled) {
+                background: #2980b9;
+                transform: translateY(-2px);
+            }
+
+            .answer-btn:disabled {
+                background: #95a5a6;
+                cursor: not-allowed;
+            }
+
+            /* Additional styles for MultipleChoice support */
+            .answer-btn.selected {
+                background: #28a745 !important;
+                border: 3px solid #155724 !important;
+                color: white !important;
+                transform: translateY(-3px);
+                box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+            }
+
+            /* ✅ NEW: Grayed out style for permanently selected MultipleChoice answers */
+            .answer-btn.grayed-out {
+                background: #95a5a6 !important;
+                border: 3px solid #6c757d !important;
+                color: #ffffff !important;
+                cursor: not-allowed !important;
+                transform: none !important;
+                box-shadow: inset 0 2px 4px rgba(0,0,0,0.2) !important;
+                opacity: 0.8;
+            }
+
+                .answer-btn.grayed-out:hover {
+                    background: #95a5a6 !important;
+                    transform: none !important;
+                    cursor: not-allowed !important;
+                }
+
+        .answer-btn {
+            position: relative;
+            transition: all 0.3s;
+        }
+
+            .answer-btn:hover:not(:disabled):not(.selected):not(.grayed-out) {
+                background: #2980b9;
+                transform: translateY(-2px);
+            }
+
+        .selection-indicator {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #28a745;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 14px;
+            line-height: 24px;
+            text-align: center;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        #submitMultipleBtn {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 20px auto;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+            transition: all 0.3s;
+            display: block;
+            max-width: 400px;
+            width: 100%;
+        }
+
+            #submitMultipleBtn:hover:not(:disabled) {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+                background: linear-gradient(135deg, #218838, #1e7e34);
+            }
+
+            #submitMultipleBtn:disabled {
+                background: #6c757d;
+                cursor: not-allowed;
+                transform: none;
+                box-shadow: none;
+            }
+
+        .question-type-badge {
+            background: linear-gradient(135deg, #17a2b8, #138496);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            margin: 10px auto;
+            display: inline-block;
+            box-shadow: 0 2px 10px rgba(23, 162, 184, 0.3);
+        }
+
+            .question-type-badge.multiple-choice {
+                background: linear-gradient(135deg, #17a2b8, #138496);
+            }
+
+            .question-type-badge.single-choice {
+                background: linear-gradient(135deg, #6610f2, #520dc2);
+            }
+
+            .question-type-badge.true-false {
+                background: linear-gradient(135deg, #ffc107, #e0a800);
+                color: #212529;
+            }
+
+        .answer-result.multiple-choice {
+            border-left: 5px solid #17a2b8;
+            background: linear-gradient(135deg, #d1ecf1, #f8f9fa);
+        }
+
+        .answer-result {
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 18px;
+        }
+
+            .answer-result.correct {
+                background: #d4edda;
+                color: #155724;
+            }
+
+            .answer-result.incorrect {
+                background: #f8d7da;
+                color: #721c24;
+            }
+
+            .answer-result.info {
+                background: #d1ecf1;
+                color: #0c5460;
+            }
+
+        .player-progress {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border: 1px solid #ffeaa7;
+        }
+
+        .waiting-host {
+            background: #f0ad4e;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 20px 0;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .leaderboard {
+            margin: 20px 0;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 5px solid #46178f;
+        }
+
+        .rank {
+            font-size: 24px;
+            font-weight: bold;
+            color: #46178f;
+        }
+
+        .game-info {
+            background: #e8f4fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .waiting-screen {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .waiting-animation {
+            font-size: 64px;
+            margin: 20px 0;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .player-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid #dee2e6;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #46178f;
+        }
+
+        /* Player Answer Cards Styling - Similar to Host */
+        .player-answers-display {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .player-answer-card {
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #dee2e6;
+            background: white;
+            position: relative;
+            font-size: 14px;
+        }
+
+            .player-answer-card.correct {
+                border-color: #28a745;
+                background: linear-gradient(135deg, #d4edda, white);
+            }
+
+            .player-answer-card.incorrect {
+                border-color: #dc3545;
+                background: linear-gradient(135deg, #f8d7da, white);
+            }
+
+            .player-answer-card.selected {
+                box-shadow: 0 0 12px rgba(255, 193, 7, 0.8);
+                border-color: #ffc107 !important;
+                border-width: 3px !important;
+            }
+
+        .player-answer-label {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #46178f;
+            font-size: 16px;
+        }
+
+        .player-answer-text {
+            font-size: 15px;
+            line-height: 1.4;
+            margin-bottom: 8px;
+        }
+
+        .player-correct-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #28a745;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .player-incorrect-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #dc3545;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .player-selected-indicator {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: #ffc107;
+            color: #212529;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        /* Player Leaderboard Styles */
+        .player-leaderboard {
+            margin-top: 25px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            border: 2px solid #dee2e6;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+            .player-leaderboard h4 {
+                color: #46178f;
+                font-size: 18px;
+                font-weight: bold;
+                margin-bottom: 15px;
+                text-align: center;
+                border-bottom: 2px solid #46178f;
+                padding-bottom: 8px;
+            }
+
+        .player-leaderboard-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e0e0e0;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+            .player-leaderboard-item:hover {
+                transform: translateX(5px);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            }
+
+        .player-leaderboard-rank {
+            display: flex;
+            align-items: center;
+            font-weight: bold;
+            font-size: 16px;
+            min-width: 80px;
+        }
+
+        .player-leaderboard-medal {
+            margin-right: 8px;
+            font-size: 18px;
+        }
+
+        .player-leaderboard-name {
+            flex: 1;
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-left: 10px;
+        }
+
+        .player-leaderboard-score {
+            font-size: 16px;
+            font-weight: bold;
+            color: #46178f;
+            background: #f0e6ff;
+            padding: 6px 12px;
+            border-radius: 20px;
+        }
+
+        /* Top 3 special styling */
+        .player-leaderboard-item.rank-1 {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border-color: #ffd700;
+        }
+
+        .player-leaderboard-item.rank-2 {
+            background: linear-gradient(135deg, #e2e3e5 0%, #c6c8ca 100%);
+            border-color: #c0c0c0;
+        }
+
+        .player-leaderboard-item.rank-3 {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            border-color: #cd7f32;
+        }
+
+        /* Additional styles for player results emphasis */
+        .top-three-section {
+            margin: 30px 0;
+            text-align: center;
+        }
+
+        .top-three-podium {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .champion-card {
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transition: transform 0.3s;
+        }
+
+            .champion-card:hover {
+                transform: translateY(-5px);
+            }
+
+        .champion-medal {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .champion-position {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #46178f;
+        }
+
+        .champion-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .champion-score {
+            font-size: 24px;
+            font-weight: bold;
+            color: #46178f;
+            margin-bottom: 5px;
+        }
+
+        .champion-accuracy {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .leaderboard-item.top-three {
+            border-left: 5px solid #FFD700;
+            background: linear-gradient(135deg, #FFD70022, #f8f9fa);
+        }
+
+        .top-badge {
+            background: #FFD700;
+            color: #333;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        /* Add smooth animation for player list updates */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Connection Status -->
+    <div id="connectionStatus" class="connection-status disconnected">Disconnected</div>
+
+    <div class="container">
+        <!-- Join Game Screen -->
+        <div id="joinScreen" class="screen active">
+            <h1>🎮 Kahoot Advanced Game - Player</h1>
+            <div class="input-group">
+                <label for="roomCodeInput">Room Code:</label>
+                <input type="text" id="roomCodeInput" placeholder="Enter Room Code">
+            </div>
+            <div class="input-group">
+                <label for="userNameInput">Your Name:</label>
+                <input type="text" id="userNameInput" placeholder="Enter Your Name">
+            </div>
+            <div class="btn-group">
+                <button class="btn" id="joinGameBtn">🎮 Join Game</button>
+                <button class="btn" id="openHostPageBtn" style="background: #28a745;">🏠 Open Host Page</button>
+            </div>
+            <div id="joinStatus"></div>
+        </div>
+
+        <!-- Waiting Screen -->
+        <div id="waitingScreen" class="screen">
+            <div class="waiting-screen">
+                <h2>🎉 Successfully Joined!</h2>
+                <div class="waiting-animation">⏳</div>
+                <h3>Waiting for game to start...</h3>
+                <div id="waitingInfo" class="game-info"></div>
+                <div class="btn-group">
+                    <button class="btn" id="leaveGameBtn" style="background: #dc3545;">🚪 Leave Game</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="gameScreen" class="screen">
+            <div id="gameInfo" class="game-info"></div>
+            <div class="timer" id="timer"></div>
+            <div class="question-container">
+                <div id="questionText" class="question-text"></div>
+                <div id="answersContainer" class="answers-grid"></div>
+            </div>
+            <div id="answerResult" class="answer-result"></div>
+            <div id="playerProgress" class="player-progress" style="display: none;"></div>
+            <div id="playerQuestionResult" class="player-question-result" style="display: none;">
+                <div id="playerQuestionDisplay">
+                    <div id="playerQuestionText" class="player-question-text"></div>
+                    <div id="playerAnswersDisplay" class="player-answers-display"></div>
+                    <div id="playerLeaderboard" class="player-leaderboard"></div>
+                </div>
+            </div>
+            <div id="waitingForHost" class="waiting-host" style="display: none;">
+                ⏳ Waiting for host to proceed to next question...
+            </div>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="resultsScreen" class="screen">
+            <h2>🏆 Game Completed! 🎉</h2>
+            <div id="finalResults"></div>
+            <div class="btn-group">
+                <button class="btn" id="playAgainBtn">🔄 Play Again</button>
+            </div>
+        </div>
+
+        <!-- Status Messages -->
+        <div id="statusMessages"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <script>
+        // Global variables
+        let connection;
+        let currentRoomCode = '';
+        let playerName = '';
+        let playerId = '';
+        let timer = null;
+        let hasAnswered = false;
+        let questionStartTime = null;
+        let selectedAnswers = []; // ✅ NEW: Track selected answers for MultipleChoice
+        let currentQuestionType = 'SingleChoice'; // ✅ NEW: Track current question type
+        let currentQuestionData = null; // Store current question data for result display
+
+        // DOM elements
+        const joinScreen = document.getElementById('joinScreen');
+        const waitingScreen = document.getElementById('waitingScreen');
+        const gameScreen = document.getElementById('gameScreen');
+        const resultsScreen = document.getElementById('resultsScreen');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const statusMessages = document.getElementById('statusMessages');
+
+        // Join elements
+        const roomCodeInput = document.getElementById('roomCodeInput');
+        const userNameInput = document.getElementById('userNameInput');
+        const joinGameBtn = document.getElementById('joinGameBtn');
+        const openHostPageBtn = document.getElementById('openHostPageBtn');
+        const joinStatus = document.getElementById('joinStatus');
+
+        // Waiting elements
+        const waitingInfo = document.getElementById('waitingInfo');
+        const leaveGameBtn = document.getElementById('leaveGameBtn');
+
+        // Game elements
+        const gameInfo = document.getElementById('gameInfo');
+        const timerElement = document.getElementById('timer');
+        const questionText = document.getElementById('questionText');
+        const answersContainer = document.getElementById('answersContainer');
+        const answerResult = document.getElementById('answerResult');
+        const playerProgress = document.getElementById('playerProgress');
+        const waitingForHost = document.getElementById('waitingForHost');
+
+        // Player question result elements
+        const playerQuestionResult = document.getElementById('playerQuestionResult');
+        const playerQuestionDisplay = document.getElementById('playerQuestionDisplay');
+        const playerQuestionText = document.getElementById('playerQuestionText');
+        const playerAnswersDisplay = document.getElementById('playerAnswersDisplay');
+
+        // Results elements
+        const finalResults = document.getElementById('finalResults');
+        const playAgainBtn = document.getElementById('playAgainBtn');
+
+        // Session management functions
+        function savePreviousSession(roomCode, userName, playerId) {
+            try {
+                const sessionData = {
+                    roomCode: roomCode,
+                    userName: userName,
+                    playerId: playerId,
+                    timestamp: Date.now()
+                };
+                localStorage.setItem('kahoot_player_session', JSON.stringify(sessionData));
+            } catch (err) {
+                console.log(`❌ Failed to save session: ${err.message}`);
+            }
+        }
+
+        function clearPreviousSession() {
+            try {
+                localStorage.removeItem('kahoot_player_session');
+                console.log('🗑️ Session cleared');
+            } catch (err) {
+                console.log(`❌ Failed to clear session: ${err.message}`);
+            }
+        }
+
+        function getPreviousSession() {
+            try {
+                const sessionData = localStorage.getItem('kahoot_player_session');
+                if (sessionData) {
+                    const parsed = JSON.parse(sessionData);
+                    // Check if session is less than 1 hour old
+                    if (Date.now() - parsed.timestamp < 3600000) {
+                        return parsed;
+                    } else {
+                        clearPreviousSession();
+                    }
+                }
+            } catch (err) {
+                console.log(`❌ Failed to get session: ${err.message}`);
+                clearPreviousSession();
+            }
+            return null;
+        }
+
+        // Initialize SignalR connection (anonymous for players)
+        async function initConnection() {
+            try {
+                console.log("🔄 initConnection called");
+
+                if (connection && connection.state === signalR.HubConnectionState.Connected) {
+                    console.log("✅ Connection already established");
+                    return connection;
+                }
+
+                if (connection) {
+                    try {
+                        console.log("🔄 Stopping previous connection...");
+                        await connection.stop();
+                        console.log("✅ Previous connection stopped");
+                    } catch (e) {
+                        console.log(`⚠️ Error stopping previous connection: ${e.message}`);
+                    }
+                }
+
+                console.log("🔄 Creating new SignalR connection...");
+                // Create new connection without authentication (anonymous for players)
+                const connectionBuilder = new signalR.HubConnectionBuilder()
+                    // .withUrl("http://localhost:5000/gameHub")
+                    .withUrl("http://localhost:5000/gameHub", {
+                        transport: signalR.HttpTransportType.WebSockets,
+                        skipNegotiation: true,
+                        withCredentials: false
+                    })
+                    .withAutomaticReconnect([0, 2000, 5000, 10000, 20000])
+                    .configureLogging(signalR.LogLevel.Information);
+
+                connection = connectionBuilder.build();
+                console.log("✅ SignalR connection created");
+
+                // Set up event handlers
+                console.log("🔄 Setting up SignalR event handlers...");
+                setupSignalRHandlers();
+                console.log("✅ Event handlers set up");
+
+                // Start connection
+                console.log("🔄 Starting SignalR connection...");
+                await connection.start();
+
+                console.log("✅ Connected to SignalR Hub as player");
+                updateConnectionStatus(true);
+
+                return connection;
+            } catch (err) {
+                console.log(`❌ Failed to connect: ${err}`);
+                console.error('Connection Error:', err);
+                updateConnectionStatus(false);
+                showStatus("Failed to connect: " + err.message, 'error');
+                throw err;
+            }
+        }
+
+        // Setup SignalR event handlers
+        function setupSignalRHandlers() {
+            // Player events
+            connection.on("JoinedGame", (data) => {
+                console.log(`🎯 Joined game: ${JSON.stringify(data)}`);
+                currentRoomCode = data.roomCode;
+                playerId = data.playerId;
+                playerName = data.userName;
+
+                // Update debug info
+                updateDebugInfo();
+
+                // Reset button state
+                joinGameBtn.disabled = false;
+                joinGameBtn.textContent = '🎮 Join Game';
+
+                // Save session for potential reconnection
+                savePreviousSession(data.roomCode, data.userName, data.playerId);
+
+                // ✅ Enhanced reconnection feedback
+                const reconnectionText = data.isReconnecting ? '(Reconnected after page refresh)' : '';
+                showStatus(`Successfully joined game! ${reconnectionText}`, 'success');
+
+                waitingInfo.innerHTML = `
+                            <h4>🎯 Game Info</h4>
+                            <p><strong>Room Code:</strong> ${data.roomCode}</p>
+                            <p><strong>Your Name:</strong> ${data.userName}</p>
+                            <p><strong>Game State:</strong> ${data.gameState}</p>
+                            ${data.isReconnecting ? '<p><strong>🔄 Successfully reconnected after page refresh!</strong></p>' : ''}
+                        `;
+
+                // Add simple request lobby control
+                addRequestLobbyControl();
+
+                // ✅ ALWAYS AUTO-DISPLAY player-list immediately when joining successfully
+                console.log('🔄 Auto-displaying player list immediately after joining...');
+                const initialLobbyData = {
+                    players: data.players || [],
+                    playerCount: data.totalPlayers || 1,
+                    canStart: false // Players can't see start button
+                };
+
+                // Force update lobby display
+                updateLobbyDisplay(initialLobbyData);
+
+                // Also automatically request fresh lobby data to ensure we have the latest info
+                setTimeout(async () => {
+                    try {
+                        if (connection && currentRoomCode) {
+                            await connection.invoke("GetRoomStatus");
+                            console.log('🔄 Auto-requested fresh lobby data after joining');
+                        }
+                    } catch (err) {
+                        console.log(`❌ Auto-request lobby failed: ${err}`);
+                    }
+                }, 100); // Reduced delay to 100ms for faster response
+
+                // Handle different game states appropriately
+                if (data.gameState === 'InProgress') {
+                    showScreen('gameScreen');
+                    gameInfo.innerHTML = `
+                                <h4>🎮 Game In Progress</h4>
+                                <p>Player: ${playerName}</p>
+                                <p>Waiting for current question...</p>
+                            `;
+                } else if (data.gameState === 'WaitingForHost') {
+                    showScreen('gameScreen');
+                    gameInfo.innerHTML = `
+                                <h4>⏳ Waiting for Host</h4>
+                                <p>Player: ${playerName}</p>
+                                <p>Game is between questions, waiting for host to proceed...</p>
+                            `;
+                    showWaitingForHost();
+                } else if (data.gameState === 'Completed') {
+                    showStatus('Game has already completed', 'info');
+                    showScreen('waitingScreen');
+                } else {
+                    // Lobby state - show waiting screen with all players
+                    showScreen('waitingScreen');
+                }
+            });
+
+            connection.on("PlayerJoined", (data) => {
+                console.log(`👤 Player joined: ${JSON.stringify(data)}`);
+                if (!data.isReconnecting) {
+                    showStatus(`${data.userName} joined the game! (${data.totalPlayers} players)`, 'info');
+                } else {
+                    showStatus(`${data.userName} reconnected to the game! (${data.totalPlayers} players)`, 'info');
+                }
+
+                // ✅ ALWAYS AUTO-UPDATE lobby display when new player joins (no manual action needed)
+                if (waitingScreen.classList.contains('active')) {
+                    console.log('🔄 Auto-updating lobby display for new player...');
+                    updateLobbyDisplay({
+                        players: data.players || [],
+                        playerCount: data.totalPlayers || 0,
+                        canStart: false
+                    });
+                }
+            });
+
+            connection.on("PlayerLeft", (data) => {
+                console.log(`👋 Player left: ${JSON.stringify(data)}`);
+                showStatus(`${data.userName} ${data.wasKicked ? 'was kicked' : 'left'} the game`, 'info');
+
+                // ✅ ALWAYS AUTO-UPDATE lobby display when player leaves (no manual action needed)
+                if (waitingScreen.classList.contains('active')) {
+                    console.log('🔄 Auto-updating lobby display for player leaving...');
+                    updateLobbyDisplay({
+                        players: data.players || [],
+                        playerCount: data.totalPlayers || 0,
+                        canStart: false
+                    });
+                }
+            });
+
+            connection.on("LobbyUpdate", (data) => {
+                console.log(`👥 Lobby update: ${JSON.stringify(data)}`);
+                // ✅ ALWAYS AUTO-UPDATE when receiving lobby update event
+                if (waitingScreen.classList.contains('active')) {
+                    console.log('🔄 Auto-updating lobby display from LobbyUpdate event...');
+                    updateLobbyDisplay(data);
+                }
+            });
+
+            // Game events
+            connection.on("GameStarted", (data) => {
+                console.log(`🎮 Game started: ${JSON.stringify(data)}`);
+                showStatus("Game has started!", 'success');
+                showScreen('gameScreen');
+                gameInfo.innerHTML = `
+                            <h4>🎮 Game Started!</h4>
+                            <p>Total Questions: ${data.totalQuestions}</p>
+                            <p>Get ready for the first question...</p>
+                        `;
+            });
+
+            // ✅ NEW EVENT: Handle proceeding to next question to reset UI properly
+            connection.on("ProceedingToNextQuestion", (data) => {
+                console.log(`➡️ Proceeding to next question: ${JSON.stringify(data)}`);
+
+                // Reset UI for next question
+                timerElement.style.display = 'block';
+                answersContainer.style.display = 'grid';
+                answerResult.innerHTML = '';
+                playerProgress.style.display = 'none';
+
+                // Hide player question result
+                if (playerQuestionResult) {
+                    playerQuestionResult.style.display = 'none';
+                }
+
+                showStatus(data.message, 'info');
+
+                // Clear any existing waiting state
+                hideWaitingForHost();
+            });
+
+            connection.on("NewQuestion", (data) => {
+                console.log(`❓ New question: ${JSON.stringify(data)}`);
+                displayQuestion(data);
+                hideWaitingForHost();
+                showStatus(`Question ${data.questionIndex} of ${data.totalQuestions}`, 'info');
+            });
+
+            connection.on("AnswerSubmitted", (data) => {
+                console.log(`✅ Answer submitted: ${JSON.stringify(data)}`);
+
+                // Simple confirmation message instead of detailed feedback
+                if (data.submitted) {
+                    showStatus("Answer submitted successfully!", 'success');
+                } else {
+                    showStatus("Answer recorded", 'info');
+                }
+            });
+
+            connection.on("PlayerQuestionResult", (data) => {
+                console.log(`📊 Player question result: ${JSON.stringify(data)}`);
+                displayPlayerQuestionResult(data);
+            });
+
+            // ✅ NEW EVENT: Handle question time ended to show results even if player hasn't answered
+            connection.on("QuestionTimeEnded", (data) => {
+                console.log(`⏰ Question time ended: ${JSON.stringify(data)}`);
+
+                // Clear timer
+                if (timer) {
+                    clearInterval(timer);
+                    timer = null;
+                }
+
+                // Hide timer and show time's up message
+                timerElement.style.display = 'none';
+
+                // If player hasn't received PlayerQuestionResult yet, show a temporary result
+                if (currentQuestionData && !hasAnswered) {
+                    // Create temporary result data for unanswered question
+                    const tempResult = {
+                        isCorrect: false,
+                        score: 0,
+                        timeTaken: 0,
+                        selectedAnswers: [],
+                        isLastQuestion: data.isLastQuestion || false
+                    };
+                    displayPlayerQuestionResult(tempResult);
+                }
+
+                showStatus(data.message, 'info');
+            });
+
+            connection.on("FinalResults", (data) => {
+                console.log(`🏆 Final results: ${JSON.stringify(data)}`);
+                displayPlayerGameResults(data);
+            });
+
+            connection.on("GameEnded", (data) => {
+                console.log(`🏁 Game ended: ${JSON.stringify(data)}`);
+                displayPlayerGameResults(data);
+            });
+
+            // Reconnection events
+            connection.on("ReconnectState", (data) => {
+                console.log(`🔄 Reconnect state: ${JSON.stringify(data)}`);
+
+                if (data.IsActive && data.QuestionId) {
+                    // Reconnecting to active question
+                    showScreen('gameScreen');
+                    displayQuestion(data, true);
+                    showStatus('Reconnected to ongoing game!', 'success');
+                } else if (data.GameState === 'WaitingForHost') {
+                    // Reconnecting while waiting for host
+                    showScreen('gameScreen');
+                    gameInfo.innerHTML = `
+                                <h4>🔄 Reconnected!</h4>
+                                <p>Player: ${playerName}</p>
+                                <p>${data.Message || 'Game is between questions, waiting for host to proceed...'}</p>
+                            `;
+                    showWaitingForHost();
+                    showStatus('Reconnected - Waiting for host!', 'success');
+                } else {
+                    // Other states
+                    showScreen('gameScreen');
+                    gameInfo.innerHTML = `
+                                <h4>🔄 Reconnected!</h4>
+                                <p>Player: ${playerName}</p>
+                                <p>Game State: ${data.GameState || 'Unknown'}</p>
+                            `;
+                    showStatus('Reconnected to game!', 'success');
+                }
+            });
+
+            // All players answered notification
+            connection.on("AllPlayersAnswered", (data) => {
+                console.log(`✅ All players answered: ${JSON.stringify(data)}`);
+                showStatus(data.message || 'All players have answered! Waiting for time to end...', 'info');
+            });
+
+            // Error and notification events
+            connection.on("Error", (message) => {
+                console.log(`❌ Error: ${message}`);
+
+                // Reset button state on error
+                joinGameBtn.disabled = false;
+                joinGameBtn.textContent = '🎮 Join Game';
+
+                // Provide detailed error context
+                let displayMessage = message;
+                if (message.includes('Room not found')) {
+                    displayMessage = 'Room no longer exists. The game may have ended or the room code is incorrect.';
+                } else if (message.includes('Cannot join game')) {
+                    displayMessage = 'Cannot join: Game is currently in progress. Only existing players can reconnect.';
+                } else if (message.includes('Reconnections are not allowed')) {
+                    displayMessage = 'Reconnections are disabled for this game.';
+                } else if (message.includes('Username cannot be empty')) {
+                    displayMessage = 'Please enter your name.';
+                } else if (message.includes('already taken')) {
+                    // ✅ Enhanced: Handle duplicate username error with better UI feedback and reconnection advice
+                    let displayMessage = message;
+
+                    // Check if this might be a reconnection attempt
+                    const previousSession = getPreviousSession();
+                    if (previousSession && previousSession.userName === userNameInput.value.trim()) {
+                        displayMessage = `${message}\n\nIf you just refreshed the page, wait a moment and try again. Your previous session might still be active.`;
+                    }
+
+                    showStatus(displayMessage, 'error');
+
+                    // Highlight the username input to draw attention
+                    userNameInput.style.borderColor = '#dc3545';
+                    userNameInput.style.backgroundColor = '#f8d7da';
+
+                    // Clear the highlight after user starts typing
+                    userNameInput.addEventListener('input', function clearHighlight() {
+                        userNameInput.style.borderColor = '';
+                        userNameInput.style.backgroundColor = '';
+                        userNameInput.removeEventListener('input', clearHighlight);
+                    });
+
+                    // Focus on the username input for easy correction
+                    setTimeout(() => {
+                        userNameInput.focus();
+                        userNameInput.select();
+                    }, 100);
+                } else if (message.includes('Failed to join game')) {
+                    displayMessage = 'Failed to join: ' + message;
+                }
+
+                showStatus(displayMessage, 'error');
+
+                // Handle specific reconnection errors
+                if (message.includes('Cannot join game') || message.includes('Reconnections are not allowed') || message.includes('Room not found')) {
+                    // Reset to join screen after a delay
+                    setTimeout(() => {
+                        resetToJoin();
+                    }, 3000);
+                }
+            });
+
+            connection.on("HostDisconnected", (message) => {
+                console.log(`🔌 Host disconnected: ${message}`);
+                showStatus(message, 'error');
+            });
+
+            connection.on("RoomClosed", (message) => {
+                console.log(`🚪 Room closed: ${message}`);
+                showStatus(message, 'error');
+                resetToJoin();
+            });
+
+            connection.on("KickedFromGame", (message) => {
+                console.log(`⛔ Kicked from game: ${message}`);
+                showStatus(message, 'error');
+                resetToJoin();
+            });
+
+            connection.on("PlayerDisconnected", (data) => {
+                console.log(`🔌 Player disconnected: ${JSON.stringify(data)}`);
+                showStatus(`${data.userName} disconnected${data.canReconnect ? ' (can reconnect)' : ''}`, 'info');
+
+                // ✅ ALWAYS AUTO-UPDATE lobby display when player disconnects (no manual action needed)
+                if (waitingScreen.classList.contains('active')) {
+                    console.log('🔄 Auto-updating lobby display for player disconnection...');
+                    updateLobbyDisplay({
+                        players: data.players || [],
+                        playerCount: data.totalPlayers || 0,
+                        canStart: false
+                    });
+                }
+            });
+
+            connection.on("RoomStatus", (data) => {
+                console.log(`🏠 Room status: ${JSON.stringify(data)}`);
+                // ✅ ALWAYS AUTO-UPDATE when receiving room status (this is the response from GetRoomStatus)
+                if (waitingScreen.classList.contains('active')) {
+                    console.log('🔄 Auto-updating lobby display from RoomStatus event...');
+                    updateLobbyDisplay({
+                        players: data.players || [],
+                        playerCount: data.playerCount || 0,
+                        canStart: false
+                    });
+                }
+            });
+
+            // ✅ NEW: Show progress to players when they submit answers
+            connection.on("PlayerProgress", (data) => {
+                // ✅ DISABLED: Player progress display removed per user request
+                console.log(`📊 PlayerProgress event received but display disabled: ${JSON.stringify(data)}`);
+            });
+        }
+
+        // Display question for players
+        function displayQuestion(data, isReconnect = false) {
+            console.log(`❓ Displaying question: ${JSON.stringify(data)}`);
+
+            hasAnswered = false;
+            selectedAnswers = []; // ✅ RESET: Clear selected answers for new question
+            currentQuestionType = data.questionType || 'SingleChoice'; // ✅ NEW: Store question type
+            currentQuestionData = data; // ✅ NEW: Store question data for result display
+            questionStartTime = new Date(data.startTime || Date.now());
+
+            // Hide player question result if showing
+            if (playerQuestionResult) {
+                playerQuestionResult.style.display = 'none';
+            }
+
+            // ✅ ENHANCED: Show question type indicator with last question info
+            const questionTypeIcon = {
+                'SingleChoice': '📍',
+                'MultipleChoice': '☑️',
+                'TrueFalse': '✓❌'
+            }[currentQuestionType] || '❓';
+
+            const lastQuestionIndicator = data.isLastQuestion ?
+                '<div style="background: #dc3545; color: white; padding: 8px 12px; border-radius: 15px; font-size: 14px; font-weight: bold; margin: 10px auto; display: inline-block; animation: pulse 2s infinite;">🏁 FINAL QUESTION</div>' : '';
+
+            const questionTypeBadge = data.isMultipleChoice ?
+                '<div style="background: #17a2b8; color: white; padding: 8px 12px; border-radius: 15px; font-size: 14px; font-weight: bold; margin: 10px auto; display: inline-block;">☑️ MULTIPLE CHOICE - Select correct answers (cannot deselect once chosen)</div>' :
+                currentQuestionType === 'TrueFalse' ?
+                    '<div style="background: #ffc107; color: #212529; padding: 8px 12px; border-radius: 15px; font-size: 14px; font-weight: bold; margin: 10px auto; display: inline-block;">✓❌ TRUE or FALSE</div>' :
+                    '<div style="background: #6610f2; color: white; padding: 8px 12px; border-radius: 15px; font-size: 14px; font-weight: bold; margin: 10px auto; display: inline-block;">📍 SINGLE CHOICE</div>';
+
+            questionText.innerHTML = `
+                        <h3>Question ${data.questionIndex} of ${data.totalQuestions} ${questionTypeIcon}</h3>
+                        ${lastQuestionIndicator}
+                        <div style="text-align: center; margin-bottom: 15px;">
+                            ${questionTypeBadge}
+                        </div>
+                        <p>${data.questionText}</p>
+                    `;
+
+            // ✅ ENHANCED: Create answer buttons with different styles for MultipleChoice
+            answersContainer.innerHTML = '';
+            if (data.answers && data.answers.length > 0) {
+                data.answers.forEach((answer, index) => {
+                    const button = document.createElement('button');
+                    button.className = 'answer-btn';
+                    button.id = `answer-${answer.id}`;
+                    button.textContent = answer.title;
+
+                    // ✅ ENHANCED: Different click handlers for different question types
+                    if (data.isMultipleChoice) {
+                        // MultipleChoice: Toggle selection
+                        button.onclick = () => toggleMultipleChoiceAnswer(answer.id, button);
+
+                        // Add visual indicator for MultipleChoice
+                        button.style.position = 'relative';
+                        button.innerHTML = `
+                                <span class="answer-text">${answer.title}</span>
+                                <span class="selection-indicator" style="display: none; position: absolute; top: 5px; right: 5px; background: #28a745; color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; line-height: 20px; text-align: center;">✓</span>
+                            `;
+                    } else {
+                        // SingleChoice/TrueFalse: Submit immediately
+                        button.onclick = () => submitAnswer(answer.id);
+                    }
+
+                    answersContainer.appendChild(button);
+                });
+
+                // ✅ NEW: Add submit button for MultipleChoice
+                if (data.isMultipleChoice) {
+                    const submitButton = document.createElement('button');
+                    submitButton.className = 'btn';
+                    submitButton.id = 'submitMultipleBtn';
+                    submitButton.style.cssText = `
+                            background: #28a745;
+                            color: white;
+                            padding: 15px 30px;
+                            font-size: 18px;
+                            font-weight: bold;
+                            margin-top: 20px;
+                            border-radius: 25px;
+                            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+                            transition: all 0.3s;
+                            display: none;
+                        `;
+                    submitButton.innerHTML = '🚀 Submit Selected Answers (0)';
+                    submitButton.onclick = () => submitMultipleAnswers();
+                    answersContainer.appendChild(submitButton);
+                }
+
+                console.log(`✅ Created ${data.answers.length} answer buttons for ${currentQuestionType} question`);
+            } else {
+                console.log('⚠️ No answers provided for this question');
+                answersContainer.innerHTML = '<p>No answers available for this question</p>';
+            }
+
+            // Start timer
+            const timeLimit = isReconnect ? data.remainingTimeSeconds : data.timeLimitSeconds;
+            console.log(`⏰ Starting timer with ${timeLimit} seconds`);
+            startTimer(timeLimit);
+
+            // Clear previous result
+            answerResult.innerHTML = '';
+            playerProgress.style.display = 'none';
+
+            // Update game info
+            gameInfo.innerHTML = `
+                        <h4>Question ${data.questionIndex} of ${data.totalQuestions}</h4>
+                        <p>Player: ${playerName}</p>
+                        <p>Type: ${currentQuestionType}</p>
+                    `;
+        }
+
+        // ✅ IMPROVED: Select answer for MultipleChoice questions - once selected, cannot be deselected
+        function toggleMultipleChoiceAnswer(answerId, buttonElement) {
+            if (hasAnswered) {
+                console.log(`⚠️ Player already submitted - ignoring selection for answer ${answerId}`);
+                return; // Don't allow changes after submission
+            }
+
+            // ✅ FIXED: If already selected, don't allow deselection (grayout behavior)
+            if (selectedAnswers.includes(answerId)) {
+                console.log(`⚠️ Answer ${answerId} already selected and grayed out - cannot deselect`);
+                return; // Cannot deselect once selected
+            }
+
+            const answerText = buttonElement.querySelector('.answer-text').textContent;
+            const indicator = buttonElement.querySelector('.selection-indicator');
+
+            // Select answer (can only select, not deselect)
+            selectedAnswers.push(answerId);
+
+            // ✅ ENHANCED: Apply grayed-out styling instead of selected styling
+            buttonElement.classList.add('grayed-out');
+            buttonElement.classList.remove('selected'); // Remove any selected class
+            buttonElement.disabled = true; // Actually disable the button
+
+            if (indicator) {
+                indicator.style.display = 'block';
+                indicator.style.background = '#6c757d'; // Gray indicator
+                indicator.innerHTML = '✓';
+            }
+
+            console.log(`✅ Selected and grayed out answer: ${answerText} (ID: ${answerId}) - Total selected: ${selectedAnswers.length}`);
+
+            // ✅ FIXED: Show submit button when answers are selected
+            const submitBtn = document.getElementById('submitMultipleBtn');
+            if (submitBtn) {
+                submitBtn.style.display = 'block';
+                submitBtn.innerHTML = `🚀 Submit Selected Answers (${selectedAnswers.length})`;
+                submitBtn.disabled = false;
+            }
+
+            console.log(`📊 MultipleChoice answer selection completed - Total selected: ${selectedAnswers.length} answers`);
+        }
+
+        // ✅ ENHANCED: Submit answer for SingleChoice/TrueFalse (original method)
+        async function submitAnswer(answerId) {
+            if (hasAnswered) {
+                console.log(`⚠️ Already answered - ignoring submit for answer ${answerId}`);
+                return;
+            }
+
+            console.log(`🎯 submitAnswer called for answer ${answerId}, question type: ${currentQuestionType}`);
+
+            // ✅ FIXED: MultipleChoice questions should use submitMultipleAnswers instead
+            if (currentQuestionType === 'MultipleChoice') {
+                console.log(`☑️ MultipleChoice detected - individual answers don't submit, use Submit button instead`);
+                return; // Don't submit individual answers for MultipleChoice
+            }
+
+            // For SingleChoice/TrueFalse: Submit immediately
+            console.log(`📝 ${currentQuestionType} detected - submitting answer ${answerId} immediately`);
+            hasAnswered = true;
+
+            // Disable all answer buttons
+            const buttons = answersContainer.querySelectorAll('.answer-btn');
+            buttons.forEach(btn => btn.disabled = true);
+            console.log(`🔒 Disabled all answer buttons for ${currentQuestionType} question`);
+
+            try {
+                // Store selected answer for result display
+                selectedAnswers = [answerId];
+
+                await connection.invoke("SubmitAnswer", answerId);
+                console.log(`✅ Successfully submitted answer ${answerId} for ${currentQuestionType} question`);
+                showStatus("Answer submitted!", 'success');
+            } catch (err) {
+                console.log(`❌ Error submitting answer: ${err}`);
+                showStatus("Failed to submit answer", 'error');
+                // Re-enable buttons if answer submission fails
+                hasAnswered = false;
+                buttons.forEach(btn => btn.disabled = false);
+                console.log(`🔓 Re-enabled answer buttons due to submission failure`);
+            }
+        }
+
+        // ✅ NEW: Submit multiple selected answers for MultipleChoice
+        async function submitMultipleAnswers() {
+            if (hasAnswered || selectedAnswers.length === 0) {
+                console.log(`⚠️ Cannot submit multiple answers - hasAnswered: ${hasAnswered}, selectedAnswers: ${selectedAnswers.length}`);
+                return;
+            }
+
+            console.log(`🚀 submitMultipleAnswers called with ${selectedAnswers.length} answers: ${selectedAnswers.join(', ')}`);
+            hasAnswered = true;
+
+            // Disable all answer buttons and submit button
+            const buttons = answersContainer.querySelectorAll('.answer-btn');
+            const submitBtn = document.getElementById('submitMultipleBtn');
+            buttons.forEach(btn => btn.disabled = true);
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '⏳ Submitting...';
+            }
+            console.log(`🔒 Disabled all buttons for MultipleChoice submission`);
+
+            try {
+                await connection.invoke("SubmitMultipleAnswers", selectedAnswers);
+                console.log(`✅ Successfully submitted ${selectedAnswers.length} answers for MultipleChoice question: ${selectedAnswers.join(', ')}`);
+                showStatus(`Submitted ${selectedAnswers.length} answer(s)!`, 'success');
+
+                // Hide submit button after successful submission
+                if (submitBtn) {
+                    submitBtn.style.display = 'none';
+                    console.log(`👻 Hidden submit button after successful submission`);
+                }
+            } catch (err) {
+                console.log(`❌ Error submitting multiple answers: ${err}`);
+                showStatus("Failed to submit answers", 'error');
+
+                // Re-enable buttons if submission fails
+                hasAnswered = false;
+                buttons.forEach(btn => btn.disabled = false);
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = `🚀 Submit Selected Answers (${selectedAnswers.length})`;
+                }
+                console.log(`🔓 Re-enabled buttons due to multiple answer submission failure`);
+            }
+        }
+
+        // Display player question result with leaderboard and question details
+        function displayPlayerQuestionResult(data) {
+            // ✅ Ensure timer and answers remain hidden when showing results
+            timerElement.style.display = 'none';
+            answersContainer.style.display = 'none';
+
+            // ✅ DISABLED: Player progress display removed per user request
+            playerProgress.style.display = 'none';
+
+            // ✅ NEW: Show question result with correct answers like Host
+            if (currentQuestionData && playerQuestionResult && playerQuestionText && playerAnswersDisplay) {
+                // Display question details
+                const questionTypeIcon = {
+                    'SingleChoice': '📍',
+                    'MultipleChoice': '☑️',
+                    'TrueFalse': '✓❌'
+                }[currentQuestionData.questionType] || '❓';
+
+                const questionTypeBadge = currentQuestionData.isMultipleChoice ?
+                    '<span style="background: #17a2b8; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; margin-left: 10px;">☑️ MULTIPLE CHOICE</span>' :
+                    currentQuestionData.questionType === 'TrueFalse' ?
+                        '<span style="background: #ffc107; color: #212529; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; margin-left: 10px;">✓❌ TRUE/FALSE</span>' :
+                        '<span style="background: #6610f2; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; margin-left: 10px;">📍 SINGLE CHOICE</span>';
+
+                playerQuestionText.innerHTML = `
+                        <h3>Question ${currentQuestionData.questionIndex} of ${currentQuestionData.totalQuestions} ${questionTypeIcon} - Your Result</h3>
+                        <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 10px;">
+                            <span>Question Type:</span>
+                            ${questionTypeBadge}
+                        </div>
+                        <p>${currentQuestionData.questionText}</p>
+                    `;
+
+                // Display answers with correct/incorrect indicators and player selections
+                let answersHTML = '';
+
+                // Enhanced debug logging to understand the data structure
+                console.log('=== PLAYER QUESTION RESULT DEBUG ===');
+                console.log('currentQuestionData:', currentQuestionData);
+                console.log('data from PlayerQuestionResult:', data);
+                console.log('currentQuestionData.answers:', currentQuestionData.answers);
+                console.log('data.correctAnswers:', data.correctAnswers);
+                console.log('data.correctAnswerIds:', data.correctAnswerIds);
+                console.log('selectedAnswers global:', selectedAnswers);
+                console.log('data.selectedAnswers:', data.selectedAnswers);
+
+                // Try to get correct answers from multiple possible sources
+                const correctAnswers = data.correctAnswers ||
+                    currentQuestionData.correctAnswers ||
+                    (currentQuestionData.correctAnswer ? [currentQuestionData.correctAnswer] : []) ||
+                    [];
+
+                const correctAnswerIds = data.correctAnswerIds ||
+                    correctAnswers.map(ca => ca.id || ca.Id || ca) ||
+                    [];
+
+                const playerSelectedIds = data.selectedAnswers || selectedAnswers || [];
+
+                if (currentQuestionData.answers) {
+                    currentQuestionData.answers.forEach((answer, index) => {
+                        const answerLabel = String.fromCharCode(65 + index); // A, B, C, D
+
+                        // Simplified logic: try direct property first, then ID matching
+                        let isCorrect = false;
+
+                        // Method 1: Direct property check
+                        if (answer.isCorrect === true || answer.IsCorrect === true) {
+                            isCorrect = true;
+                            console.log(`${answerLabel}: CORRECT via direct property (answer.isCorrect=${answer.isCorrect})`);
+                        }
+                        // Method 2: Check if answer ID is in correctAnswerIds array
+                        else if (correctAnswerIds.length > 0) {
+                            if (correctAnswerIds.includes(answer.id) || correctAnswerIds.includes(answer.Id)) {
+                                isCorrect = true;
+                                console.log(`${answerLabel}: CORRECT via ID matching (answer.id=${answer.id} in ${correctAnswerIds})`);
+                            } else {
+                                console.log(`${answerLabel}: INCORRECT - ID not in correct list (answer.id=${answer.id} not in ${correctAnswerIds})`);
+                            }
+                        }
+                        // Method 3: If no correct answer info available, assume all incorrect (fallback)
+                        else {
+                            console.log(`${answerLabel}: INCORRECT - no correct answer data available`);
+                        }
+
+                        const wasSelected = playerSelectedIds.includes(answer.id) || playerSelectedIds.includes(answer.Id);
+                        let playerCount = 0;
+                        data.answers.forEach(element => {
+                            if (answer.id == element.id) {
+                                playerCount = element.playerCount;
+                            }
+                        });
+
+                        answersHTML += `
+                                <div class="player-answer-card ${isCorrect ? 'correct' : 'incorrect'} ${wasSelected ? 'selected' : ''}">
+                                    <div class="player-answer-label">${answerLabel})</div>
+                                    <div class="player-answer-text">${answer.title}</div>
+                                    ${isCorrect ? `<div id="answer-${answer.id}" class="player-correct-indicator">✅ CORRECT (${playerCount})</div>` : `<div id="answer-${answer.id}" class="player-incorrect-indicator">❌ INCORRECT (${playerCount})</div>`}
+                                    ${wasSelected ? '<div class="player-selected-indicator">👆 YOUR CHOICE</div>' : ''}
+                                </div>
+                            `;
+                    });
+                }
+
+                playerAnswersDisplay.innerHTML = answersHTML;
+
+                // Display current leaderboard if available (but not on last question)
+                if (!data.isLastQuestion) {
+                    document.getElementById('playerLeaderboard').style.display = 'block';
+                    displayPlayerLeaderboard(data);
+                }
+                else {
+                    document.getElementById('playerLeaderboard').style.display = 'none';
+                }
+
+                playerQuestionResult.style.display = 'block';
+            }
+
+            // Show appropriate waiting message
+            if (data.isLastQuestion) {
+                waitingForHost.innerHTML = '🏁 Final question completed! Waiting for final leaderboard...';
+            } else {
+                waitingForHost.innerHTML = '⏳ Waiting for host to proceed to next question...';
+            }
+            showWaitingForHost();
+        }
+
+        // Display current leaderboard in player view
+        function displayPlayerLeaderboard(data) {
+            const playerLeaderboard = document.getElementById('playerLeaderboard');
+            if (!playerLeaderboard) return;
+
+            console.log('=== PLAYER LEADERBOARD DEBUG ===');
+            console.log('data for leaderboard:', data);
+            console.log('data.TopPlayers:', data.TopPlayers);
+            console.log('data.topPlayers:', data.topPlayers);
+            console.log('data.currentLeaderboard:', data.currentLeaderboard);
+            console.log('data.leaderboard:', data.leaderboard);
+
+            // Try to get leaderboard from multiple possible sources - TopPlayers is the main one from server
+            const leaderboard = data.TopPlayers || data.topPlayers || data.currentLeaderboard || data.leaderboard || data.players || [];
+
+            if (!leaderboard || leaderboard.length === 0) {
+                playerLeaderboard.innerHTML = '<p style="text-align: center; color: #666; font-style: italic;">No leaderboard data available</p>';
+                return;
+            }
+
+            console.log('PROCESSED leaderboard:', leaderboard);
+
+            // The server already sends sorted top 5, but ensure sorting just in case and limit to top 10
+            const sortedLeaderboard = leaderboard
+                .sort((a, b) => (b.Score || b.score || 0) - (a.Score || a.score || 0))
+                .slice(0, 10);
+
+            let leaderboardHTML = '<h4>🏆 Current Leaderboard</h4>';
+
+            sortedLeaderboard.forEach((player, index) => {
+                const rank = index + 1;
+                // Handle different property name variations from server
+                const playerName = player.UserName || player.userName || player.Name || player.playerName || player.name || `Player ${rank}`;
+                const score = player.Score || player.score || 0;
+
+                // Medal icons for top 3
+                const medals = ['🥇', '🥈', '🥉'];
+                const medalIcon = rank <= 3 ? medals[rank - 1] : '🏅';
+
+                const rankClass = rank <= 3 ? `rank-${rank}` : '';
+
+                leaderboardHTML += `
+                        <div class="player-leaderboard-item ${rankClass}">
+                            <div class="player-leaderboard-rank">
+                                <span class="player-leaderboard-medal">${medalIcon}</span>
+                                #${rank}
+                            </div>
+                            <div class="player-leaderboard-name">${playerName}</div>
+                            <div class="player-leaderboard-score">${score} pts</div>
+                        </div>
+                    `;
+            });
+
+            playerLeaderboard.innerHTML = leaderboardHTML;
+            console.log('=== END LEADERBOARD DEBUG ===');
+        }
+
+        function displayPlayerGameResults(data) {
+            console.log(`🏆 displayPlayerGameResults called with data: ${JSON.stringify(data)}`);
+            showScreen('resultsScreen');
+
+            // ✅ IMPORTANT: Ensure timer and answers are hidden when showing final results
+            timerElement.style.display = 'none';
+            answersContainer.style.display = 'none';
+            playerProgress.style.display = 'none';
+            waitingForHost.style.display = 'none';
+
+            let resultsHTML = '';
+
+            // ✅ FIXED: Handle both cases for property names (yourRank vs YourRank)
+            const yourRank = data.yourRank || data.YourRank;
+            const yourScore = data.yourScore || data.YourScore;
+            const yourProgress = data.yourProgress || data.YourProgress;
+            const isInTopThree = data.isInTopThree || data.IsInTopThree || (yourRank && yourRank <= 3);
+
+            if (yourRank) {
+                // Player-specific results with top 3 emphasis
+                const medal = ['🥇', '🥈', '🥉'][yourRank - 1] || '🏅';
+
+                resultsHTML += `
+                            <div class="status ${isInTopThree ? 'success' : 'info'}">
+                                <h3>${medal} Your Final Result ${isInTopThree ? '🎉 TOP 3! 🎉' : ''}</h3>
+                                <div class="player-stats">
+                                    <div class="stat-card">
+                                        <div class="stat-number">#${yourRank}</div>
+                                        <div>Final Rank</div>
+                                    </div>
+                                    <div class="stat-card">
+                                        <div class="stat-number">${yourScore}</div>
+                                        <div>Final Score</div>
+                                    </div>
+                                    <div class="stat-card">
+                                        <div class="stat-number">${yourProgress}</div>
+                                        <div>Accuracy</div>
+                                    </div>
+                                </div>
+                                <p>Out of ${data.totalPlayers || data.TotalPlayers} players</p>
+                                ${isInTopThree ? '<p><strong>🌟 Congratulations! You\'re in the Top 3! 🌟</strong></p>' : ''}
+                            </div>
+                        `;
+            }
+
+            // Display Top 3 Players with special emphasis
+            const topThreePlayers = data.topThreePlayers || data.TopThreePlayers;
+            if (topThreePlayers && topThreePlayers.length > 0) {
+                resultsHTML += `
+                            <div class="top-three-section">
+                                <h3>🏆 TOP 3 CHAMPIONS 🏆</h3>
+                                <div class="top-three-podium">
+                        `;
+
+                topThreePlayers.forEach((player, index) => {
+                    const medals = ['🥇', '🥈', '🥉'];
+                    const colors = ['#FFD700', '#C0C0C0', '#CD7F32'];
+                    const positions = ['👑 CHAMPION', '🥈 RUNNER-UP', '🥉 THIRD PLACE'];
+
+                    resultsHTML += `
+                                <div class="champion-card" style="border: 3px solid ${colors[index]}; background: linear-gradient(135deg, ${colors[index]}22, white);">
+                                    <div class="champion-medal">${medals[index]}</div>
+                                    <div class="champion-position">${positions[index]}</div>
+                                    <div class="champion-name">${player.userName || player.UserName}</div>
+                                    <div class="champion-score">${player.score || player.Score} pts</div>
+                                    <div class="champion-accuracy">${player.progress || player.Progress}</div>
+                                </div>
+                            `;
+                });
+
+                resultsHTML += `
+                                </div>
+                            </div>
+                        `;
+            }
+
+            resultsHTML += '<h3>📊 Final Leaderboard</h3>';
+
+            const leaderboard = data.finalLeaderboard || data.FinalLeaderboard || data.topPlayers || [];
+            leaderboard.forEach((player, index) => {
+                const medal = ['🥇', '🥈', '🥉'][index] || '🏅';
+                const isYou = yourRank && (player.rank === yourRank || player.Rank === yourRank);
+                const isTopThree = index < 3;
+
+                resultsHTML += `
+                            <div class="leaderboard-item ${isTopThree ? 'top-three' : ''}" ${isYou ? 'style="border-left: 5px solid #ffd700; background: #fff8dc;"' : ''}>
+                                <div>
+                                    <span class="rank">${medal} #${player.rank || player.Rank || index + 1}</span>
+                                    <strong>${player.userName || player.UserName}${isYou ? ' (You)' : ''}</strong>
+                                    ${isTopThree ? '<span class="top-badge">TOP 3</span>' : ''}
+                                </div>
+                                <div class="rank">${player.Score || player.score} pts</div>
+                            </div>
+                        `;
+            });
+
+            finalResults.innerHTML = resultsHTML;
+        }
+
+        function dedupePlayersByName(players) {
+            try {
+                const map = new Map();
+                (players || []).forEach(p => {
+                    const key = ((p.name || p.userName || '') + '').toUpperCase().trim();
+                    if (!key) return;
+                    const existing = map.get(key);
+                    if (!existing) {
+                        map.set(key, p);
+                        return;
+                    }
+                    const tNew = p.joinedAt ? new Date(p.joinedAt).getTime() : 0;
+                    const tOld = existing.joinedAt ? new Date(existing.joinedAt).getTime() : 0;
+                    const preferNew = (p.isConnected && !existing.isConnected) ||
+                        (tNew > tOld) ||
+                        (tNew === tOld && (String(p.playerId || p.id || '') > String(existing.playerId || existing.id || '')));
+                    if (preferNew) map.set(key, p);
+                });
+                return Array.from(map.values());
+            } catch (_) {
+                return players || [];
+            }
+        }
+
+        // Add updateLobbyDisplay function for players - Enhanced version with better auto-display
+        function updateLobbyDisplay(data) {
+            // Only show in waiting screen
+            if (!waitingScreen.classList.contains('active')) {
+                console.log('⚠️ Skipping lobby update - not in waiting screen');
+                return;
+            }
+
+            // Ensure data has proper structure with fallbacks
+            const rawPlayers = (data && Array.isArray(data.players)) ? data.players : [];
+            const players = dedupePlayersByName(rawPlayers);
+            const playerCount = players.length;
+
+            console.log(`🔍 updateLobbyDisplay called with playerCount: ${playerCount}, players: ${players.length}`);
+
+            let playersHTML = `
+                        <div class="player-list">
+                            <h3>👥 Players in Game (${playerCount})</h3>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; margin-top: 15px;">
+                    `;
+
+            if (players && players.length > 0) {
+                players.forEach(player => {
+                    const statusIcon = player.isConnected !== false ? '🟢' : '🔴';
+                    const isYou = player.name === playerName || player.userName === playerName;
+
+                    playersHTML += `
+                                <div style="
+                                    padding: 10px;
+                                    background: ${isYou ? '#e8f5e8' : '#f8f9fa'};
+                                    border: ${isYou ? '2px solid #28a745' : '1px solid #ddd'};
+                                    border-radius: 8px;
+                                    text-align: center;
+                                    transition: transform 0.2s;
+                                    animation: fadeIn 0.3s ease-in;
+                                " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                                    <div style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                        <span style="font-size: 14px;">${statusIcon}</span>
+                                        <strong style="color: ${isYou ? '#155724' : '#333'}; font-size: 14px;">
+                                            ${player.name || player.userName}${isYou ? ' (You)' : ''}
+                                        </strong>
+                                    </div>
+                                </div>
+                            `;
+                });
+            } else {
+                playersHTML += '<p style="text-align: center; color: #666; padding: 20px; font-style: italic;">Waiting for other players to join...</p>';
+            }
+
+            playersHTML += '</div></div>';
+
+            // ✅ ALWAYS UPDATE: Update or create the lobby section in waiting info
+            const existingLobby = waitingInfo.querySelector('.player-list');
+            if (existingLobby) {
+                // Replace existing lobby with smooth transition
+                existingLobby.style.opacity = '0.5';
+                setTimeout(() => {
+                    existingLobby.outerHTML = playersHTML;
+                    console.log(`✅ Lobby display UPDATED: ${playerCount} players, ${players.length} in list`);
+                }, 100);
+            } else {
+                // Create new lobby section
+                waitingInfo.innerHTML += playersHTML;
+                console.log(`✅ Lobby display CREATED: ${playerCount} players, ${players.length} in list`);
+            }
+        }
+
+        // Add debug button to manually request lobby info
+        function addRequestLobbyControl() {
+            if (document.getElementById('requestLobbyControl')) return; // Already added
+
+            const requestLobbyHTML =
+                `<div id="requestLobbyControl" style="background: #e8f4fd; padding: 10px; border-radius: 8px; margin: 10px 0; border: 2px solid #17a2b8; text-align: center;">
+                            <p style="margin: 5px 0; font-size: 12px; color: #0c5460;">
+                                ✅ Player list updates automatically when players join/leave
+                            </p>
+                            <button class="btn" onclick="requestLobbyUpdate()" style="background: #17a2b8; font-size: 14px;">📋 Manual Refresh</button>
+                        </div>`;
+
+            waitingInfo.insertAdjacentHTML('beforeend', requestLobbyHTML);
+        }
+
+        async function requestLobbyUpdate() {
+            if (!connection || !currentRoomCode) {
+                showStatus('❌ No connection or room code available', 'error');
+                return;
+            }
+
+            try {
+                console.log('🔄 Requesting room status...');
+                await connection.invoke("GetRoomStatus");
+                showStatus('Room status requested', 'info');
+            } catch (err) {
+                console.log(`❌ Error requesting room status: ${err}`);
+                showStatus('Failed to request room status: ' + err.message, 'error');
+            }
+        }
+
+        // Utility functions
+        function showWaitingForHost() {
+            waitingForHost.style.display = 'block';
+        }
+
+        function hideWaitingForHost() {
+            waitingForHost.style.display = 'none';
+        }
+
+        // Timer functions
+        function startTimer(seconds = 10) {
+            clearTimer();
+            let timeLeft = seconds;
+
+            const updateTimer = () => {
+                timerElement.textContent = `⏱️ ${Math.ceil(timeLeft)}s`;
+
+                if (timeLeft <= 0) {
+                    clearTimer();
+                    timerElement.textContent = "⏰ Time's up!";
+
+                    // Disable all answer buttons if not answered
+                    if (!hasAnswered) {
+                        const buttons = answersContainer.querySelectorAll('.answer-btn');
+                        buttons.forEach(btn => btn.disabled = true);
+                    }
+                } else {
+                    timeLeft -= 0.1;
+                }
+            };
+
+            updateTimer();
+            timer = setInterval(updateTimer, 100);
+        }
+
+        function clearTimer() {
+            if (timer) {
+                clearInterval(timer);
+                timer = null;
+            }
+        }
+
+        // UI Helper functions
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function resetToJoin() {
+            console.log('🔄 Resetting to join screen...');
+
+            // Clear game state
+            currentRoomCode = '';
+            playerName = '';
+            playerId = '';
+            hasAnswered = false;
+            selectedAnswers = []; // ✅ NEW: Clear selected answers
+            currentQuestionType = 'SingleChoice'; // ✅ NEW: Reset question type
+
+            // Clear timers
+            clearTimer();
+
+            // Clear form data
+            roomCodeInput.value = '';
+            userNameInput.value = '';
+
+            // Reset button states
+            joinGameBtn.disabled = false;
+            joinGameBtn.textContent = '🎮 Join Game';
+
+            // Clear displays
+            waitingInfo.innerHTML = '';
+            gameInfo.innerHTML = '';
+            questionText.innerHTML = '';
+            answersContainer.innerHTML = '';
+            answerResult.innerHTML = '';
+            playerProgress.style.display = 'none';
+            waitingForHost.style.display = 'none';
+            finalResults.innerHTML = '';
+
+            // Show join screen
+            showScreen('joinScreen');
+
+            // Update debug info
+            updateDebugInfo();
+
+            // Clear session data
+            clearPreviousSession();
+
+            console.log('✅ Reset to join screen completed');
+        }
+
+        function showStatus(message, type = 'info') {
+            // const statusDiv = document.createElement('div');
+            // statusDiv.className = `status ${type}`;
+            // statusDiv.textContent = message;
+            // statusMessages.appendChild(statusDiv);
+
+            // // Auto-remove after 3 seconds
+            // setTimeout(() => {
+            //     if (statusDiv.parentNode) {
+            //         statusDiv.parentNode.removeChild(statusDiv);
+            //     }
+            // }, 3000);
+        }
+
+        function updateConnectionStatus(connected) {
+            connectionStatus.textContent = connected ? 'Connected' : 'Disconnected';
+            connectionStatus.className = `connection-status ${connected ? 'connected' : 'disconnected'}`;
+
+            // Update debug info
+            const debugConnectionState = document.getElementById('debugConnectionState');
+            if (debugConnectionState) {
+                debugConnectionState.textContent = connected ? 'Connected' : 'Disconnected';
+                debugConnectionState.style.color = connected ? 'green' : 'red';
+            }
+        }
+
+        function updateDebugInfo() {
+            const debugRoomCode = document.getElementById('debugRoomCode');
+            const debugPlayerName = document.getElementById('debugPlayerName');
+
+            if (debugRoomCode) {
+                debugRoomCode.textContent = currentRoomCode || 'None';
+            }
+
+            if (debugPlayerName) {
+                debugPlayerName.textContent = playerName || 'None';
+            }
+        }
+
+        // Event listeners
+        joinGameBtn.addEventListener('click', async () => {
+            const roomCode = roomCodeInput.value.trim();
+            const userName = userNameInput.value.trim();
+
+            if (!roomCode || !userName) {
+                showStatus('Please enter both room code and your name', 'error');
+                return;
+            }
+
+            // ✅ NEW: Basic client-side validation for username
+            if (userName.length < 2) {
+                showStatus('Username must be at least 2 characters long', 'error');
+                userNameInput.focus();
+                return;
+            }
+
+            if (userName.length > 50) {
+                showStatus('Username must be less than 50 characters', 'error');
+                userNameInput.focus();
+                return;
+            }
+
+            // Check for invalid characters
+            const invalidChars = /[<>\"'&]/;
+            if (invalidChars.test(userName)) {
+                showStatus('Username contains invalid characters. Please use only letters, numbers, and basic symbols.', 'error');
+                userNameInput.focus();
+                return;
+            }
+
+            try {
+                joinGameBtn.disabled = true;
+                joinGameBtn.textContent = '🔄 Connecting...';
+                showStatus('Connecting to server...', 'info');
+
+                // Ensure connection is established
+                await initConnection();
+
+                // Invoke the JoinGame method
+                await connection.invoke("JoinGame", roomCode, userName);
+
+            } catch (err) {
+                console.error('Join Game Error:', err);
+                showStatus('Failed to join game: ' + err.message, 'error');
+
+                // Reset button state on error
+                joinGameBtn.disabled = false;
+                joinGameBtn.textContent = '🎮 Join Game';
+            }
+        });
+
+        openHostPageBtn.addEventListener('click', () => {
+            window.open('host.html', '_blank');
+        });
+
+        leaveGameBtn.addEventListener('click', () => {
+            if (confirm('Are you sure you want to leave the game?')) {
+                resetToJoin();
+                if (connection) {
+                    connection.stop();
+                }
+            }
+        });
+
+        playAgainBtn.addEventListener('click', () => {
+            window.location.reload();
+        });
+
+        // Auto-load previous session if available
+        window.addEventListener('load', () => {
+            const previousSession = getPreviousSession();
+            if (previousSession) {
+                roomCodeInput.value = previousSession.roomCode;
+                userNameInput.value = previousSession.userName;
+            }
+        });
+    </script>
+</body>
+</html>

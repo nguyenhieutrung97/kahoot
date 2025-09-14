@@ -1,124 +1,142 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { GameHeader } from "@/components/ui/GameHeader";
+import { GameInput } from "@/components/ui/GameInput";
+import { GameButton } from "@/components/ui/GameButton";
+import { useGameHub } from "@/hooks/useGameHub";
+import { buildNavigationUrl } from "@/lib/game-utils";
+import { isValidPlayerName, isValidRoomCode } from "@/lib/game-utils";
 
-const AVATAR_COLORS = [
-  "bg-red-600",
-  "bg-gray-600",
-  "bg-blue-600",
-  "bg-green-600",
-  "bg-orange-600",
-  "bg-purple-600",
-  "bg-indigo-600",
-  "bg-teal-600",
-  "bg-pink-600",
-  "bg-yellow-600",
-];
+const SESSION_KEY = "kahoot_player_session";
 
-const getRandomAvatar = (name: string) => {
-  const colorIndex = Math.floor(Math.random() * AVATAR_COLORS.length);
-  const initials = name
-    .split(" ")
-    .map((word) => word.charAt(0))
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-
-  return {
-    color: AVATAR_COLORS[colorIndex],
-    initials: initials || "?",
-  };
+type Session = {
+  roomCode: string;
+  userName: string;
+  playerId?: string;
+  timestamp: number;
 };
 
-export default function JoinRoom() {
-  const [name, setName] = useState("");
-  const [avatar, setAvatar] = useState<{
-    color: string;
-    initials: string;
-  } | null>(null);
+export default function JoinPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [roomCode, setRoomCode] = useState("");
+  const [userName, setUserName] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const didJoinRef = useRef(false);
 
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newName = e.target.value;
-    setName(newName);
+  const { connected, joinGame } = useGameHub({
+    onJoinedGame: (payload) => {
+      // Persist session
+      try {
+        const session: Session = { roomCode: payload.roomCode || roomCode, userName: payload.userName || userName, playerId: payload.playerId, timestamp: Date.now() };
+        localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      } catch (e) {}
 
-    if (newName.trim()) {
-      setAvatar(getRandomAvatar(newName));
-    } else {
-      setAvatar(null);
+      // Navigate to lobby with params
+      const url = buildNavigationUrl('/lobby', { roomCode: payload.roomCode || roomCode, name: payload.userName || userName });
+      router.push(url);
+    },
+    onError: (msg) => {
+      setError(msg || 'Failed to connect');
+      setIsLoading(false);
+      didJoinRef.current = false;
     }
-  };
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (name.trim() && avatar) {
-      const searchParams = new URLSearchParams(window.location.search);
-      const roomId = searchParams.get("roomId") || "ROOM123";
-      router.push(
-        `/lobby?roomId=${encodeURIComponent(roomId)}&name=${encodeURIComponent(name.trim())}`,
-      );
+  useEffect(() => {
+    // Prefill roomCode from URL (do not modify the value)
+    let q: string | null = null;
+    try {
+      q = searchParams?.get('roomCode');
+      if (q) setRoomCode(q);
+    } catch {}
+
+    // Restore previous session (if <1h). Only apply saved roomCode when no roomCode
+    // was provided via URL — we must not overwrite the URL mapping.
+    try {
+      const raw = localStorage.getItem(SESSION_KEY);
+      if (raw) {
+        const parsed: Session = JSON.parse(raw);
+        if (Date.now() - (parsed.timestamp || 0) < 3600_000) {
+          if (!q) setRoomCode(parsed.roomCode || '');
+          setUserName(parsed.userName || '');
+        } else {
+          localStorage.removeItem(SESSION_KEY);
+        }
+      }
+    } catch (e) {}
+  }, []);
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    setError("");
+
+    if (!isValidRoomCode(roomCode)) {
+      setError('Please enter a valid room code');
+      return;
     }
-  };
 
-  const handleBack = () => {
-    router.push("/");
+    if (!isValidPlayerName(userName)) {
+      setError('Please enter a valid name (1-50 chars)');
+      return;
+    }
+
+    if (!connected) {
+      setError('Connecting to server...');
+    }
+
+    if (didJoinRef.current) return;
+    didJoinRef.current = true;
+    setIsLoading(true);
+
+    try {
+      await joinGame(roomCode.trim(), userName.trim());
+      // onJoinedGame will handle navigation
+    } catch (err: any) {
+      setError(err?.message || 'Failed to join game');
+      setIsLoading(false);
+      didJoinRef.current = false;
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm p-6 border-b-4 border-red-600">
-        <h1 className="text-2xl font-bold text-red-600 uppercase tracking-wide">PLAYER REGISTRATION</h1>
-      </header>
+      <GameHeader title="JOIN GAME" withSvgBorder />
 
       <main className="flex items-center justify-center min-h-[calc(100vh-120px)]">
-        <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full mx-4 border-2 border-gray-200">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 uppercase tracking-wide mb-4">
-              ENTER YOUR NAME
-            </h2>
-            <div className="w-16 h-1 bg-red-600 mx-auto mb-4"></div>
-            <p className="text-gray-600 font-medium">Precision starts with identity</p>
+        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full mx-4 border-2 border-gray-200">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 uppercase tracking-wide mb-2">Join Room</h2>
+            <p className="text-gray-600 text-sm">Enter room code and your display name</p>
           </div>
 
-          {avatar && (
-            <div className="flex justify-center mb-6">
-              <div
-                className={`w-20 h-20 ${avatar.color} rounded-full flex items-center justify-center text-white text-2xl font-bold border-4 border-gray-200`}
-              >
-                {avatar.initials}
-              </div>
-            </div>
-          )}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <GameInput
+              type="text"
+              value={roomCode}
+              onChange={(e) => setRoomCode(e.target.value)}
+              placeholder="Room code"
+              fullWidth
+              disabled={isLoading}
+            />
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <input
-                type="text"
-                value={name}
-                onChange={handleNameChange}
-                placeholder="YOUR NAME"
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded font-medium text-center uppercase tracking-wide focus:outline-none focus:border-red-600 focus:ring-0 transition-colors"
-                autoFocus
-              />
-            </div>
+            <GameInput
+              type="text"
+              value={userName}
+              onChange={(e) => setUserName(e.target.value)}
+              placeholder="Your name"
+              fullWidth
+              disabled={isLoading}
+            />
 
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={handleBack}
-                className="flex-1 px-4 py-3 border-2 border-gray-300 text-gray-700 rounded font-bold uppercase tracking-wide hover:bg-gray-50 transition-colors"
-              >
-                BACK
-              </button>
-              <button
-                type="submit"
-                disabled={!name.trim()}
-                className="flex-1 px-4 py-3 bg-red-600 text-white rounded font-bold uppercase tracking-wide hover:bg-red-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed border-2 border-red-600 disabled:border-gray-300"
-              >
-                JOIN GAME
-              </button>
-            </div>
+            {error && <div className="text-sm text-red-600">{error}</div>}
+
+            <GameButton type="submit" variant="primary" size="lg" fullWidth loading={isLoading} disabled={isLoading}>
+              Join Game
+            </GameButton>
           </form>
         </div>
       </main>
