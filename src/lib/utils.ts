@@ -35,8 +35,9 @@ export function getDeterministicAvatar(name: string): { color: string; initials:
     hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
   }
   const index = hash % AVATAR_COLORS.length;
+  const color = (AVATAR_COLORS[index] ?? AVATAR_COLORS[0]) as string;
   return {
-    color: AVATAR_COLORS[index],
+    color,
     initials: getInitialsFromName(name),
   };
 }

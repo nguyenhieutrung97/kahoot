@@ -1,3 +1,5 @@
+import React from 'react';
+
 // Performance utilities for Next.js
 
 export const debounce = <T extends (...args: any[]) => any>(

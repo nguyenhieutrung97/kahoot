@@ -22,8 +22,9 @@ export const getRandomAvatar = (name: string): Avatar => {
     .toUpperCase()
     .slice(0, 2);
 
+  const color = AVATAR_COLORS[colorIndex] ?? AVATAR_COLORS[0];
   return {
-    color: AVATAR_COLORS[colorIndex],
+    color,
     initials: initials || DEFAULTS.FALLBACK_INITIALS,
   };
 };
@@ -32,15 +33,15 @@ export const getRandomAvatar = (name: string): Avatar => {
  * Gets icon theme for a specific question number
  */
 export const getQuestionIconTheme = (questionNumber: number) => {
-  return QUESTION_THEMES[questionNumber % QUESTION_THEMES.length];
+  return QUESTION_THEMES[questionNumber % QUESTION_THEMES.length] ?? QUESTION_THEMES[0];
 };
 
 /**
  * Gets the appropriate icon for an answer based on question theme
  */
 export const getAnswerIcon = (answerId: number, questionNumber: number = 1): string => {
-  const themeIcons = getQuestionIconTheme(questionNumber);
-  return themeIcons[answerId as keyof typeof themeIcons] || '❓';
+  const themeIcons: any = getQuestionIconTheme(questionNumber) || {};
+  return themeIcons[answerId] || themeIcons[String(answerId)] || '❓';
 };
 
 /**

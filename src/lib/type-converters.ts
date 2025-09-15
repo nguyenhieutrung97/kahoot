@@ -20,14 +20,15 @@ const ANSWER_ICONS = ['🌟', '🔥', '💧', '🌪️', '🎯', '⚡'];
 export const convertApiAnswerToGameAnswer = (apiAnswer: Answer, index: number): GameAnswer => {
   const colorIndex = index % ANSWER_COLORS.length;
   const iconIndex = index % ANSWER_ICONS.length;
+  const colorObj = (ANSWER_COLORS[colorIndex] ?? ANSWER_COLORS[0]) as { color: string; hoverColor: string };
   
   return {
     // Use stable 1-based index for UI answer IDs to prevent GUID->number collisions
     id: index + 1,
     text: apiAnswer.title || '',
-    color: ANSWER_COLORS[colorIndex].color,
-    hoverColor: ANSWER_COLORS[colorIndex].hoverColor,
-    icon: ANSWER_ICONS[iconIndex],
+  color: colorObj.color,
+  hoverColor: colorObj.hoverColor,
+    icon: ANSWER_ICONS[iconIndex] || '❓',
   };
 };
 
@@ -44,12 +45,12 @@ export const convertApiQuestionToGameQuestion = (apiQuestion: Question): GameQue
   const correctAnswer = correctIndex >= 0 ? answers[correctIndex] : undefined;
 
   return {
-    id: apiQuestion.id,
+    id: apiQuestion.id ?? '',
     text: apiQuestion.title || '',
     answers,
     correctAnswerId: correctAnswer?.id,
-    timeLimit: apiQuestion.timeLimitSeconds,
-  };
+    timeLimit: apiQuestion.timeLimitSeconds ?? undefined,
+  } as GameQuestion;
 };
 
 /**
@@ -76,14 +77,17 @@ export const convertGameQuestionToApiQuestion = (gameQuestion: GameQuestion, gam
     return apiAnswer;
   });
 
-  return {
-    id: gameQuestion.id,
+  const result: Question = {
     gameId: gameId || null,
     title: gameQuestion.text,
-    timeLimitSeconds: gameQuestion.timeLimit,
-    type: QuestionType.SingleChoice, // Default to single choice
+    type: QuestionType.SingleChoice,
     answers,
   };
+
+  if (gameQuestion.id) result.id = gameQuestion.id;
+  if (gameQuestion.timeLimit !== undefined) result.timeLimitSeconds = gameQuestion.timeLimit;
+
+  return result;
 };
 
 /**

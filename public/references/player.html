@@ -936,18 +936,6 @@
                 // Force update lobby display
                 updateLobbyDisplay(initialLobbyData);
 
-                // Also automatically request fresh lobby data to ensure we have the latest info
-                setTimeout(async () => {
-                    try {
-                        if (connection && currentRoomCode) {
-                            await connection.invoke("GetRoomStatus");
-                            console.log('🔄 Auto-requested fresh lobby data after joining');
-                        }
-                    } catch (err) {
-                        console.log(`❌ Auto-request lobby failed: ${err}`);
-                    }
-                }, 100); // Reduced delay to 100ms for faster response
-
                 // Handle different game states appropriately
                 if (data.gameState === 'InProgress') {
                     showScreen('gameScreen');

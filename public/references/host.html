@@ -593,8 +593,8 @@
         <div id="setupScreen" class="screen active">
             <h1>Kahoot Advanced Game - Host</h1>
 
-            <!-- Authentication Section -->
-            <div class="auth-section">
+            <!-- Authentication Section - DISABLED -->
+            <div class="auth-section" style="display: none;">
                 <h3>Host Authentication</h3>
                 <p style="margin-bottom: 15px;">You need to provide a valid authentication token to create and manage games.</p>
 
@@ -679,8 +679,8 @@
         // Global variables
         let connection;
         let currentRoomCode = '';
-        let authToken = '';
-        let isTokenValid = false;
+        let authToken = ''; // DISABLED: Token authentication disabled
+        let isTokenValid = true; // DISABLED: Always true now
         let totalPlayersInGame = 0;
         let currentAutoShowResults = true; // Track the current setting
 
@@ -799,7 +799,6 @@
             tokenStatus.textContent = validation.message;
 
             isTokenValid = validation.valid;
-            createRoomBtn.disabled = !validation.valid;
 
             if (validation.valid) {
                 authToken = authTokenInput.value.trim();
@@ -822,7 +821,7 @@
                  testTokenBtn.textContent = '🧪 Testing...';
                  showStatus('Testing token with API...', 'info');
                  // 'http://localhost:5000/api/games'
-                 const response = await fetch('http://localhost:5000/api/games', {
+                 const response = await fetch('https://api.bdkahoot.trungtero.com/api/games', {
                      method: 'GET',
                      headers: {
                          'Authorization': `Bearer ${authToken}`,
@@ -847,7 +846,7 @@
                  console.log(`❌ Network error testing token: ${error.message}`);
 
                  if (error.message.includes('ERR_CERT_AUTHORITY_INVALID')) {
-                     showStatus('⚠️ SSL Certificate issue - Try accepting the certificate at http://localhost:5000/', 'error');
+                     showStatus('⚠️ SSL Certificate issue - Try accepting the certificate at https://api.bdkahoot.trungtero.com/', 'error');
                  } else {
                      showStatus(`❌ Network error: ${error.message}`, 'error');
                  }
@@ -855,7 +854,7 @@
              }
          }
 
-        // Initialize SignalR connection with authentication
+        // Initialize SignalR connection without authentication (DISABLED)
         async function initConnection() {
             try {
                 if (connection && connection.state === signalR.HubConnectionState.Connected) {
@@ -872,20 +871,12 @@
                     }
                 }
 
-                // Validate token before attempting connection
-                if (!authToken || !isTokenValid) {
-                    throw new Error("Valid authentication token required");
-                }
+                // DISABLED: Token validation removed
+                console.log("🔌 Token authentication disabled - connecting without authentication");
 
-                // Create new connection with authentication
+                // Create new connection without authentication
                 const connectionBuilder = new signalR.HubConnectionBuilder()
-                    // .withUrl("https://localhost:7007/gameHub", {
-                    .withUrl("http://localhost:5000/gameHub", {
-                        accessTokenFactory: () => {
-                            console.log(`🔑 Token factory called - Token length: ${authToken.length} chars`);
-                            console.log("🔑 Full token being sent:", authToken.substring(0, 50) + "...");
-                            return authToken;
-                        },
+                    .withUrl("https://api.bdkahoot.trungtero.com/gameHub", {
                         skipNegotiation: true,
                         transport: signalR.HttpTransportType.WebSockets
                     })
@@ -898,7 +889,7 @@
                 setupSignalRHandlers();
 
                 // Start connection
-                console.log("🔌 Starting host connection with authentication...");
+                console.log("🔌 Starting host connection without authentication...");
                 await connection.start();
 
                 console.log("✅ Connected to SignalR Hub as host");
@@ -908,14 +899,7 @@
             } catch (err) {
                 console.log(`❌ Failed to connect: ${err}`);
                 updateConnectionStatus(false);
-
-                if (err.message && err.message.includes("401")) {
-                    showStatus("Authentication failed: Invalid or expired token", 'error');
-                } else if (err.message && err.message.includes("unauthorized")) {
-                    showStatus("Authorization failed: Token may not have required permissions", 'error');
-                } else {
-                    showStatus("Failed to connect as host: " + err.message, 'error');
-                }
+                showStatus("Failed to connect as host: " + err.message, 'error');
                 throw err;
             }
         }
@@ -1294,42 +1278,15 @@
             console.log(`🔍 DEBUG: hostAnswersDisplay.innerHTML length:`, hostAnswersDisplay.innerHTML.length);
         }
 
-        // Dedupe players by normalized name, prefer most recent joinedAt and connected status
-        function dedupePlayersByName(players) {
-            try {
-                const map = new Map();
-                (players || []).forEach(p => {
-                    const key = ((p.name || p.userName || '') + '').toUpperCase().trim();
-                    if (!key) return;
-                    const existing = map.get(key);
-                    if (!existing) {
-                        map.set(key, p);
-                        return;
-                    }
-                    const tNew = p.joinedAt ? new Date(p.joinedAt).getTime() : 0;
-                    const tOld = existing.joinedAt ? new Date(existing.joinedAt).getTime() : 0;
-                    const preferNew = (p.isConnected && !existing.isConnected) ||
-                        (tNew > tOld) ||
-                        (tNew === tOld && (String(p.playerId || p.id || '') > String(existing.playerId || existing.id || '')));
-                    if (preferNew) map.set(key, p);
-                });
-                return Array.from(map.values());
-            } catch (_) {
-                return players || [];
-            }
-        }
-
         function updateLobbyDisplay(data) {
-            const rawPlayers = (data && Array.isArray(data.players)) ? data.players : [];
-            const players = dedupePlayersByName(rawPlayers);
             let playersHTML = `
                         <div class="player-list">
-                            <h3>Players in Lobby (${players.length})</h3>
+                            <h3>Players in Lobby (${data.playerCount})</h3>
                             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 10px;">
                     `;
 
-            if (players && players.length > 0) {
-                players.forEach(player => {
+            if (data.players && data.players.length > 0) {
+                data.players.forEach(player => {
                     const statusIcon = player.isConnected ? '??' : '??';
                     playersHTML += `
                                 <div class="player-item">
@@ -1350,7 +1307,7 @@
             // Update game stats
             const playerCountCard = gameStats.querySelector('.stat-card:nth-child(3)');
             if (playerCountCard) {
-                playerCountCard.querySelector('.stat-number').textContent = players.length;
+                playerCountCard.querySelector('.stat-number').textContent = data.playerCount;
             }
 
             playersHTML += '</div>';
@@ -1654,68 +1611,21 @@
         }
 
         testTokenBtn.addEventListener('click', async () => {
-            if (!authToken) {
-                showStatus('Please provide a token first', 'error');
-                return;
-            }
-
-            try {
-                testTokenBtn.disabled = true;
-                testTokenBtn.textContent = '🧪 Testing...';
-                showStatus('Testing token with API...', 'info');
-
-                const response = await fetch('http://localhost:5000/api/games', {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (response.ok) {
-                    console.log('✅ Token validated successfully with API');
-                    showStatus('✅ Token works with API - Ready for SignalR!', 'success');
-                    return true;
-                } else if (response.status === 401) {
-                    console.log('❌ Token validation failed - 401 Unauthorized');
-                    showStatus('❌ Token is invalid or expired', 'error');
-                    return false;
-                } else {
-                    console.log(`❌ API call failed with status: ${response.status}`);
-                    showStatus(`❌ API call failed: ${response.status}`, 'error');
-                    return false;
-                }
-            } catch (error) {
-                console.log(`❌ Network error testing token: ${error.message}`);
-
-                if (error.message.includes('ERR_CERT_AUTHORITY_INVALID')) {
-                    showStatus('⚠️ SSL Certificate issue - Try accepting the certificate at http://localhost:5000/', 'error');
-                } else {
-                    showStatus(`❌ Network error: ${error.message}`, 'error');
-                }
-                return false;
-            }
+            // DISABLED: Token testing disabled
+            showStatus('Token authentication is disabled', 'info');
+            console.log('🔌 Token testing disabled - authentication is not required');
         });
 
         clearTokenBtn.addEventListener('click', () => {
-            authTokenInput.value = '';
-            authToken = '';
-            isTokenValid = false;
-            tokenStatus.style.display = 'none';
-            createRoomBtn.disabled = true;
-            console.log('?Token cleared');
+            // DISABLED: Token clearing disabled
+            showStatus('Token authentication is disabled', 'info');
+            console.log('🔌 Token clearing disabled - authentication is not required');
         });
 
-        // Auto-validate token on input
+        // DISABLED: Auto-validate token on input
         authTokenInput.addEventListener('input', () => {
-            const token = authTokenInput.value.trim();
-            if (token.length > 50) {
-                const validation = validateToken(token);
-                updateTokenStatus(validation);
-            } else if (token.length === 0) {
-                tokenStatus.style.display = 'none';
-                isTokenValid = false;
-            }
+            // DISABLED: Token validation disabled
+            console.log('🔌 Token input validation disabled - authentication is not required');
         });
 
         createRoomBtn.addEventListener('click', async () => {
@@ -1727,26 +1637,14 @@
                 return;
             }
 
-            if (!isTokenValid || !authToken) {
-                showStatus('Please provide a valid authentication token', 'error');
-                return;
-            }
+            // DISABLED: Token validation removed
+            console.log('🔌 Token authentication disabled - proceeding without token validation');
 
             try {
-                createRoomBtn.disabled = true;
-                showStatus('Testing token and creating room...', 'info');
+                showStatus('Creating room...', 'info');
 
-                // First test the token with API
-                console.log('🔍 Testing token with API before SignalR connection...');
-                const tokenWorks = await testTokenWithAPI();
-
-                if (!tokenWorks) {
-                    showStatus('❌ Token validation failed. Cannot create room.', 'error');
-                    return;
-                }
-
-                // Token works, now try SignalR
-                console.log('✅ Token verified, connecting to SignalR...');
+                // Connect to SignalR without token validation
+                console.log('🔌 Connecting to SignalR without authentication...');
                 await initConnection();
 
                 console.log(`🏠 Creating room for game: ${gameId} (Manual Mode)`);
@@ -1754,19 +1652,7 @@
 
             } catch (err) {
                 console.log(`❌ Error creating room: ${err}`);
-
-                // Provide specific error messages
-                if (err.message && err.message.includes("401")) {
-                    showStatus('❌ Unauthorized: Token may be expired or invalid', 'error');
-                } else if (err.message && err.message.includes("403")) {
-                    showStatus('❌ Forbidden: Token does not have required permissions', 'error');
-                } else if (err.message && err.message.includes("Failed to invoke")) {
-                    showStatus('❌ SignalR Error: ' + err.message, 'error');
-                } else {
-                    showStatus('❌ Failed to create room: ' + err.message, 'error');
-                }
-            } finally {
-                createRoomBtn.disabled = !isTokenValid;
+                showStatus('❌ Failed to create room: ' + err.message, 'error');
             }
         });
 

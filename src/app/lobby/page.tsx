@@ -31,6 +31,9 @@ const generatePlayerId = () => {
 const getAvatar = (name: string) => getDeterministicAvatar(name);
 
 export default function Lobby() {
+  // Number of slots to display in the lobby
+  const maxSlots = 12;
+
   const searchParams = useSearchParams();
   const router = useRouter();
   const gameId = searchParams.get("gameId") || "";
@@ -40,6 +43,9 @@ export default function Lobby() {
 
   const [players, setPlayers] = useState<Player[]>([]);
   const didJoinRef = useRef(false); // guard to avoid multiple JoinGame calls in StrictMode
+
+  // Fill empty slots for the UI
+  const emptySlots: null[] = Array(Math.max(0, maxSlots - players.length)).fill(null);
   
   // Debug: analyze raw vs mapped vs deduped players to find duplication sources
   const debugLogPlayers = (label: string, list: any[]) => {
@@ -89,62 +95,6 @@ export default function Lobby() {
     } catch {}
   };
   
-  // Centralized player deduplication. Prefer connectionId when present; otherwise normalize by name.
-  const dedupePlayersByName = (playerList: Player[]): Player[] => {
-    const playerMap = new Map<string, Player>();
-
-    playerList.forEach((player) => {
-      const normalizedName = (player.name || '').toUpperCase().trim();
-      // Key by connectionId if present; otherwise use normalized name.
-      const key = (player.connectionId && String(player.connectionId).trim()) || normalizedName;
-
-      if (!key) return; // skip empty names
-
-      const existing = playerMap.get(key);
-      if (!existing) {
-        // clone to avoid mutating original objects
-        playerMap.set(key, { ...player });
-        return;
-      }
-
-      // Determine which record to prefer. Prefer connected players, then newer joinedAt, then larger id.
-      const curTime = player.joinedAt ? new Date(player.joinedAt).getTime() : 0;
-      const existTime = existing.joinedAt ? new Date(existing.joinedAt).getTime() : 0;
-
-      const curConnected = (player as any).isConnected === undefined ? true : (player as any).isConnected;
-      const existConnected = (existing as any).isConnected === undefined ? true : (existing as any).isConnected;
-
-      const preferCurrent =
-        (curConnected && !existConnected) ||
-        curTime > existTime ||
-        (curTime === existTime && player.id > existing.id);
-
-      if (preferCurrent) {
-        // merge: keep latest data but preserve connection flag if either is connected
-        playerMap.set(key, {
-          ...existing,
-          ...player,
-          joinedAt: player.joinedAt || existing.joinedAt,
-          avatar: player.avatar || existing.avatar,
-        });
-      } else {
-        // ensure we keep the connection status and most complete name
-        playerMap.set(key, {
-          ...existing,
-          name: existing.name || player.name,
-          joinedAt: existing.joinedAt || player.joinedAt,
-          avatar: existing.avatar || player.avatar,
-        });
-      }
-    });
-
-    // Return stable sorted list (oldest first)
-    return Array.from(playerMap.values()).sort((a, b) => {
-      const ta = a.joinedAt ? new Date(a.joinedAt).getTime() : 0;
-      const tb = b.joinedAt ? new Date(b.joinedAt).getTime() : 0;
-      return ta - tb;
-    });
-  };
 
   // Map raw server data to Player objects
   const mapServerPlayers = (rawPlayers: any[]): Player[] => {
@@ -181,15 +131,13 @@ export default function Lobby() {
         debugLogPlayers('JoinedGame/raw', payload.players);
         const serverPlayers = mapServerPlayers(payload.players);
         debugLogPlayers('JoinedGame/mapped', serverPlayers as any);
-        const dedupedPlayers = dedupePlayersByName(serverPlayers);
-        debugLogPlayers('JoinedGame/deduped', dedupedPlayers as any);
-        setPlayers(dedupedPlayers);
+        setPlayers(serverPlayers);
         // Set current player from payload if provided so UI can highlight it immediately
         try {
           const myId = payload.playerId || payload.player?.playerId || payload.player?.id;
           const myName = payload.userName || payload.player?.userName || payload.player?.name || playerName;
           if (myId || myName) {
-            const found = dedupedPlayers.find(p => (p.id && myId && String(p.id) === String(myId)) || (p.name && String(p.name).toUpperCase() === String(myName).toUpperCase()));
+            const found = serverPlayers.find(p => (p.id && myId && String(p.id) === String(myId)) || (p.name && String(p.name).toUpperCase() === String(myName).toUpperCase()));
             if (found) setCurrentPlayer(found);
             else setCurrentPlayer({ id: myId || generatePlayerId(), name: myName || 'You', connectionId: payload.connectionId, avatar: getAvatar(myName || 'You'), joinedAt: payload.joinedAt || new Date().toISOString() });
           }
@@ -202,16 +150,14 @@ export default function Lobby() {
         debugLogPlayers('LobbyInfo/raw', payload.players);
         const serverPlayers = mapServerPlayers(payload.players);
         debugLogPlayers('LobbyInfo/mapped', serverPlayers as any);
-        const dedupedPlayers = dedupePlayersByName(serverPlayers);
-        debugLogPlayers('LobbyInfo/deduped', dedupedPlayers as any);
-        setPlayers(dedupedPlayers);
+        setPlayers(serverPlayers);
         // If we have a session or previous currentPlayer, try to reconcile and keep currentPlayer reference
         try {
           const raw = localStorage.getItem('kahoot_player_session');
           const session = raw ? JSON.parse(raw as string) : null;
           const sessionId = session?.playerId;
           const sessionName = session?.userName;
-          const found = dedupedPlayers.find(p => (sessionId && String(p.id) === String(sessionId)) || (sessionName && String(p.name).toUpperCase() === String(sessionName).toUpperCase()));
+          const found = serverPlayers.find(p => (sessionId && String(p.id) === String(sessionId)) || (sessionName && String(p.name).toUpperCase() === String(sessionName).toUpperCase()));
           if (found) setCurrentPlayer(found);
         } catch {}
       }
@@ -222,14 +168,17 @@ export default function Lobby() {
         debugLogPlayers('LobbyUpdate/raw', payload.players);
         const serverPlayers = mapServerPlayers(payload.players);
         debugLogPlayers('LobbyUpdate/mapped', serverPlayers as any);
-        const dedupedPlayers = dedupePlayersByName(serverPlayers);
-        debugLogPlayers('LobbyUpdate/deduped', dedupedPlayers as any);
-        setPlayers(dedupedPlayers);
+        setPlayers(serverPlayers);
       }
     },
     onPlayerJoined: (payload) => {
-      // Server will send updated lobby info automatically
-      // No need to manually update players here
+      // If the event payload contains a full player list, update it; otherwise, do nothing (wait for LobbyUpdate)
+      if (payload && Array.isArray(payload.players)) {
+        debugLogPlayers('PlayerJoined/raw', payload.players);
+        const serverPlayers = mapServerPlayers(payload.players);
+        debugLogPlayers('PlayerJoined/mapped', serverPlayers as any);
+        setPlayers(serverPlayers);
+      }
     },
     onGameStarted: (payload) => {
       // Navigate to the question page using actual gameId from server
@@ -241,15 +190,8 @@ export default function Lobby() {
     onError: (msg) => setError(msg || "Connection error"),
   });
 
-  // Helper to request fresh lobby info (manual refresh)
-  const requestLobbyUpdate = async () => {
-    try {
-      await requestRoomStatus(joinCode || undefined);
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.log('Failed to request lobby status', err);
-    }
-  };
+
+  // No-op: manual lobby refresh is not supported by the backend
 
   // Get game and questions data - only if gameId looks like a GUID (actual game ID)
   // If it looks like a room code (short string), we'll get game info from SignalR events
@@ -285,33 +227,6 @@ export default function Lobby() {
   // Connect to room via SignalR once we have name+room
   useEffect(() => {
     if (connected && joinCode && playerName && !didJoinRef.current) {
-      // Prevent duplicate join when navigating from /join -> /lobby where join was already invoked.
-      // If we have a recent session saved that matches this room + name, assume we're already joined
-      try {
-        const raw = localStorage.getItem('kahoot_player_session');
-        if (raw) {
-          const parsed = JSON.parse(raw as string);
-          const sessionRoom = parsed?.roomCode;
-          const sessionName = parsed?.userName;
-          const sessionPlayerId = parsed?.playerId;
-          const isRecent = parsed?.timestamp && (Date.now() - parsed.timestamp) < 3600_000;
-
-          if (isRecent && sessionRoom && sessionName && sessionPlayerId &&
-            sessionRoom === joinCode && String(sessionName).toUpperCase() === String(playerName).toUpperCase()) {
-            // We already joined from the Join page; request room status to populate lobby and skip re-joining
-            didJoinRef.current = true;
-            // Populate optimistic current player from session so UI shows player immediately
-            try {
-              setCurrentPlayer({ id: sessionPlayerId, name: sessionName, avatar: getAvatar(sessionName), joinedAt: new Date().toISOString() });
-            } catch {}
-            try { requestRoomStatus(joinCode).catch(() => {}); } catch (e) {}
-            return undefined;
-          }
-        }
-      } catch (err) {
-        // ignore parse errors and fall through to join
-      }
-
       didJoinRef.current = true; // ensure we only attempt once per mount
       const nameUpper = playerName.toUpperCase();
       joinGame(joinCode, nameUpper).catch((error) => {
@@ -357,23 +272,6 @@ export default function Lobby() {
     }
     return undefined;
   }, [countdown, router, gameId, playerName, gameInfo, questions]);
-
-  const maxSlots = 12;
-  const emptySlots = Array(Math.max(0, maxSlots - players.length)).fill(null);
-
-  // Show loading state - only if we're trying to fetch via API and still loading
-  if (isActualGameId && (gameLoading || questionsLoading)) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <GameHeader title="GAME LOBBY" withSvgBorder />
-        <main className="flex items-center justify-center min-h-[calc(100vh-120px)]">
-          <div className="text-center">
-            <div className="text-lg text-gray-600">Loading game...</div>
-          </div>
-        </main>
-      </div>
-    );
-  }
 
   // Show error state - only if we have a real error or if using API and got an error
   if (error || (isActualGameId && (gameError || questionsError))) {
@@ -429,7 +327,7 @@ export default function Lobby() {
         <div className="mt-8 text-center max-w-4xl mx-auto">
           <div className="flex items-center justify-center gap-3">
             <button
-              onClick={requestLobbyUpdate}
+              // onClick removed: manual refresh not supported
               className="px-4 py-2 bg-teal-600 text-white rounded-md hover:bg-teal-700 transition-colors"
             >
               📋 Refresh Lobby
@@ -489,7 +387,7 @@ export default function Lobby() {
           })}
 
           {/* Render empty slots */}
-          {emptySlots.map((_, index) => (
+          {emptySlots.map((_: null, index: number) => (
             <div
               key={`empty-${index}`}
               className="bg-white rounded-lg p-4 shadow-lg border-2 border-gray-200 opacity-40"
