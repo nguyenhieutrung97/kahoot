@@ -857,8 +857,8 @@
                 console.log("🔄 Creating new SignalR connection...");
                 // Create new connection without authentication (anonymous for players)
                 const connectionBuilder = new signalR.HubConnectionBuilder()
-                    // .withUrl("http://localhost:5000/gameHub")
-                    .withUrl("http://localhost:5000/gameHub", {
+                    // .withUrl("http://api.bdkahoot.trungtero.com/gameHub")
+                    .withUrl("http://api.bdkahoot.trungtero.com/gameHub", {
                         transport: signalR.HttpTransportType.WebSockets,
                         skipNegotiation: true,
                         withCredentials: false

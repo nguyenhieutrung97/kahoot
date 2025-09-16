@@ -1,90 +1,121 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFinalResult } from '@/context/FinalResultContext';
 import { GameHeader } from '@/components/ui/GameHeader';
 import { GameButton } from '@/components/ui/GameButton';
+import { useGameHub } from '@/hooks/useGameHub';
 
 export default function FinalPage() {
-  const { result } = useFinalResult();
+  const { result, setResult } = useFinalResult();
   const router = useRouter();
 
-  const data = result || {} as any;
+  const [gotQuestionTimeEnded, setGotQuestionTimeEnded] = useState(false);
+  const [gotPlayerQuestionResult, setGotPlayerQuestionResult] = useState(false);
+  const [playerResultPayload, setPlayerResultPayload] = useState<any>(null);
 
-  // Player-centric fields with backward-compatible fallbacks
-  const yourRank = data.yourRank ?? data.YourRank ?? data.rank ?? data.Rank;
-  const yourScore = data.yourScore ?? data.YourScore ?? data.score ?? data.Score;
-  const yourProgress = data.yourProgress ?? data.YourProgress;
+  useGameHub({
+    onQuestionTimeEnded: () => {
+      setGotQuestionTimeEnded(true);
+    },
+    onPlayerQuestionResult: (payload) => {
+      setGotPlayerQuestionResult(true);
+      setPlayerResultPayload(payload);
+    },
+    onFinalResults: (payload) => {
+      try { setResult(payload); } catch {}
+    },
+    onGameEnded: (payload) => {
+      try { setResult(payload); } catch {}
+    }
+  });
 
-  // Top three and leaderboard fallbacks
-  const topThree = data.topThreePlayers || data.TopThreePlayers || data.topThree || data.Top3 || [];
-  const leaderboard = data.finalLeaderboard || data.FinalLeaderboard || data.topPlayers || data.TopPlayers || data.leaderboard || [];
+  const ready = !!result || (gotQuestionTimeEnded && gotPlayerQuestionResult);
 
-  const isInTopThree = (yourRank && yourRank <= 3) || false;
+  const leaderboardData = useMemo(() => {
+    if (result) {
+      return result.finalLeaderboard || result.FinalLeaderboard || result.topPlayers || result.TopPlayers || result.leaderboard || [];
+    }
+    if (playerResultPayload) {
+      return playerResultPayload.topPlayers || playerResultPayload.TopPlayers || [];
+    }
+    return [];
+  }, [result, playerResultPayload]);
+
+  const first = Array.isArray(leaderboardData) && leaderboardData.length > 0 ? leaderboardData[0] : null;
+  const firstName = first?.name || first?.playerName || first?.userName || first?.Name || first?.PlayerName || 'Unknown';
+  const firstScore = first?.score ?? first?.Score ?? first?.playerScore ?? undefined;
+
+  const topFive = Array.isArray(leaderboardData) ? leaderboardData.slice(0, 5) : [];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <GameHeader title="FINAL RESULTS" withSvgBorder />
-      <main className="px-6 py-6 max-w-4xl mx-auto">
-        <div className="bg-white rounded-lg p-6 shadow-lg border-2 border-gray-200">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold mb-4">Game Results</h2>
-            <GameButton variant="secondary" size="sm" onClick={() => router.push('/')}>Back to Home</GameButton>
-          </div>
-
-          {/* Player summary */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="p-4 rounded-lg bg-gray-50 text-center">
-              <div className="text-sm text-gray-600">Final Rank</div>
-              <div className="text-3xl font-bold">{yourRank ?? '—'}</div>
-            </div>
-            <div className="p-4 rounded-lg bg-gray-50 text-center">
-              <div className="text-sm text-gray-600">Final Score</div>
-              <div className="text-3xl font-bold">{yourScore ?? '—'}</div>
-            </div>
-            <div className="p-4 rounded-lg bg-gray-50 text-center">
-              <div className="text-sm text-gray-600">Progress</div>
-              <div className="text-3xl font-bold">{yourProgress ?? '—'}</div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
+      <GameHeader title="LEADERBOARD" withSvgBorder />
+      <main className="px-6 py-8 max-w-xl mx-auto">
+        {!ready && (
+          <div className="bg-white/90 backdrop-blur rounded-xl p-8 shadow-xl border border-gray-200/70 text-center relative overflow-hidden">
+            <div className="absolute inset-0 opacity-5 bg-[radial-gradient(circle_at_30%_30%,#dc2626,transparent_60%)]" />
+            <h2 className="text-lg font-bold mb-3 tracking-wide text-gray-800">Preparing Final Leaderboard</h2>
+            <div className="mx-auto mb-5 w-14 h-14 border-4 border-red-500 border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm text-gray-600 font-medium">
+              Waiting for {gotQuestionTimeEnded ? '' : 'question end event'}{!gotQuestionTimeEnded && !gotPlayerQuestionResult ? ' and ' : ''}{gotPlayerQuestionResult ? '' : 'player results'}...
+            </p>
+            <p className="text-[11px] text-gray-400 mt-4">If this takes too long, the host may not have published results yet.</p>
+            <div className="mt-6">
+              <GameButton size="sm" variant="secondary" onClick={() => router.push('/')}>Home</GameButton>
             </div>
           </div>
-
-          {/* Top three */}
-          {Array.isArray(topThree) && topThree.length > 0 && (
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold mb-3">Top 3</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {topThree.slice(0,3).map((p: any, idx: number) => (
-                  <div key={idx} className={`p-4 rounded-lg text-center ${idx===0 ? 'bg-yellow-100' : idx===1 ? 'bg-gray-100' : 'bg-red-50'}`}>
-                    <div className="text-sm text-gray-600">#{idx + 1}</div>
-                    <div className="text-lg font-bold">{p.name || p.playerName || p.Name || p.PlayerName || '—'}</div>
-                    <div className="text-sm text-gray-700">{p.score ?? p.Score ?? p.playerScore ?? '—'}</div>
-                  </div>
-                ))}
+        )}
+        {ready && (
+          <div className="bg-white/90 backdrop-blur rounded-xl p-8 shadow-xl border border-gray-200/70 relative overflow-hidden">
+            <div className="absolute inset-0 pointer-events-none opacity-10 bg-[radial-gradient(circle_at_70%_40%,#fbbf24,transparent_60%)]" />
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-red-600 to-amber-500">Final Leaderboard</h2>
+              <GameButton size="sm" variant="secondary" onClick={() => router.push('/')}>Home</GameButton>
+            </div>
+            <div className="mb-6 p-5 rounded-2xl border-2 border-yellow-400 bg-gradient-to-br from-yellow-50 to-amber-100 flex items-center justify-between shadow-inner">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-300 to-amber-500 flex items-center justify-center text-xl font-black text-white shadow">1</div>
+                <div>
+                  <div className="text-lg font-bold text-gray-800 leading-none">{firstName}</div>
+                  <div className="text-[11px] uppercase tracking-wider font-semibold text-amber-600 mt-1">Champion</div>
+                </div>
               </div>
-            </div>
-          )}
-
-          {/* Full leaderboard */}
-          <div>
-            <h3 className="text-xl font-semibold mb-3">Leaderboard</h3>
-            <div className="space-y-2">
-              {(Array.isArray(leaderboard) && leaderboard.length > 0) ? (
-                leaderboard.map((pl: any, i: number) => (
-                  <div key={i} className={`p-3 rounded-lg flex justify-between items-center ${i < 3 ? 'border-l-4' : 'border'} ${i===0 ? 'border-yellow-400' : i===1 ? 'border-gray-400' : i===2 ? 'border-red-300' : 'border-gray-200'}`}>
-                    <div className="flex items-center space-x-3">
-                      <div className="text-lg font-bold">#{i + 1}</div>
-                      <div className="font-medium">{pl.name || pl.playerName || pl.Name || pl.PlayerName || 'Unknown'}</div>
-                    </div>
-                    <div className="font-semibold">{pl.score ?? pl.Score ?? pl.playerScore ?? '--'}</div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-gray-500 italic">No leaderboard available</div>
+              {firstScore !== undefined && (
+                <div className="text-right">
+                  <div className="text-base font-extrabold text-gray-800">{firstScore}</div>
+                  <div className="text-[10px] tracking-wider font-semibold text-gray-500">POINTS</div>
+                </div>
               )}
             </div>
+            {topFive.length > 1 && (
+              <ul className="space-y-3">
+                {topFive.slice(1).map((p: any, i: number) => {
+                  const rank = i + 2;
+                  const name = p.name || p.playerName || p.userName || 'Unknown';
+                  const score = p.score ?? p.Score ?? p.playerScore ?? 0;
+                  const colors = rank === 2 ? 'border-slate-300 bg-slate-50' : rank === 3 ? 'border-orange-300 bg-orange-50' : 'border-gray-200 bg-white';
+                  return (
+                    <li key={p.playerId || name + rank} className={`p-4 rounded-xl border ${colors} flex items-center justify-between shadow-sm`}> 
+                      <div className="flex items-center gap-4">
+                        <div className="w-9 h-9 rounded-full bg-gray-800 text-white flex items-center justify-center text-sm font-bold">{rank}</div>
+                        <span className="font-semibold text-gray-700 text-sm">{name}</span>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-bold text-gray-800">{score}</div>
+                        <div className="text-[10px] tracking-wider font-semibold text-gray-400">PTS</div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            {!first && (
+              <div className="text-gray-500 text-sm italic">No leaderboard data yet.</div>
+            )}
           </div>
-        </div>
+        )}
       </main>
     </div>
   );

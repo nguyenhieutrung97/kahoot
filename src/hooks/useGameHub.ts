@@ -19,6 +19,7 @@ type Handlers = {
   onQuestionResults?: (payload: any) => void;
   onProceedingToNextQuestion?: (payload: any) => void;
   onFinalResults?: (payload: any) => void;
+  onGameEnded?: (payload: any) => void; // NEW
   onRoomStatus?: (payload: any) => void;
   onPlayerDisconnected?: (payload: any) => void;
   onHostDisconnected?: (payload: any) => void;
@@ -71,6 +72,7 @@ export function useGameHub(handlers: Handlers = {}) {
     on('QuestionResults', proxy('onQuestionResults'));
     on('ProceedingToNextQuestion', proxy('onProceedingToNextQuestion'));
     on('FinalResults', proxy('onFinalResults'));
+    on('GameEnded', proxy('onGameEnded')); // NEW subscription
     on('RoomStatus', proxy('onRoomStatus'));
     on('PlayerDisconnected', proxy('onPlayerDisconnected'));
     on('HostDisconnected', proxy('onHostDisconnected'));
@@ -109,6 +111,7 @@ export function useGameHub(handlers: Handlers = {}) {
       off('QuestionResults');
       off('ProceedingToNextQuestion');
       off('FinalResults');
+      off('GameEnded'); // NEW cleanup
       off('RoomStatus');
       off('PlayerDisconnected');
       off('HostDisconnected');
@@ -127,25 +130,23 @@ export function useGameHub(handlers: Handlers = {}) {
   return {
     connected,
     client: connection,
-    // server actions
-    // For now, server invocations should be performed via connection.invoke
-    createGameRoom: (gameId: string, autoShowResults = true) => connection.invoke('CreateGameRoom', gameId, autoShowResults),
-    joinGame: (roomCode: string, userName: string) => connection.invoke('JoinGame', roomCode, userName),
-    startGame: (roomCode: string) => connection.invoke('StartGame', roomCode),
-    submitAnswer: (answerId: string) => connection.invoke('SubmitAnswer', answerId),
-    submitMultipleAnswers: (answerIds: string[]) => connection.invoke('SubmitMultipleAnswers', answerIds),
-    // Robust request for room/lobby status. Different server implementations
-    // expose different method names (GetRoomStatus, GetLobbyInfo, etc.). Try
-    // a small list of candidate method names and return the first successful
-    // response. If none exist, rethrow the last error so callers can handle it.
+    ensureConnected: () => ensureStarted(connection),
+    // server actions (ensure hub started before invoking to avoid 'not Connected' errors)
+    createGameRoom: async (gameId: string, autoShowResults = true) => {
+      await ensureStarted(connection); return connection.invoke('CreateGameRoom', gameId, autoShowResults);
+    },
+    joinGame: async (roomCode: string, userName: string) => {
+      await ensureStarted(connection); return connection.invoke('JoinGame', roomCode, userName);
+    },
+    startGame: async (roomCode: string) => { await ensureStarted(connection); return connection.invoke('StartGame', roomCode); },
+    submitAnswer: async (answerId: string) => { await ensureStarted(connection); return connection.invoke('SubmitAnswer', answerId); },
+    submitMultipleAnswers: async (answerIds: string[]) => { await ensureStarted(connection); return connection.invoke('SubmitMultipleAnswers', answerIds); },
     requestRoomStatus: async (roomCode?: string) => {
+      await ensureStarted(connection);
       const candidates = ['GetRoomStatus', 'GetLobbyInfo', 'GetRoomInfo'];
       let lastErr: any = null;
       for (const m of candidates) {
         try {
-          // Some server methods expect a roomCode argument (host APIs), others
-          // use the connection context and take no args. Try with roomCode
-          // when provided, otherwise without.
           if (roomCode !== undefined) {
             return await connection.invoke(m, roomCode);
           }
@@ -153,20 +154,16 @@ export function useGameHub(handlers: Handlers = {}) {
         } catch (err) {
           lastErr = err;
           const msg = String((err as any)?.message || err || '').toLowerCase();
-          // If the method truly doesn't exist on the server, try the next
-          // candidate. Otherwise, surface the error immediately.
-          if (msg.includes('method does not exist') || msg.includes('no method')) {
-            // continue to next candidate
+            if (msg.includes('method does not exist') || msg.includes('no method')) {
             continue;
           }
           throw err;
         }
       }
-      // No candidate worked - rethrow the last error to allow caller handling
       throw lastErr;
     },
-    proceedToNextQuestion: (roomCode: string) => connection.invoke('ProceedToNextQuestion', roomCode),
-    showFinalLeaderboard: (roomCode: string) => connection.invoke('ShowFinalLeaderboard', roomCode),
+    proceedToNextQuestion: async (roomCode: string) => { await ensureStarted(connection); return connection.invoke('ProceedToNextQuestion', roomCode); },
+    showFinalLeaderboard: async (roomCode: string) => { await ensureStarted(connection); return connection.invoke('ShowFinalLeaderboard', roomCode); },
   };
 }
 
