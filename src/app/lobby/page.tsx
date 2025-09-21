@@ -18,7 +18,7 @@ interface Player {
   joinedAt?: string;
 }
 
-const MAX_SLOTS = 12;
+// No fixed max slots; render only actual participants
 
 const generatePlayerId = () => {
   const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
@@ -118,7 +118,6 @@ export default function Lobby() {
     onJoinedGame: (payload) => {
       try {
         const session = {
-          roomCode: payload.roomCode || roomCode,
             userName: payload.userName || playerName,
             playerId: payload.playerId || payload.player?.playerId,
             timestamp: Date.now(),
@@ -272,7 +271,7 @@ export default function Lobby() {
     return undefined;
   }, [countdown, router, gameId, playerName, gameInfo, questions]);
 
-  const emptySlots: null[] = Array(Math.max(0, MAX_SLOTS - players.length)).fill(null);
+  // No placeholders for empty slots when max slots are not fixed
 
   if (initializing) {
     return (
@@ -314,6 +313,8 @@ export default function Lobby() {
     );
   }
 
+  const hideScroll = players.length <= 8; // hide scrollbar when not many players
+
   return (
     <div className="min-h-screen bg-gray-50">
       <GameHeader
@@ -329,7 +330,7 @@ export default function Lobby() {
           </div>
         }
       />
-      <main className="px-6 py-6">
+      <main className={`px-6 py-6 min-h-[calc(100vh-120px)] ${hideScroll ? 'overflow-hidden' : 'overflow-y-auto'}`}>
         <div className="mb-8 text-center">
           <h2 className="text-2xl font-bold text-gray-900 uppercase tracking-wide mb-4">PARTICIPANTS</h2>
           <div className="w-16 h-1 bg-red-600 mx-auto" />
@@ -377,19 +378,10 @@ export default function Lobby() {
               </div>
             );
           })}
-          {emptySlots.map((_, idx) => (
-            <div key={`empty-${idx}`} className="bg-white rounded-lg p-4 shadow-lg border-2 border-gray-200 opacity-40">
-              <div className="aspect-square bg-gray-100 rounded-lg mb-3 border-2 border-gray-200 border-dashed" />
-              <div className="text-sm text-center">
-                <div className="h-4 bg-gray-100 rounded mb-1" />
-                <div className="h-3 bg-gray-100 rounded w-16 mx-auto" />
-              </div>
-            </div>
-          ))}
         </div>
         {players.length > 0 && game && questions && questions.length > 0 && (
           <div className="mt-12 text-center bg-white rounded-lg p-6 shadow-lg border-2 border-gray-200 max-w-md mx-auto">
-            <div className="text-sm text-gray-600 mb-2 font-medium uppercase tracking-wide">{players.length} of {MAX_SLOTS} participants ready</div>
+            <div className="text-sm text-gray-600 mb-2 font-medium uppercase tracking-wide">{players.length} participant{players.length !== 1 ? 's' : ''} ready</div>
             <div className="w-12 h-1 bg-red-600 mx-auto mb-4" />
             <div className="text-2xl font-bold text-red-600 uppercase tracking-wide">START IN {countdown}S</div>
             <div className="text-xs text-gray-500 mt-2">{questions.length} question{questions.length !== 1 ? 's' : ''} ready</div>

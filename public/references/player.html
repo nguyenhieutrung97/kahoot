@@ -1130,12 +1130,6 @@
                 }
             });
 
-            // All players answered notification
-            connection.on("AllPlayersAnswered", (data) => {
-                console.log(`✅ All players answered: ${JSON.stringify(data)}`);
-                showStatus(data.message || 'All players have answered! Waiting for time to end...', 'info');
-            });
-
             // Error and notification events
             connection.on("Error", (message) => {
                 console.log(`❌ Error: ${message}`);
@@ -1202,12 +1196,6 @@
                 showStatus(message, 'error');
             });
 
-            connection.on("RoomClosed", (message) => {
-                console.log(`🚪 Room closed: ${message}`);
-                showStatus(message, 'error');
-                resetToJoin();
-            });
-
             connection.on("KickedFromGame", (message) => {
                 console.log(`⛔ Kicked from game: ${message}`);
                 showStatus(message, 'error');
@@ -1224,19 +1212,6 @@
                     updateLobbyDisplay({
                         players: data.players || [],
                         playerCount: data.totalPlayers || 0,
-                        canStart: false
-                    });
-                }
-            });
-
-            connection.on("RoomStatus", (data) => {
-                console.log(`🏠 Room status: ${JSON.stringify(data)}`);
-                // ✅ ALWAYS AUTO-UPDATE when receiving room status (this is the response from GetRoomStatus)
-                if (waitingScreen.classList.contains('active')) {
-                    console.log('🔄 Auto-updating lobby display from RoomStatus event...');
-                    updateLobbyDisplay({
-                        players: data.players || [],
-                        playerCount: data.playerCount || 0,
                         canStart: false
                     });
                 }
@@ -1773,30 +1748,6 @@
             finalResults.innerHTML = resultsHTML;
         }
 
-        function dedupePlayersByName(players) {
-            try {
-                const map = new Map();
-                (players || []).forEach(p => {
-                    const key = ((p.name || p.userName || '') + '').toUpperCase().trim();
-                    if (!key) return;
-                    const existing = map.get(key);
-                    if (!existing) {
-                        map.set(key, p);
-                        return;
-                    }
-                    const tNew = p.joinedAt ? new Date(p.joinedAt).getTime() : 0;
-                    const tOld = existing.joinedAt ? new Date(existing.joinedAt).getTime() : 0;
-                    const preferNew = (p.isConnected && !existing.isConnected) ||
-                        (tNew > tOld) ||
-                        (tNew === tOld && (String(p.playerId || p.id || '') > String(existing.playerId || existing.id || '')));
-                    if (preferNew) map.set(key, p);
-                });
-                return Array.from(map.values());
-            } catch (_) {
-                return players || [];
-            }
-        }
-
         // Add updateLobbyDisplay function for players - Enhanced version with better auto-display
         function updateLobbyDisplay(data) {
             // Only show in waiting screen
@@ -1806,9 +1757,8 @@
             }
 
             // Ensure data has proper structure with fallbacks
-            const rawPlayers = (data && Array.isArray(data.players)) ? data.players : [];
-            const players = dedupePlayersByName(rawPlayers);
-            const playerCount = players.length;
+            const playerCount = data.playerCount || data.totalPlayers || 0;
+            const players = data.players || [];
 
             console.log(`🔍 updateLobbyDisplay called with playerCount: ${playerCount}, players: ${players.length}`);
 
@@ -1887,7 +1837,6 @@
 
             try {
                 console.log('🔄 Requesting room status...');
-                await connection.invoke("GetRoomStatus");
                 showStatus('Room status requested', 'info');
             } catch (err) {
                 console.log(`❌ Error requesting room status: ${err}`);
@@ -2068,7 +2017,7 @@
                 await initConnection();
 
                 // Invoke the JoinGame method
-                await connection.invoke("JoinGame", roomCode, userName);
+                await connection.invoke("JoinGame", roomCode, userName, null); // Pass null for playerId for now
 
             } catch (err) {
                 console.error('Join Game Error:', err);

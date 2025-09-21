@@ -48,6 +48,15 @@ export function useGameHub(handlers: Handlers = {}) {
   useEffect(() => {
     let mounted = true;
     const c = connection;
+    // Reflect connection lifecycle in local state
+    try {
+      // When reconnecting, mark as disconnected to gate UI/actions
+      (c as any).onreconnecting?.(() => { if (mounted) setConnected(false); });
+      // When reconnected, mark as connected
+      (c as any).onreconnected?.(() => { if (mounted) setConnected(true); });
+      // When closed, mark as disconnected
+      (c as any).onclose?.(() => { if (mounted) setConnected(false); });
+    } catch {}
     const off = (name: string) => c.off(name as any);
     const on = (name: string, fn?: (p: any) => void) => {
       if (fn) c.on(name as any, fn as any); else c.off(name as any);
@@ -87,6 +96,7 @@ export function useGameHub(handlers: Handlers = {}) {
         await ensureStarted(c);
         if (mounted) setConnected(true);
       } catch (err) {
+        if (mounted) setConnected(false);
         handlersRef.current.onError?.((err as Error)?.message || 'Failed to connect');
       }
     };
@@ -95,6 +105,9 @@ export function useGameHub(handlers: Handlers = {}) {
 
     return () => {
       mounted = false;
+      try { (c as any).onreconnecting?.(null); } catch {}
+      try { (c as any).onreconnected?.(null); } catch {}
+      try { (c as any).onclose?.(null); } catch {}
       off('Error');
       off('RoomCreated');
       off('JoinedGame');

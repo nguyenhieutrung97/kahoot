@@ -71,17 +71,30 @@ export const getSearchParam = (
 };
 
 /**
- * Validates game ID format
+ * Validates game ID format - only alphanumeric characters allowed
  */
 export const isValidRoomCode = (roomCode: string): boolean => {
-  return roomCode.trim().length > 0 && roomCode.trim().length <= 50;
+  const trimmed = roomCode.trim();
+  if (trimmed.length === 0 || trimmed.length > 50) {
+    return false;
+  }
+  // Only allow alphanumeric characters (letters and numbers)
+  const alphanumericRegex = /^[a-zA-Z0-9]+$/;
+  return alphanumericRegex.test(trimmed);
 };
 
 /**
- * Validates player name format
+ * Validates player name format - allows letters, numbers, spaces, and basic punctuation
  */
 export const isValidPlayerName = (name: string): boolean => {
-  return name.trim().length > 0 && name.trim().length <= 50;
+  const trimmed = name.trim();
+  if (trimmed.length === 0 || trimmed.length > 50) {
+    return false;
+  }
+  // Allow letters, numbers, spaces, hyphens, apostrophes, and periods
+  // Reject special characters like < > " ' & and other potentially problematic chars
+  const validNameRegex = /^[a-zA-Z0-9\s\-'\.]+$/;
+  return validNameRegex.test(trimmed);
 };
 
 /**

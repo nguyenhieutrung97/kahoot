@@ -20,15 +20,10 @@ export default function Dashboard() {
   // Prefill from query or previous session
   useEffect(() => {
     try {
-      const q = searchParams?.get('roomCode');
-      if (q) setRoomCode(q);
-    } catch {}
-    try {
       const raw = localStorage.getItem(SESSION_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
         if (Date.now() - (parsed.timestamp || 0) < 3600_000) {
-          if (!roomCode) setRoomCode(parsed.roomCode || '');
           if (parsed.userName) setPlayerName(parsed.userName || '');
         } else {
           localStorage.removeItem(SESSION_KEY);
@@ -43,18 +38,18 @@ export default function Dashboard() {
     setError('');
 
     if (!isValidRoomCode(roomCode)) {
-      setError('Please enter a valid room code');
+      setError('Room code must contain only letters and numbers (1-50 characters)');
       return;
     }
     if (!isValidPlayerName(playerName)) {
-      setError('Please enter a valid name (1-50 chars)');
+      setError('Name can only contain letters, numbers, spaces, hyphens, apostrophes, and periods (1-50 characters)');
       return;
     }
 
     setIsLoading(true);
     try {
       // Provisional session (playerId set after JoinedGame in lobby)
-      const session = { roomCode: roomCode.trim(), userName: playerName.trim(), timestamp: Date.now() };
+      const session = { userName: playerName.trim(), timestamp: Date.now() };
       localStorage.setItem(SESSION_KEY, JSON.stringify(session));
     } catch {}
 
@@ -105,6 +100,15 @@ export default function Dashboard() {
               >
                 ENTER LOBBY
               </GameButton>
+              <a
+                href="references/host.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 inline-flex items-center justify-center w-full px-6 py-3 rounded-md border-2 border-gray-300 text-gray-700 font-bold uppercase tracking-wide hover:bg-gray-50 transition-colors"
+              >
+                <span className="mr-2">🧪</span>
+                Create Game (Testing)
+              </a>
             </div>
           </form>
         </div>

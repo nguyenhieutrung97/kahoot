@@ -617,7 +617,7 @@
 
             <div class="input-group">
                 <label for="gameIdInput">Game ID (from database):</label>
-                <input type="text" id="gameIdInput" placeholder="Enter Game ID" value="68ad817b2c3280174f6e0785">
+                <input type="text" id="gameIdInput" placeholder="Enter Game ID" value="68ad817b2c3280174f6e0785"> <!-- 675c1f85e7b5a4f12c8d9e10 on Local -->
             </div>
 
             <div class="btn-group">
@@ -871,10 +871,7 @@
                     }
                 }
 
-                // DISABLED: Token validation removed
-                console.log("🔌 Token authentication disabled - connecting without authentication");
-
-                // Create new connection without authentication
+                // Create new connection with authentication
                 const connectionBuilder = new signalR.HubConnectionBuilder()
                     .withUrl("https://api.bdkahoot.trungtero.com/gameHub", {
                         skipNegotiation: true,
@@ -889,7 +886,7 @@
                 setupSignalRHandlers();
 
                 // Start connection
-                console.log("🔌 Starting host connection without authentication...");
+                console.log("🔌 Starting host connection with authentication...");
                 await connection.start();
 
                 console.log("✅ Connected to SignalR Hub as host");
@@ -955,39 +952,11 @@
                 if (!data.isReconnecting) {
                     showStatus(`${data.userName} joined the game! (${data.totalPlayers} players)`, 'info');
                 }
-
-                // Auto-update lobby display when in lobby screen
-                if (lobbyScreen.classList.contains('active')) {
-                    // Automatically refresh lobby info when a player joins
-                    setTimeout(async () => {
-                        try {
-                            if (connection && currentRoomCode) {
-                                await connection.invoke("GetLobbyInfo", currentRoomCode);
-                            }
-                        } catch (err) {
-                            console.log(`❌ Auto-refresh lobby failed: ${err}`);
-                        }
-                    }, 100);
-                }
             });
 
             connection.on("PlayerLeft", (data) => {
                 console.log(`👋 Player left: ${JSON.stringify(data)}`);
                 showStatus(`${data.userName} ${data.wasKicked ? 'was kicked' : 'left'} the game`, 'info');
-
-                // Auto-update lobby display when in lobby screen
-                if (lobbyScreen.classList.contains('active')) {
-                    // Automatically refresh lobby info when a player leaves
-                    setTimeout(async () => {
-                        try {
-                            if (connection && currentRoomCode) {
-                                await connection.invoke("GetLobbyInfo", currentRoomCode);
-                            }
-                        } catch (err) {
-                            console.log(`❌ Auto-refresh lobby failed: ${err}`);
-                        }
-                    }, 100);
-                }
             });
 
             // Game events
@@ -1028,11 +997,6 @@
                 showStatus(`Question ${data.questionIndex} of ${data.totalQuestions} - Host View`, 'info');
             });
 
-            connection.on("PlayerAnswered", (data) => {
-                console.log(`✅ Player answered: ${JSON.stringify(data)}`);
-                updatePlayerProgress(data);
-            });
-
             connection.on("QuestionResults", (data) => {
                 console.log(`📊 Question results: ${JSON.stringify(data)}`);
 
@@ -1065,16 +1029,6 @@
                 console.log(`🏁 Game ended: ${JSON.stringify(data)}`);
                 displayHostGameResults(data);
                 showStatus("🎮 Game ended!", 'info');
-            });
-
-            connection.on("EarlyResultsShown", (data) => {
-                console.log(`⚡ Early results shown: ${JSON.stringify(data)}`);
-                showStatus(`Results shown early! ${data.message}`, 'success');
-            });
-
-            connection.on("AllPlayersAnswered", (data) => {
-                console.log(`🎯 All players answered: ${JSON.stringify(data)}`);
-                showStatus(`🎉 All ${data.totalPlayers} players have answered Question ${data.questionIndex}!`, 'success');
             });
 
             // ✅ NEW EVENT: Handle question time ended to reset host UI properly
@@ -1129,12 +1083,6 @@
             connection.on("HostDisconnected", (message) => {
                 console.log(`🔌 Host disconnected: ${message}`);
                 showStatus(message, 'error');
-            });
-
-            connection.on("RoomClosed", (message) => {
-                console.log(`🚪 Room closed: ${message}`);
-                showStatus(message, 'error');
-                resetToSetup();
             });
 
             // ✅ NEW: Also handle FinalResults event for host (same as players but with host-specific UI)
@@ -1384,7 +1332,6 @@
                     showResultsBtn.disabled = true;
                     showResultsBtn.textContent = '⏳ Showing Results...';
                 }
-
                 await connection.invoke("ShowQuestionResultsEarly", currentRoomCode);
                 console.log(`📊 Showing question results for room: ${currentRoomCode}`);
                 showStatus('Showing question results...', 'info');
@@ -1674,21 +1621,6 @@
                 console.log(`? Error starting game: ${err}`);
                 showStatus('Failed to start game: ' + err.message, 'error');
                 startGameBtn.disabled = false;
-            }
-        });
-
-        refreshLobbyBtn.addEventListener('click', async () => {
-            if (!currentRoomCode) {
-                showStatus('No room code available', 'error');
-                return;
-            }
-
-            try {
-                await connection.invoke("GetLobbyInfo", currentRoomCode);
-                console.log(`Getting lobby info for room: ${currentRoomCode}`);
-            } catch (err) {
-                console.log(`? Error getting lobby info: ${err}`);
-                showStatus('Failed to get lobby info', 'error');
             }
         });
 
