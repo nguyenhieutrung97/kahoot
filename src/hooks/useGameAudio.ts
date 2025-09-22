@@ -14,6 +14,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 let sharedAudioCtx: AudioContext | null = null;
 let bgAudioEl: HTMLAudioElement | null = null;
 let championAudioEl: HTMLAudioElement | null = null;
+let championStartToken = 0; // cancel in-flight play() when stopping/toggling
 let ambientState: {
   gain: GainNode;
   filter: BiquadFilterNode;
@@ -284,26 +285,16 @@ export function useGameAudio() {
     }
   }, [bgTrack, musicEnabled]);
 
-  const startChampionMusic = useCallback(async () => {
-    if (!musicEnabled) return;
-    await resumeCtx();
-    try { if (championAudioEl) { championAudioEl.pause(); championAudioEl = null; } } catch {}
-    try {
-      const el = new Audio("/sounds/champion.mp3");
-      el.loop = true;
-      el.volume = 0.12;
-      await el.play();
-      championAudioEl = el;
-      setChampionPlaying(true);
-    } catch {}
-  }, [musicEnabled]);
-
   // replace existing stopChampionMusic with this
   const stopChampionMusic = useCallback((force: boolean = false) => {
+    // Invalidate any ongoing start attempts
+    championStartToken++;
     if (!championAudioEl) { setChampionPlaying(false); return; }
 
     try {
       // Always pause immediately (timers can be throttled on Safari/background)
+      championAudioEl.muted = true;
+      try { championAudioEl.volume = 0; } catch {}
       championAudioEl.pause();
     } catch {}
 
@@ -323,6 +314,27 @@ export function useGameAudio() {
     championAudioEl = null;
     setChampionPlaying(false);
   }, []);
+
+  const startChampionMusic = useCallback(async () => {
+    if (!musicEnabled) return;
+    await resumeCtx();
+    // Ensure any existing element is fully stopped and detached
+    stopChampionMusic();
+    const myToken = ++championStartToken;
+    try {
+      const el = new Audio("/sounds/champion.mp3");
+      el.loop = true;
+      el.volume = 0.12;
+      await el.play();
+      // If another stop/start happened while awaiting, abort attaching
+      if (myToken !== championStartToken || !musicEnabled) {
+        try { el.pause(); } catch {}
+        return;
+      }
+      championAudioEl = el;
+      setChampionPlaying(true);
+    } catch {}
+  }, [musicEnabled, stopChampionMusic]);
 
 
   // React to musicEnabled toggles
