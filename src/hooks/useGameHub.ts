@@ -148,8 +148,8 @@ export function useGameHub(handlers: Handlers = {}) {
     createGameRoom: async (gameId: string, autoShowResults = true) => {
       await ensureStarted(connection); return connection.invoke('CreateGameRoom', gameId, autoShowResults);
     },
-    joinGame: async (roomCode: string, userName: string) => {
-      await ensureStarted(connection); return connection.invoke('JoinGame', roomCode, userName);
+    joinGame: async (roomCode: string, userName: string, playerId?: string | null) => {
+      await ensureStarted(connection); return connection.invoke('JoinGame', roomCode, userName, playerId ?? null);
     },
     startGame: async (roomCode: string) => { await ensureStarted(connection); return connection.invoke('StartGame', roomCode); },
     submitAnswer: async (answerId: string) => { await ensureStarted(connection); return connection.invoke('SubmitAnswer', answerId); },

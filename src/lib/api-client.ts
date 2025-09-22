@@ -266,7 +266,7 @@ export type SignalRClient = {
   stop: () => Promise<void>;
   // server invocations
   createGameRoom: (gameId: string, autoShowResults?: boolean) => Promise<void>;
-  joinGame: (roomCode: string, userName: string) => Promise<void>;
+  joinGame: (roomCode: string, userName: string, playerId?: string | null) => Promise<void>;
   startGame: (roomCode: string) => Promise<void>;
   submitAnswer: (answerId: string) => Promise<void>;
   proceedToNextQuestion: (roomCode: string) => Promise<void>;
@@ -332,7 +332,7 @@ export function createSignalRClient(baseUrl: string = API_BASE_URL): SignalRClie
         throw err;
       }
     },
-    joinGame: (roomCode, userName) => invoke('JoinGame', roomCode, userName),
+    joinGame: (roomCode, userName, playerId) => invoke('JoinGame', roomCode, userName, playerId ?? null),
     startGame: (roomCode) => invoke('StartGame', roomCode),
     submitAnswer: (answerId) => invoke('SubmitAnswer', answerId),
     proceedToNextQuestion: (roomCode) => invoke('ProceedToNextQuestion', roomCode),

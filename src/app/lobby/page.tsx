@@ -92,6 +92,8 @@ export default function Lobby() {
   const playerName = searchParams.get('name') || '';
   const joinCode = roomCode || gameId;
 
+  const sessionKeyFor = (code: string) => `kahoot_player_session:${String(code || '').toUpperCase()}`;
+
   const [players, setPlayers] = useState<Player[]>([]);
   const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null);
   const [countdown, setCountdown] = useState(5);
@@ -117,12 +119,21 @@ export default function Lobby() {
     },
     onJoinedGame: (payload) => {
       try {
+        const codeForKey = String(payload.roomCode || roomCode || joinCode || '').toUpperCase();
         const session = {
-            userName: payload.userName || playerName,
-            playerId: payload.playerId || payload.player?.playerId,
-            timestamp: Date.now(),
+          userName: payload.userName || playerName,
+          playerId: payload.playerId || payload.player?.playerId,
+          roomCode: codeForKey,
+          timestamp: Date.now(),
         };
-        localStorage.setItem('kahoot_player_session', JSON.stringify(session));
+        if (codeForKey) {
+          localStorage.setItem(sessionKeyFor(codeForKey), JSON.stringify(session));
+        }
+        // Keep global session for convenience (prefill name elsewhere)
+        try {
+          const global = { userName: session.userName, timestamp: session.timestamp };
+          localStorage.setItem('kahoot_player_session', JSON.stringify(global));
+        } catch {}
       } catch {}
       if (payload.gameTitle || payload.totalQuestions) {
         setGameInfo({
@@ -162,7 +173,7 @@ export default function Lobby() {
         debugLogPlayers('LobbyInfo/mapped', serverPlayers as any);
         setPlayers(serverPlayers);
         try {
-          const raw = localStorage.getItem('kahoot_player_session');
+          const raw = localStorage.getItem(sessionKeyFor(joinCode));
           const session = raw ? JSON.parse(raw) : null;
           const sessionId = session?.playerId;
           const sessionName = session?.userName;
@@ -231,7 +242,16 @@ export default function Lobby() {
           return;
         }
         didJoinRef.current = true;
-        await joinGame(joinCode, playerName.toUpperCase());
+        let playerId: string | null = null;
+        try {
+          const raw = localStorage.getItem(sessionKeyFor(joinCode));
+          const session = raw ? JSON.parse(raw) : null;
+          const storedName = (session?.userName || '').toUpperCase();
+          if (session?.playerId && storedName === playerName.toUpperCase()) {
+            playerId = session.playerId;
+          }
+        } catch {}
+        await joinGame(joinCode, playerName.toUpperCase(), playerId ?? null);
         setTimeout(() => { if (initializing) setInitializing(false); }, 1500);
       } catch (err) {
         // eslint-disable-next-line no-console

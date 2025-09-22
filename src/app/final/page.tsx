@@ -242,9 +242,6 @@ export default function FinalPage() {
                 })}
               </ul>
             )}
-            {!first && (
-              <div className="text-gray-500 text-sm italic">No leaderboard data yet.</div>
-            )}
 
             {/* Bottom large Back to Home button */}
             <div className="mt-10">
