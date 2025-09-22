@@ -304,6 +304,7 @@ export default function Lobby() {
       return () => clearTimeout(t);
     }
     setShowWaitingInfo(false);
+    return undefined;
   }, [initializing, game, questions, players]);
 
   // No placeholders for empty slots when max slots are not fixed
