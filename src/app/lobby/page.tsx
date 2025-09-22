@@ -107,6 +107,7 @@ export default function Lobby() {
   } | null>(null);
   const didJoinRef = useRef(false);
   const { setResult } = useFinalResult(); // NEW
+  const [showWaitingInfo, setShowWaitingInfo] = useState(false); // NEW waiting info flag
 
   const { connected, client, joinGame, ensureConnected } = useGameHub({
     onGameEnded: (payload) => { // NEW
@@ -205,7 +206,8 @@ export default function Lobby() {
       router.push(`/question?gameId=${encodeURIComponent(startedGameId)}&name=${encodeURIComponent(playerName)}&questionNumber=1`);
     },
     onError: (msg) => {
-      setError(msg || 'Connection error');
+      const text = typeof msg === 'string' ? msg : (msg && (msg as any).message) || 'Connection error';
+      setError(text);
       if (initializing) setInitializing(false);
     },
   });
@@ -290,6 +292,19 @@ export default function Lobby() {
     }
     return undefined;
   }, [countdown, router, gameId, playerName, gameInfo, questions]);
+
+  // Show informational banner if game not ready or questions missing / waiting on more players
+  useEffect(() => {
+    if (initializing) { setShowWaitingInfo(false); return; }
+    const gameReady = game && game.state === GameState.Ready;
+    const hasQuestions = !!(questions && questions.length > 0);
+    const canCountdown = gameReady && hasQuestions && players.length > 0;
+    if (!canCountdown) {
+      const t = setTimeout(() => setShowWaitingInfo(true), 800);
+      return () => clearTimeout(t);
+    }
+    setShowWaitingInfo(false);
+  }, [initializing, game, questions, players]);
 
   // No placeholders for empty slots when max slots are not fixed
 
@@ -413,6 +428,15 @@ export default function Lobby() {
             <div className="w-12 h-1 bg-yellow-600 mx-auto mb-4" />
             <div className="text-lg font-bold text-yellow-800 uppercase tracking-wide">GAME NOT READY</div>
             <div className="text-xs text-yellow-600 mt-2">The game host needs to add questions before starting</div>
+          </div>
+        )}
+        {showWaitingInfo && (
+          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[90%] max-w-md bg-green-600 text-indigo-50 shadow-xl rounded-xl px-5 py-4 border border-indigo-400/50 backdrop-blur-md" role="status" aria-live="polite">
+            <p className="text-sm font-semibold tracking-wide">Waiting for other players to join…</p>
+            <p className="text-xs mt-1 opacity-90">The host will start the game when everyone is ready.</p>
+            {players.length > 0 && (
+              <p className="text-[11px] mt-2 opacity-75">Current players: {players.length}</p>
+            )}
           </div>
         )}
       </main>

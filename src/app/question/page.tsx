@@ -6,6 +6,9 @@ import { GameHeader } from '@/components/ui/GameHeader';
 import { GameButton } from '@/components/ui/GameButton';
 import { useGameHub } from '@/hooks/useGameHub';
 import { useFinalResult } from '@/context/FinalResultContext';
+import { normalizeLeaderboard, NormalizedLeaderboardPlayer } from '@/lib/normalizers/leaderboard';
+import TopPlayersList from '@/components/ui/TopPlayersList';
+import { useGameAudio } from '@/hooks/useGameAudio';
 
 type Answer = {
   id: string;
@@ -63,6 +66,7 @@ export default function QuestionPage() {
   const [playerRank, setPlayerRank] = useState<number | null>(null);
   const [playerScore, setPlayerScore] = useState<number | null>(null);
   const [topPlayers, setTopPlayers] = useState<any[]>([]);
+  const [normalizedTopPlayers, setNormalizedTopPlayers] = useState<NormalizedLeaderboardPlayer[]>([]); // NEW normalized list
   const [fatalError, setFatalError] = useState<string | null>(null); // NEW
   const timerRef = useRef<number | null>(null);
   const autoFinalTimeoutRef = useRef<any>(null); // NEW
@@ -71,238 +75,19 @@ export default function QuestionPage() {
   const [displayQuestionNumber, setDisplayQuestionNumber] = useState<number>(questionNumber);
   const [totalTime, setTotalTime] = useState<number | null>(null); // NEW total time for progress bar
   
-  // Music effects
-  const [musicEnabled, setMusicEnabled] = useState(true);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const bgGainRef = useRef<GainNode | null>(null);
-  const bgFilterRef = useRef<BiquadFilterNode | null>(null);
-  const bgOscillatorsRef = useRef<OscillatorNode[] | null>(null);
-  const [isBgPlaying, setIsBgPlaying] = useState(false);
-  const bgAudioRef = useRef<HTMLAudioElement | null>(null);
-  const [bgTrack, setBgTrack] = useState<'energy' | 'mystery'>('energy');
-  const getTrackSrc = useCallback((track: 'energy' | 'mystery') => {
-    // Place your files under public/sounds/energy.mp3 and public/sounds/mystery.mp3
-    return `/sounds/${track}.mp3`;
-  }, []);
-
-  // Music functions
-  const playSound = useCallback((soundType: 'question' | 'correct' | 'incorrect' | 'timeout' | 'tick') => {
-    if (!musicEnabled) return;
-    
-    try {
-      // Stop any currently playing audio
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
-      }
-
-      // Create audio context for generating sounds
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      
-      // Set different frequencies and patterns for different sounds
-      switch (soundType) {
-        case 'question':
-          // Upward arpeggio for new question
-          oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // A4
-          oscillator.frequency.setValueAtTime(554.37, audioContext.currentTime + 0.1); // C#5
-          oscillator.frequency.setValueAtTime(659.25, audioContext.currentTime + 0.2); // E5
-          gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-          oscillator.start(audioContext.currentTime);
-          oscillator.stop(audioContext.currentTime + 0.5);
-          break;
-          
-        case 'correct':
-          // Happy ascending chord
-          oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
-          oscillator.frequency.setValueAtTime(659.25, audioContext.currentTime + 0.1); // E5
-          oscillator.frequency.setValueAtTime(783.99, audioContext.currentTime + 0.2); // G5
-          gainNode.gain.setValueAtTime(0.4, audioContext.currentTime);
-          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.8);
-          oscillator.start(audioContext.currentTime);
-          oscillator.stop(audioContext.currentTime + 0.8);
-          break;
-          
-        case 'incorrect':
-          // Descending sad tone
-          oscillator.frequency.setValueAtTime(392, audioContext.currentTime); // G4
-          oscillator.frequency.setValueAtTime(349.23, audioContext.currentTime + 0.2); // F4
-          oscillator.frequency.setValueAtTime(311.13, audioContext.currentTime + 0.4); // D#4
-          gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.6);
-          oscillator.start(audioContext.currentTime);
-          oscillator.stop(audioContext.currentTime + 0.6);
-          break;
-          
-        case 'timeout':
-          // Warning beep
-          oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-          gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
-          gainNode.gain.setValueAtTime(0.2, audioContext.currentTime + 0.1);
-          gainNode.gain.setValueAtTime(0, audioContext.currentTime + 0.1);
-          gainNode.gain.setValueAtTime(0.2, audioContext.currentTime + 0.2);
-          gainNode.gain.setValueAtTime(0, audioContext.currentTime + 0.3);
-          oscillator.start(audioContext.currentTime);
-          oscillator.stop(audioContext.currentTime + 0.3);
-          break;
-          
-        case 'tick':
-          // Subtle tick for timer
-          oscillator.frequency.setValueAtTime(1000, audioContext.currentTime);
-          gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-          oscillator.start(audioContext.currentTime);
-          oscillator.stop(audioContext.currentTime + 0.1);
-          break;
-      }
-    } catch (error) {
-      console.log('Audio not supported or blocked:', error);
-    }
-  }, [musicEnabled]);
-
-  // Background music helpers
-  const ensureAudioContext = useCallback(async (): Promise<boolean> => {
-    if (!musicEnabled) return false;
-    try {
-      const AudioCtx: any = (window as any).AudioContext || (window as any).webkitAudioContext;
-      if (!AudioCtx) return false;
-      let ctx = audioCtxRef.current as any;
-      if (!ctx) {
-        ctx = new AudioCtx();
-        audioCtxRef.current = ctx;
-      }
-      if (ctx.state === 'suspended') {
-        await ctx.resume();
-      }
-      return true;
-    } catch {
-      return false;
-    }
-  }, [musicEnabled]);
-
-  const startBackgroundMusic = useCallback(async () => {
-    if (!musicEnabled || isBgPlaying) return;
-    // Try file-based background track first
-    try {
-      // Stop previous element if any
-      try { bgAudioRef.current?.pause(); } catch {}
-      bgAudioRef.current = null;
-      const src = getTrackSrc(bgTrack);
-      const el = new Audio(src);
-      el.loop = true;
-      el.volume = 0.08; // subtle
-      bgAudioRef.current = el;
-      await el.play();
-      setIsBgPlaying(true);
-      return;
-    } catch {
-      // Fallback to generated ambient if file missing or autoplay blocked
-    }
-
-    const ok = await ensureAudioContext();
-    if (!ok) return;
-    const ctx = audioCtxRef.current!;
-
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.001, ctx.currentTime);
-
-    const filter = ctx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(1200, ctx.currentTime);
-
-    filter.connect(gain);
-    gain.connect(ctx.destination);
-
-    const osc1 = ctx.createOscillator();
-    osc1.type = 'sine';
-    osc1.frequency.setValueAtTime(220, ctx.currentTime);
-    osc1.connect(filter);
-
-    const osc2 = ctx.createOscillator();
-    osc2.type = 'triangle';
-    osc2.frequency.setValueAtTime(440, ctx.currentTime);
-    osc2.connect(filter);
-
-    const lfo = ctx.createOscillator();
-    const lfoGain = ctx.createGain();
-    lfo.frequency.setValueAtTime(0.15, ctx.currentTime);
-    lfoGain.gain.setValueAtTime(60, ctx.currentTime);
-    lfo.connect(lfoGain);
-    (lfoGain as any).connect((filter as any).frequency);
-
-    osc1.start();
-    osc2.start();
-    lfo.start();
-
-    bgGainRef.current = gain;
-    bgFilterRef.current = filter;
-    bgOscillatorsRef.current = [osc1, osc2, lfo];
-    gain.gain.exponentialRampToValueAtTime(0.06, ctx.currentTime + 1.2);
-    setIsBgPlaying(true);
-  }, [musicEnabled, isBgPlaying, ensureAudioContext, getTrackSrc, bgTrack]);
-
-  const stopBackgroundMusic = useCallback((quick = false) => {
-    const ctx = audioCtxRef.current;
-    const gain = bgGainRef.current;
-    const oscs = bgOscillatorsRef.current;
-    try {
-      // Stop file-based audio first
-      try {
-        if (bgAudioRef.current) {
-          bgAudioRef.current.pause();
-          bgAudioRef.current.currentTime = 0;
-          bgAudioRef.current = null;
-        }
-      } catch {}
-
-      if (ctx && gain) {
-        const now = ctx.currentTime;
-        // Fade out
-        gain.gain.cancelScheduledValues(now);
-        const timeConst = quick ? 0.05 : 0.2;
-        gain.gain.setTargetAtTime(0.0001, now, timeConst);
-        const cleanupDelay = quick ? 200 : 900;
-        window.setTimeout(() => {
-          oscs?.forEach(o => { try { o.stop(); o.disconnect(); } catch {} });
-          try { gain.disconnect(); } catch {}
-          try { bgFilterRef.current?.disconnect(); } catch {}
-          bgGainRef.current = null;
-          bgFilterRef.current = null;
-          bgOscillatorsRef.current = null;
-          setIsBgPlaying(false);
-        }, cleanupDelay);
-      } else {
-        oscs?.forEach(o => { try { o.stop(); o.disconnect(); } catch {} });
-        try { bgFilterRef.current?.disconnect(); } catch {}
-        bgGainRef.current = null;
-        bgFilterRef.current = null;
-        bgOscillatorsRef.current = null;
-        setIsBgPlaying(false);
-      }
-    } catch {}
-  }, []);
-
-  // Stop bg music if disabled or on unmount
-  useEffect(() => { if (!musicEnabled) stopBackgroundMusic(true); }, [musicEnabled, stopBackgroundMusic]);
-  useEffect(() => () => { stopBackgroundMusic(true); }, [stopBackgroundMusic]);
-  useEffect(() => {
-    // If user switches track while playing, restart with new selection
-    if (isBgPlaying) {
-      stopBackgroundMusic(true);
-      startBackgroundMusic();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bgTrack]);
+  // Music centralized via useGameAudio hook (replaces legacy inline audio logic)
+  const {
+    musicEnabled, setMusicEnabled,
+    bgTrack, setBgTrack,
+    isBgPlaying,
+    playEffect,
+    startBackground: startBackgroundMusic,
+    stopBackground: stopBackgroundMusic
+  } = useGameAudio();
 
   const { connected, submitAnswer, submitMultipleAnswers } = useGameHub({
     onError: (msg) => { // NEW
-      const m = msg || 'Unknown error';
+      const m = typeof msg === 'string' ? msg : (msg && (msg as any).message) || 'Unknown error';
       const lower = m.toLowerCase();
       if (lower.includes('session not found')) {
         setFatalError('Sorry player, game session not found. Redirecting to home...');
@@ -362,7 +147,7 @@ export default function QuestionPage() {
         startTimer(remaining);
         
         // Play question start sound
-        playSound('question');
+        playEffect('question');
         // Start background music for question
         startBackgroundMusic();
       } catch (e) {
@@ -391,7 +176,7 @@ export default function QuestionPage() {
         setCorrectAnswers(correctAns);
         
         // Play timeout sound
-        playSound('timeout');
+        playEffect('timeout');
       }
       // Fade out background
       stopBackgroundMusic();
@@ -417,19 +202,23 @@ export default function QuestionPage() {
           correctIds = [String((payload as any).correctAnswer.id || (payload as any).correctAnswer.answerId || (payload as any).correctAnswer)];
         }
         setCorrectAnswers(correctIds);
-        // Create message
         const msg = isCorrect ? 'Correct!' : 'Incorrect';
         setShowResult({ correct: isCorrect, message: msg });
-        
-        // Play result sound
-        playSound(isCorrect ? 'correct' : 'incorrect');
-        // Stop background
+        playEffect(isCorrect ? 'correct' : 'incorrect');
         stopBackgroundMusic();
-        
-        // Rank & score
         if (typeof payload?.currentRank === 'number') setPlayerRank(payload.currentRank);
         if (typeof payload?.score === 'number') setPlayerScore(payload.score);
-        if (Array.isArray(payload?.topPlayers)) setTopPlayers(payload.topPlayers.slice(0, 5));
+        // Normalize leaderboard data from payload
+        const lb = normalizeLeaderboard(payload);
+        setNormalizedTopPlayers(lb.players.slice(0, 5));
+        setTopPlayers(lb.players.slice(0, 5).map(p => ({
+          playerId: p.id,
+            userName: p.name,
+            score: p.score,
+            rank: p.rank || undefined,
+            // keep any original timing fields
+            timeTaken: (p.raw && (p.raw.timeTaken ?? p.raw.answerTime))
+        })));
         setHasSubmitted(true);
       } catch (e) {
         console.error('Failed handling PlayerQuestionResult', e);
@@ -455,21 +244,21 @@ export default function QuestionPage() {
         
         // Play tick sound for last 5 seconds
         if (prev <= 5) {
-          playSound('tick');
+          playEffect('tick');
         }
         
         return prev - 1;
       });
     }, 1000) as any;
-  }, [clearTimer, playSound]);
+  }, [clearTimer, playEffect]);
 
   useEffect(() => () => { clearTimer(); }, [clearTimer]);
 
   const handleSelect = (id: string) => {
     if (!connected || hasSubmitted || (timeLeft !== null && timeLeft <= 0)) return;
     if (isMultipleChoice) {
-      if (selectedIds.includes(id)) return; // cannot deselect
-      setSelectedIds((prev) => [...prev, id]);
+      // Toggle selection (allow deselect)
+      setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
       return;
     }
     // SingleChoice: just select, do not submit yet
@@ -610,7 +399,8 @@ export default function QuestionPage() {
               const isSelected = selectedIds.includes(a.id) || selected === a.id;
               const isCorrect = showResult && correctAnswers.includes(a.id);
               const isIncorrectSelection = showResult && !isCorrect && isSelected;
-              const disabled = !connected || hasSubmitted || (timeLeft !== null && timeLeft <= 0) || (isMultipleChoice && isSelected);
+              // Removed (isMultipleChoice && isSelected) from disabled condition to allow toggling
+              const disabled = !connected || hasSubmitted || (timeLeft !== null && timeLeft <= 0);
               const base = 'relative group p-4 rounded-xl border transition-all text-left shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2';
               const stateColor = isCorrect
                 ? 'border-green-600 bg-green-50'
@@ -636,7 +426,11 @@ export default function QuestionPage() {
                 </button>
               );
             }) : (
-              <div className="text-gray-500 italic col-span-full">No answers available</div>
+              <div className="col-span-full flex flex-col items-center justify-center py-10 text-center" aria-live="polite">
+                <div className="w-12 h-12 border-4 border-indigo-500/60 border-t-transparent rounded-full animate-spin mb-4" />
+                <div className="text-sm font-medium text-gray-600">Loading answers…</div>
+                <div className="text-[11px] text-gray-400 mt-1">Waiting for host to send options</div>
+              </div>
             )}
           </div>
 
@@ -672,63 +466,12 @@ export default function QuestionPage() {
           )}
 
           {showResult && topPlayers.length > 0 && (
-            <div className="mt-6 bg-white/80 backdrop-blur border border-gray-200 rounded-lg p-4">
-              <h3 className="font-bold text-gray-800 mb-2 text-xs uppercase tracking-wider">Top Players</h3>
-              <ul className="space-y-2 text-sm">
-                {topPlayers.map((tp, index) => {
-                  const rank = tp.rank || (index + 1);
-                  const isTop3 = rank <= 3;
-                  
-                  // Color schemes for top 3
-                  const getTop3Styles = (rank: number) => {
-                    switch (rank) {
-                      case 1:
-                        return 'bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-300 text-yellow-800 shadow-lg';
-                      case 2:
-                        return 'bg-gradient-to-r from-gray-50 to-slate-50 border-gray-300 text-gray-700 shadow-md';
-                      case 3:
-                        return 'bg-gradient-to-r from-orange-50 to-amber-50 border-orange-300 text-orange-800 shadow-md';
-                      default:
-                        return 'bg-gray-50 border-gray-200 text-gray-600';
-                    }
-                  };
-
-                  const getMedalIcon = (rank: number) => {
-                    switch (rank) {
-                      case 1: return '🥇';
-                      case 2: return '🥈';
-                      case 3: return '🥉';
-                      default: return '🏅';
-                    }
-                  };
-
-                  return (
-                    <li 
-                      key={tp.playerId} 
-                      className={`flex items-center justify-between p-3 rounded-lg border-2 font-medium transition-all duration-200 ${isTop3 ? getTop3Styles(rank) : 'bg-gray-50 border-gray-200 text-gray-600'}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="text-lg">{getMedalIcon(rank)}</span>
-                        <span className={`font-bold ${isTop3 ? 'text-lg' : ''}`}>
-                          {rank}. {tp.userName || tp.name}
-                        </span>
-                        {isTop3 && (
-                          <span className="text-xs px-2 py-1 rounded-full bg-white/70 font-bold uppercase tracking-wider">
-                            TOP {rank}
-                          </span>
-                        )}
-                      </div>
-                      <span className={`font-bold ${isTop3 ? 'text-lg' : 'font-semibold'}`}>
-                        {tp.score} pts
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-              {(playerRank !== null || playerScore !== null) && (
-                <div className="mt-3 text-[11px] text-gray-600">Your Rank: {playerRank ?? '-'} | Score: {playerScore ?? 0}</div>
-              )}
-            </div>
+            <TopPlayersList
+              players={normalizedTopPlayers}
+              playerRank={playerRank}
+              playerScore={playerScore}
+              className="mt-6"
+            />
           )}
 
           <div className="mt-8 flex items-center justify-between text-[11px] text-gray-500 font-medium">

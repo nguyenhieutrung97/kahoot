@@ -6,7 +6,10 @@ import { useFinalResult } from '@/context/FinalResultContext';
 import { GameHeader } from '@/components/ui/GameHeader';
 import { GameButton } from '@/components/ui/GameButton';
 import { useGameHub } from '@/hooks/useGameHub';
-
+import { normalizeLeaderboard, NormalizedLeaderboardPlayer } from '@/lib/normalizers/leaderboard';
+import TopPlayersList from '@/components/ui/TopPlayersList';
+import PodiumTop3 from '@/components/ui/PodiumTop3';
+import { useGameAudio } from '@/hooks/useGameAudio';
 
 export default function FinalPage() {
   const { result, setResult } = useFinalResult();
@@ -15,77 +18,105 @@ export default function FinalPage() {
   const [gotQuestionTimeEnded, setGotQuestionTimeEnded] = useState(false);
   const [gotPlayerQuestionResult, setGotPlayerQuestionResult] = useState(false);
   const [playerResultPayload, setPlayerResultPayload] = useState<any>(null);
+  // NEW readiness related state
+  const [isLastQuestion, setIsLastQuestion] = useState(false);
+  const [finalResultsTimeoutReached, setFinalResultsTimeoutReached] = useState(false);
+  const finalResultsTimerRef = useRef<number | null>(null);
 
-  const { connected } = useGameHub({
-    onQuestionTimeEnded: () => {
-      setGotQuestionTimeEnded(true);
+  const { connected, client } = useGameHub({
+    onQuestionTimeEnded: (payload) => { 
+      setGotQuestionTimeEnded(true); 
+      try {
+        const tq = payload?.totalQuestions ?? payload?.TotalQuestions ?? payload?.questionCount;
+        const qi = payload?.questionIndex ?? payload?.QuestionIndex ?? payload?.index ?? payload?.questionNumber;
+        if (typeof tq === 'number' && typeof qi === 'number') {
+          // Backend might be 0 or 1 based; treat last if qi >= tq - 1 (0-based) OR qi === tq (1-based)
+            if (qi === tq || qi === tq - 1) setIsLastQuestion(true);
+        }
+      } catch {}
     },
-    onPlayerQuestionResult: (payload) => {
-      setGotPlayerQuestionResult(true);
-      setPlayerResultPayload(payload);
+    onPlayerQuestionResult: (payload) => { 
+      setGotPlayerQuestionResult(true); 
+      setPlayerResultPayload(payload); 
+      try {
+        const tq = payload?.totalQuestions ?? payload?.TotalQuestions ?? payload?.questionCount;
+        const qi = payload?.questionIndex ?? payload?.QuestionIndex ?? payload?.index ?? payload?.questionNumber;
+        if (typeof tq === 'number' && typeof qi === 'number') {
+          if (qi === tq || qi === tq - 1) setIsLastQuestion(true);
+        }
+      } catch {}
     },
-    onFinalResults: (payload) => {
-      try { setResult(payload); } catch {}
+    onFinalResults: (payload) => { 
+      try { setResult(payload); } catch {}; 
+      // If final results arrive, cancel fallback timer
+      if (finalResultsTimerRef.current) { clearTimeout(finalResultsTimerRef.current); finalResultsTimerRef.current = null; }
     },
-    onGameEnded: (payload) => {
-      try { setResult(payload); } catch {}
-    }
+    onGameEnded: () => { /* optional */ }
   });
 
-  const ready = !!result || (gotQuestionTimeEnded && gotPlayerQuestionResult);
-
-  const leaderboardData = useMemo(() => {
-    if (result) {
-      return result.finalLeaderboard || result.FinalLeaderboard || result.topPlayers || result.TopPlayers || result.leaderboard || [];
+  // Start fallback timer only when last question result received but final results not yet present.
+  useEffect(() => {
+    if (result) { // final results arrived
+      if (finalResultsTimerRef.current) { clearTimeout(finalResultsTimerRef.current); finalResultsTimerRef.current = null; }
+      return;
     }
-    if (playerResultPayload) {
-      return playerResultPayload.topPlayers || playerResultPayload.TopPlayers || [];
+    if (isLastQuestion && gotPlayerQuestionResult && !finalResultsTimeoutReached) {
+      if (!finalResultsTimerRef.current) {
+        finalResultsTimerRef.current = window.setTimeout(() => {
+          setFinalResultsTimeoutReached(true);
+          finalResultsTimerRef.current = null;
+        }, 4000); // 4s grace period for host to publish final results
+      }
     }
-    return [];
-  }, [result, playerResultPayload]);
-
-  const first = Array.isArray(leaderboardData) && leaderboardData.length > 0 ? leaderboardData[0] : null;
-  const firstName = first?.name || first?.playerName || first?.userName || first?.Name || first?.PlayerName || 'Unknown';
-  const firstScore = first?.score ?? first?.Score ?? first?.playerScore ?? undefined;
-
-  const topFive = Array.isArray(leaderboardData) ? leaderboardData.slice(0, 5) : [];
-
-  // Champion background music
-  const [musicOn, setMusicOn] = useState(true);
-  const championAudioRef = useRef<HTMLAudioElement | null>(null);
-  const startChampionMusic = async () => {
-    if (!musicOn) return;
-    try {
-      if (championAudioRef.current) {
-        try { championAudioRef.current.pause(); } catch {}
-        championAudioRef.current = null;
+    return () => {
+      if (!result && finalResultsTimerRef.current && !(isLastQuestion && gotPlayerQuestionResult)) {
+        clearTimeout(finalResultsTimerRef.current);
+        finalResultsTimerRef.current = null;
       }
-      const audio = new Audio('/sounds/champion.mp3');
-      audio.loop = true;
-      audio.volume = 0.12;
-      championAudioRef.current = audio;
-      await audio.play();
-    } catch {}
-  };
-  const stopChampionMusic = () => {
-    try {
-      if (championAudioRef.current) {
-        championAudioRef.current.pause();
-        championAudioRef.current.currentTime = 0;
-        championAudioRef.current = null;
-      }
-    } catch {}
-  };
+    };
+  }, [result, isLastQuestion, gotPlayerQuestionResult, finalResultsTimeoutReached]);
+
+  const ready = !!result || (isLastQuestion && gotPlayerQuestionResult && finalResultsTimeoutReached);
+
+  // Normalized leaderboard result (unifies shapes from various backend payloads)
+  const normalized = useMemo(() => {
+    if (result) return normalizeLeaderboard(result);
+    if (isLastQuestion && gotPlayerQuestionResult && finalResultsTimeoutReached && playerResultPayload) {
+      return normalizeLeaderboard(playerResultPayload);
+    }
+    return { players: [], first: undefined };
+  }, [result, playerResultPayload, isLastQuestion, gotPlayerQuestionResult, finalResultsTimeoutReached]);
+
+  const players = normalized.players;
+  const first = normalized.first;
+  const firstName = first?.name || 'Unknown';
+  const firstScore = first?.score;
+  const topFive: NormalizedLeaderboardPlayer[] = players.slice(0, 5);
+
+  // Centralized audio (champion music)
+  const { musicEnabled: musicOn, setMusicEnabled: setMusicOn, startChampionMusic, stopChampionMusic, championPlaying } = useGameAudio();
 
   useEffect(() => {
-    if (ready && musicOn) {
-      startChampionMusic();
-    } else {
+    if (ready && musicOn) { startChampionMusic(); } else { stopChampionMusic(); }
+    return () => { // stop on unmount / route change
       stopChampionMusic();
-    }
-    return () => { stopChampionMusic(); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, musicOn]);
+    };
+  }, [ready, musicOn, startChampionMusic, stopChampionMusic]);
+
+  // Also stop champion music on browser/tab unload just in case
+  useEffect(() => {
+    const handler = () => { try { stopChampionMusic(); } catch {} };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [stopChampionMusic]);
+
+  // Cleanup and navigate home without keeping session
+  const handleBackHome = () => {
+    try { stopChampionMusic(); } catch {}
+    try { setResult(null as any); } catch {}
+    try { (client as any)?.stop?.(); } catch {}
+    router.replace('/');
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
@@ -114,7 +145,6 @@ export default function FinalPage() {
               </div>
             )}
             <div className="absolute inset-0 pointer-events-none opacity-10 bg-[radial-gradient(circle_at_70%_40%,#fbbf24,transparent_60%)]" />
-            
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-red-600 to-amber-500">Final Leaderboard</h2>
               <div className="flex items-center gap-3">
@@ -129,123 +159,18 @@ export default function FinalPage() {
             </div>
 
             {/* Podium for Top 3 */}
-            <div className="mb-10 relative">
-              <div className="absolute inset-0 -z-10 opacity-30 bg-[radial-gradient(circle_at_50%_-20%,#fde68a,transparent_50%)]" />
-              <div className="grid grid-cols-3 gap-3 items-end">
-                {/* Second */}
-                <div className="flex flex-col items-center">
-                  <div className="mb-2 text-sm font-bold text-slate-700">2nd</div>
-                  <div className="w-full bg-gradient-to-t from-slate-200 to-slate-50 rounded-t-xl border-2 border-slate-300 h-40 shadow-inner flex items-end justify-center p-3">
-                    <div className="text-center">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-slate-400 to-slate-600 text-white font-black flex items-center justify-center mx-auto mb-2">2</div>
-                      <div className="text-sm font-semibold text-gray-800 truncate max-w-[10rem]">{(leaderboardData[1]?.name || leaderboardData[1]?.userName) ?? '—'}</div>
-                    </div>
-                  </div>
-                </div>
-                {/* First */}
-                <div className="flex flex-col items-center">
-                  <div className="mb-2 text-sm font-extrabold text-amber-700 flex items-center gap-1">🏆 Champion</div>
-                  <div className="relative w-full bg-gradient-to-t from-amber-200 to-yellow-50 rounded-t-2xl border-2 border-amber-400 h-56 shadow-inner flex items-end justify-center p-5">
-                    <div className="absolute -top-5 left-1/2 -translate-x-1/2 text-3xl">👑</div>
-                    <div className="text-center">
-                      <div className="w-14 h-14 rounded-full bg-gradient-to-br from-yellow-400 to-amber-600 text-white font-black flex items-center justify-center mx-auto mb-2">1</div>
-                      <div className="text-base font-extrabold text-gray-900 truncate max-w-[12rem]">{firstName}</div>
-                      {firstScore !== undefined && (
-                        <div className="text-xs font-semibold text-gray-700 mt-1">{firstScore} pts</div>
-                      )}
-                    </div>
-                    <div className="absolute inset-x-6 bottom-2 h-1 rounded-full bg-amber-400/50 blur-sm" />
-                  </div>
-                </div>
-                {/* Third */}
-                <div className="flex flex-col items-center">
-                  <div className="mb-2 text-sm font-bold text-orange-700">3rd</div>
-                  <div className="w-full bg-gradient-to-t from-orange-200 to-orange-50 rounded-t-xl border-2 border-orange-300 h-32 shadow-inner flex items-end justify-center p-3">
-                    <div className="text-center">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-amber-600 text-white font-black flex items-center justify-center mx-auto mb-2">3</div>
-                      <div className="text-sm font-semibold text-gray-800 truncate max-w-[10rem]">{(leaderboardData[2]?.name || leaderboardData[2]?.userName) ?? '—'}</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            {topFive.length > 1 && (
-              <ul className="space-y-4">
-                {topFive.slice(1).map((p: any, i: number) => {
-                  const rank = i + 2;
-                  const name = p.name || p.playerName || p.userName || 'Unknown';
-                  const score = p.score ?? p.Score ?? p.playerScore ?? 0;
-                  const isTop3 = rank <= 3;
-
-                  // Enhanced color schemes for top 3
-                  const getTop3Styles = (rank: number) => {
-                    switch (rank) {
-                      case 2:
-                        return 'bg-gradient-to-r from-gray-100 to-slate-100 border-gray-400 text-gray-800 shadow-lg ring-2 ring-gray-200';
-                      case 3:
-                        return 'bg-gradient-to-r from-orange-100 to-amber-100 border-orange-400 text-orange-900 shadow-lg ring-2 ring-orange-200';
-                      default:
-                        return 'border-gray-200 bg-white text-gray-700 shadow-sm';
-                    }
-                  };
-
-                  const getMedalIcon = (rank: number) => {
-                    switch (rank) {
-                      case 2: return '🥈';
-                      case 3: return '🥉';
-                      default: return '🏅';
-                    }
-                  };
-
-                  const getRankBadgeStyle = (rank: number) => {
-                    switch (rank) {
-                      case 2:
-                        return 'bg-gradient-to-br from-gray-400 to-slate-600 text-white';
-                      case 3:
-                        return 'bg-gradient-to-br from-orange-400 to-amber-600 text-white';
-                      default:
-                        return 'bg-gray-800 text-white';
-                    }
-                  };
-
-                  return (
-                    <li 
-                      key={p.playerId || name + rank} 
-                      className={`p-5 rounded-2xl border-2 ${isTop3 ? getTop3Styles(rank) : 'border-gray-200 bg-white text-gray-700 shadow-sm'} flex items-center justify-between transition-all duration-300 hover:scale-[1.02]`}
-                    > 
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-full ${getRankBadgeStyle(rank)} flex items-center justify-center text-lg font-black shadow-lg`}>
-                            {rank}
-                          </div>
-                          <div className="text-2xl">{getMedalIcon(rank)}</div>
-                        </div>
-                        <div>
-                          <div className={`font-bold ${isTop3 ? 'text-lg' : 'text-base'} text-gray-800`}>
-                            {name}
-                          </div>
-                          {isTop3 && (
-                            <div className="text-xs font-bold uppercase tracking-wider opacity-80">
-                              TOP {rank} PLAYER
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className={`font-bold ${isTop3 ? 'text-lg' : 'text-base'} text-gray-800`}>
-                          {score}
-                        </div>
-                        <div className="text-[10px] tracking-wider font-semibold text-gray-400">PTS</div>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
+            {/* Replaced podium & list with reusable components */}
+            <PodiumTop3 players={players} className="mb-10" />
+            <TopPlayersList
+              players={players}
+              title="Final Leaderboard"
+              limit={10}
+              className="mb-10"
+            />
 
             {/* Bottom large Back to Home button */}
             <div className="mt-10">
-              <GameButton size="lg" variant="primary" fullWidth onClick={() => router.push('/')}>Back to Home</GameButton>
+              <GameButton size="lg" variant="primary" fullWidth onClick={handleBackHome}>Back to Home</GameButton>
             </div>
           </div>
         )}
