@@ -1,0 +1,33 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      
+    - name: Docker Login
+      shell: bash
+      env:
+        DOCKER_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
+        DOCKER_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
+      run: |
+        echo "$DOCKER_TOKEN" | docker login -u "$DOCKER_USERNAME" --password-stdin
+
+    - name: Set Image Tag as GitHub Run ID
+      run: echo "IMAGE_TAG=${{ github.run_id }}" >> $GITHUB_ENV
+
+    - name: Build Docker image
+      run: docker build . --file Dockerfile --tag "${{ secrets.DOCKER_HUB_USERNAME }}/bdkahootfe:${{ env.IMAGE_TAG }}"
+
+    - name: Push Docker image with version tag
+      run: docker push "${{ secrets.DOCKER_HUB_USERNAME }}/bdkahootfe:${{ env.IMAGE_TAG }}"
