@@ -2,7 +2,7 @@
 
 import * as signalR from '@microsoft/signalr';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.bdkahoot.trungtero.com';
 
 let singletonConnection: signalR.HubConnection | null = null;
 let starting = false;
