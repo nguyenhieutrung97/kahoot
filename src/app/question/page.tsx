@@ -101,6 +101,22 @@ export default function QuestionPage() {
     },
     onFinalResults: (payload) => { setResult(payload); router.push('/final'); },
     onGameEnded: (payload) => { try { setResult(payload); } catch {}; router.push('/final'); },
+    onKickedFromGame: (payload: any) => { // NEW handler
+      try { (window as any).console?.log?.('KickedFromGame event', payload); } catch {}
+      try { (submitAnswer as any)?.client?.stop?.(); } catch {}
+      let reason = 'You have been kicked from the game by the host';
+      if (payload) {
+        if (typeof payload === 'string') reason = payload || reason; else reason = payload.reason || payload.message || reason;
+      }
+      // Attempt to clear any per-room session keys (heuristic)
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i) || '';
+            if (k.startsWith('kahoot_player_session:')) localStorage.removeItem(k);
+        }
+      } catch {}
+      router.replace(`/?kicked=1&reason=${encodeURIComponent(reason)}`);
+    },
     onNewQuestion: (payload) => {
       try {
         // Derive question index (0-based from server) and map to 1-based for display

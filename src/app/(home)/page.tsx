@@ -17,6 +17,9 @@ export default function Dashboard() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  const kicked = searchParams.get('kicked');
+  const reason = searchParams.get('reason');
+
   // Prefill from query or previous session
   useEffect(() => {
     try {
@@ -60,6 +63,17 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       <GameHeader title="DEVSLIKECODE" withSvgBorder />
+      {kicked && (
+        <div className="mx-auto max-w-xl mt-4 px-4">
+          <div className="bg-red-50 border border-red-200 text-red-700 rounded-md p-4 text-sm font-medium flex items-start gap-3">
+            <span>🚫</span>
+            <div>
+              <p className="font-bold tracking-wide uppercase text-xs mb-1">Removed From Game</p>
+              <p>{decodeURIComponent(reason || 'You have been kicked from the game by the host')}</p>
+            </div>
+          </div>
+        </div>
+      )}
       <main className="flex items-center justify-center min-h-[calc(100vh-120px)]">
         <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full mx-4 border-2 border-gray-200">
           <div className="text-center mb-8">

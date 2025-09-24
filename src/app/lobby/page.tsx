@@ -118,6 +118,22 @@ export default function Lobby() {
       try { setResult(payload); } catch {}
       router.push('/final');
     },
+    onKickedFromGame: (payload: any) => { // NEW handler
+      try {
+        // Stop connection to prevent further events
+        (client as any)?.stop?.();
+      } catch {}
+      let reason = 'You have been removed from the game by the host.';
+      try {
+        if (typeof payload === 'string') reason = payload || reason; else if (payload) reason = payload.reason || payload.message || reason;
+      } catch {}
+      // Clear any stored session for this room
+      try {
+        const key = sessionKeyFor(joinCode);
+        localStorage.removeItem(key);
+      } catch {}
+      router.replace(`/?kicked=1&reason=${encodeURIComponent(reason)}`);
+    },
     onJoinedGame: (payload) => {
       try {
         const codeForKey = String(payload.roomCode || roomCode || joinCode || '').toUpperCase();
