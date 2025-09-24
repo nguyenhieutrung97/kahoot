@@ -73,7 +73,7 @@ export default function Dashboard() {
               <GameInput
                 type="text"
                 value={roomCode}
-                onChange={(e) => setRoomCode(e.target.value)}
+                onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
                 placeholder="ENTER ROOM CODE"
                 error={error && !isValidRoomCode(roomCode) ? error : ''}
                 fullWidth
@@ -83,7 +83,7 @@ export default function Dashboard() {
               <GameInput
                 type="text"
                 value={playerName}
-                onChange={(e) => setPlayerName(e.target.value)}
+                onChange={(e) => setPlayerName(e.target.value.toUpperCase())}
                 placeholder="ENTER YOUR NAME"
                 error={error && isValidRoomCode(roomCode) ? error : ''}
                 fullWidth
