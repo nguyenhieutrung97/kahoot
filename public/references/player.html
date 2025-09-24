@@ -857,8 +857,8 @@
                 console.log("🔄 Creating new SignalR connection...");
                 // Create new connection without authentication (anonymous for players)
                 const connectionBuilder = new signalR.HubConnectionBuilder()
-                    // .withUrl("http://api.bdkahoot.trungtero.com/gameHub")
-                    .withUrl("http://api.bdkahoot.trungtero.com/gameHub", {
+                    // .withUrl("https://localhost:7007/gameHub")
+                    .withUrl("https://bdkahoot-be.azurewebsites.net/gameHub", {
                         transport: signalR.HttpTransportType.WebSockets,
                         skipNegotiation: true,
                         withCredentials: false
@@ -1096,7 +1096,6 @@
 
             connection.on("GameEnded", (data) => {
                 console.log(`🏁 Game ended: ${JSON.stringify(data)}`);
-                displayPlayerGameResults(data);
             });
 
             // Reconnection events
@@ -2017,7 +2016,8 @@
                 await initConnection();
 
                 // Invoke the JoinGame method
-                await connection.invoke("JoinGame", roomCode, userName, null); // Pass null for playerId for now
+                let playerReconnectId = null;
+                await connection.invoke("JoinGame", roomCode, userName, playerReconnectId); // Pass null for playerId for now
 
             } catch (err) {
                 console.error('Join Game Error:', err);
