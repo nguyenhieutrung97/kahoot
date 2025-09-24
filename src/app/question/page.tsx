@@ -74,6 +74,7 @@ export default function QuestionPage() {
   // New state to reflect current question number driven by NewQuestion events
   const [displayQuestionNumber, setDisplayQuestionNumber] = useState<number>(questionNumber);
   const [totalTime, setTotalTime] = useState<number | null>(null); // NEW total time for progress bar
+  const [submittedSnapshot, setSubmittedSnapshot] = useState<number | null>(null); // NEW freeze value for bottom display
   
   // Music centralized via useGameAudio hook (replaces legacy inline audio logic)
   const {
@@ -132,6 +133,7 @@ export default function QuestionPage() {
         setHasSubmitted(false);
         setShowResult(null);
         setCorrectAnswers([]);
+        setSubmittedSnapshot(null); // reset snapshot for new question
 
         // Determine total time limit strictly from timeLimitSeconds (fallback to 20 if missing)
         const totalLimit = (typeof payload?.timeLimitSeconds === 'number' && !isNaN(payload.timeLimitSeconds)) ? payload.timeLimitSeconds : 20;
@@ -188,8 +190,7 @@ export default function QuestionPage() {
     onProceedingToNextQuestion: () => {},
     onPlayerQuestionResult: (payload) => {
       try {
-        clearTimer();
-        setTimeLeft(0);
+        // Do NOT clear timer or force timeLeft=0 so the progress bar keeps counting down post submission
         // Extract correctness
         const isCorrect = !!(payload?.isCorrect || payload?.correct);
         // Extract correct answers ids
@@ -269,10 +270,7 @@ export default function QuestionPage() {
     if (hasSubmitted || !selected) return;
     setHasSubmitted(true);
     setShowResult(null);
-    if (timerRef.current) {
-      window.clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
+    if (submittedSnapshot === null) setSubmittedSnapshot(timeLeft); // capture freeze value
     try {
       await submitAnswer(selected);
     } catch (e) {
@@ -285,10 +283,7 @@ export default function QuestionPage() {
     if (hasSubmitted || selectedIds.length === 0) return;
     setHasSubmitted(true);
     setShowResult(null);
-    if (timerRef.current) {
-      window.clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
+    if (submittedSnapshot === null) setSubmittedSnapshot(timeLeft); // capture freeze value
     try {
       await submitMultipleAnswers(selectedIds);
       // show confirmation (hasSubmitted already true)
@@ -479,7 +474,7 @@ export default function QuestionPage() {
             {totalTime !== null && (
               <div className="flex items-center gap-2">
                 <span className="inline-block w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                <span>{timeLeft !== null ? `${timeLeft}s / ${totalTime}s` : '--'}</span>
+                <span>{(submittedSnapshot ?? timeLeft) !== null ? `${submittedSnapshot ?? timeLeft}s / ${totalTime}s` : '--'}</span>
               </div>
             )}
           </div>

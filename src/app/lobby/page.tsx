@@ -366,77 +366,77 @@ export default function Lobby() {
           </div>
         }
       />
-      <main className={`px-6 py-6 min-h-[calc(100vh-120px)] ${hideScroll ? 'overflow-hidden' : 'overflow-y-auto'}`}>
-        <div className="mb-8 text-center">
-          <h2 className="text-2xl font-bold text-gray-900 uppercase tracking-wide mb-4">PARTICIPANTS</h2>
-          <div className="w-16 h-1 bg-red-600 mx-auto" />
+      <main className={`px-4 sm:px-6 py-6 min-h-[calc(100vh-120px)] ${hideScroll ? 'overflow-hidden' : 'overflow-y-auto'} flex flex-col`}> {/* added responsive padding & flex */}
+        <div className="mb-6 sm:mb-8 text-center">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 uppercase tracking-wide mb-3 sm:mb-4">PARTICIPANTS</h2>
+          <div className="w-12 sm:w-16 h-1 bg-red-600 mx-auto" />
         </div>
-        <div className="mt-8 text-center max-w-4xl mx-auto">
-          <div className="flex items-center justify-center gap-3">
+        <div className="mt-6 sm:mt-8 text-center max-w-4xl mx-auto order-2 sm:order-none">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full">
             <button
               onClick={() => {
                 try { if (client && (client as any).stop) (client as any).stop(); } catch {}
                 router.push('/');
               }}
-              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+              className="w-full sm:w-auto px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm font-semibold"
             >
               🚪 Leave Room
             </button>
           </div>
         </div>
-        <div className="grid grid-cols-4 gap-4 max-w-4xl mx-auto mt-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 max-w-4xl mx-auto mt-6 w-full"> {/* responsive grid */}
           {players.length === 0 && currentPlayer ? (
-            <div className="bg-white rounded-lg p-4 shadow-lg border-2 border-green-300 transition-colors">
-              <div className="aspect-square bg-gray-100 rounded-lg mb-3 flex items-center justify-center border-2 border-gray-200">
-                <div className={`w-16 h-16 ${currentPlayer.avatar.color} rounded-full flex items-center justify-center text-white text-lg font-bold`}>
+            <div className="bg-white rounded-lg p-3 sm:p-4 shadow-lg border-2 border-green-300 transition-colors">
+              <div className="aspect-square bg-gray-100 rounded-lg mb-2 sm:mb-3 flex items-center justify-center border-2 border-gray-200">
+                <div className={`w-14 h-14 sm:w-16 sm:h-16 ${currentPlayer.avatar.color} rounded-full flex items-center justify-center text-white text-base sm:text-lg font-bold`}>
                   {currentPlayer.avatar.initials}
                 </div>
               </div>
-              <div className="text-sm text-center">
-                <div className="font-bold text-gray-900 truncate uppercase tracking-wide text-xs">{currentPlayer.name} (You)</div>
-                <div className="text-gray-500 font-medium mt-1">{currentPlayer.id}</div>
+              <div className="text-[11px] sm:text-sm text-center">
+                <div className="font-bold text-gray-900 truncate uppercase tracking-wide text-[10px] sm:text-xs">{currentPlayer.name} (You)</div>
+                <div className="text-gray-500 font-medium mt-1 hidden sm:block">{currentPlayer.id}</div>
               </div>
             </div>
           ) : null}
           {players.map((player) => {
             const isCurrent = currentPlayer && ((player.id && currentPlayer.id && String(player.id) === String(currentPlayer.id)) || (player.name && currentPlayer.name && player.name.toUpperCase() === currentPlayer.name.toUpperCase()));
             return (
-              <div key={player.id} className={`bg-white rounded-lg p-4 shadow-lg border-2 ${isCurrent ? 'border-green-400' : 'border-gray-200'} hover:border-red-600 transition-colors`}>
-                <div className="aspect-square bg-gray-100 rounded-lg mb-3 flex items-center justify-center border-2 border-gray-200">
-                  <div className={`w-16 h-16 ${player.avatar.color} rounded-full flex items-center justify-center text-white text-lg font-bold`}>
+              <div key={player.id} className={`bg-white rounded-lg p-3 sm:p-4 shadow-lg border-2 ${isCurrent ? 'border-green-400' : 'border-gray-200'} hover:border-red-600 transition-colors`}>
+                <div className="aspect-square bg-gray-100 rounded-lg mb-2 sm:mb-3 flex items-center justify-center border-2 border-gray-200">
+                  <div className={`w-14 h-14 sm:w-16 sm:h-16 ${player.avatar.color} rounded-full flex items-center justify-center text-white text-base sm:text-lg font-bold`}>
                     {player.avatar.initials}
                   </div>
                 </div>
-                <div className="text-sm text-center">
-                  <div className="font-bold text-gray-900 truncate uppercase tracking-wide text-xs">{player.name}{isCurrent ? ' (You)' : ''}</div>
-                  <div className="text-gray-500 font-medium mt-1">{player.id}</div>
+                <div className="text-[11px] sm:text-sm text-center">
+                  <div className="font-bold text-gray-900 truncate uppercase tracking-wide text-[10px] sm:text-xs">{player.name}{isCurrent ? ' (You)' : ''}</div>
+                  <div className="text-gray-500 font-medium mt-1">Waiting...</div>
                 </div>
               </div>
             );
           })}
         </div>
         {players.length > 0 && game && questions && questions.length > 0 && (
-          <div className="mt-12 text-center bg-white rounded-lg p-6 shadow-lg border-2 border-gray-200 max-w-md mx-auto">
-            <div className="text-sm text-gray-600 mb-2 font-medium uppercase tracking-wide">{players.length} participant{players.length !== 1 ? 's' : ''} ready</div>
-            <div className="w-12 h-1 bg-red-600 mx-auto mb-4" />
-            <div className="text-2xl font-bold text-red-600 uppercase tracking-wide">START IN {countdown}S</div>
-            <div className="text-xs text-gray-500 mt-2">{questions.length} question{questions.length !== 1 ? 's' : ''} ready</div>
+          <div className="mt-10 sm:mt-12 text-center bg-white rounded-lg p-5 sm:p-6 shadow-lg border-2 border-gray-200 max-w-md mx-auto w-full">
+            <div className="text-xs sm:text-sm text-gray-600 mb-2 font-medium uppercase tracking-wide">{players.length} participant{players.length !== 1 ? 's' : ''} ready</div>
+            <div className="w-10 sm:w-12 h-1 bg-red-600 mx-auto mb-3 sm:mb-4" />
+            <div className="text-xl sm:text-2xl font-bold text-red-600 uppercase tracking-wide">START IN {countdown}S</div>
+            <div className="text-[11px] sm:text-xs text-gray-500 mt-2">{questions.length} question{questions.length !== 1 ? 's' : ''} ready</div>
           </div>
         )}
         {game && (!questions || questions.length === 0) && (
-          <div className="mt-12 text-center bg-yellow-50 rounded-lg p-6 shadow-lg border-2 border-yellow-200 max-w-md mx-auto">
-            <div className="text-sm text-yellow-800 mb-2 font-medium uppercase tracking-wide">WAITING FOR QUESTIONS</div>
-            <div className="w-12 h-1 bg-yellow-600 mx-auto mb-4" />
-            <div className="text-lg font-bold text-yellow-800 uppercase tracking-wide">GAME NOT READY</div>
-            <div className="text-xs text-yellow-600 mt-2">The game host needs to add questions before starting</div>
+          <div className="mt-10 sm:mt-12 text-center bg-yellow-50 rounded-lg p-5 sm:p-6 shadow-lg border-2 border-yellow-200 max-w-md mx-auto w-full">
+            <div className="text-xs sm:text-sm text-yellow-800 mb-2 font-medium uppercase tracking-wide">WAITING FOR QUESTIONS</div>
+            <div className="w-10 sm:w-12 h-1 bg-yellow-600 mx-auto mb-3 sm:mb-4" />
+            <div className="text-lg sm:text-xl font-bold text-yellow-800 uppercase tracking-wide">GAME NOT READY</div>
+            <div className="text-[11px] sm:text-xs text-yellow-600 mt-2">The host needs to add questions before starting</div>
           </div>
         )}
         {showWaitingInfo && (
-          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[90%] max-w-md bg-green-600 text-indigo-50 shadow-xl rounded-xl px-5 py-4 border border-indigo-400/50 backdrop-blur-md" role="status" aria-live="polite">
-            <p className="text-sm font-semibold tracking-wide">Waiting for other players to join…</p>
-            <p className="text-xs mt-1 opacity-90">The host will start the game when everyone is ready.</p>
+          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[94%] sm:w-[90%] max-w-md bg-green-600 text-indigo-50 shadow-xl rounded-xl px-4 sm:px-5 py-4 border border-indigo-400/50 backdrop-blur-md" role="status" aria-live="polite">{/* responsive banner */}
+            <p className="text-xs sm:text-sm font-semibold tracking-wide">Waiting for other players to join…</p>
+            <p className="text-[10px] sm:text-xs mt-1 opacity-90">The host will start the game when everyone is ready.</p>
             {players.length > 0 && (
-              <p className="text-[11px] mt-2 opacity-75">Current players: {players.length}</p>
+              <p className="text-[10px] sm:text-[11px] mt-2 opacity-75">Current players: {players.length}</p>
             )}
           </div>
         )}

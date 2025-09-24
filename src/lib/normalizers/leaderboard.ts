@@ -107,8 +107,5 @@ export function normalizeLeaderboard(payload: any): NormalizedLeaderboardResult 
     if (a.rank !== b.rank) return a.rank - b.rank;
     return b.score - a.score;
   });
-  // With exactOptionalPropertyTypes, omit 'first' when empty to avoid assigning undefined
-  return ranked.length > 0
-    ? { players: ranked, first: ranked[0]! }
-    : { players: ranked };
+  return { players: ranked, first: ranked[0] };
 }

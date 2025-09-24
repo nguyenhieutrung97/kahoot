@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Kahoot Clone - Interactive Quiz Game",
-    template: "%s | Kahoot Clone"
+    default: "BD Kahoot - Interactive Quiz Game",
+    template: "%s | BD Kahoot"
   },
   description: "An interactive quiz game platform where players can join rooms, answer questions, and compete on leaderboards.",
   keywords: ["quiz", "game", "education", "interactive", "learning", "competition"],
@@ -34,13 +34,13 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: "/",
-    title: "Kahoot Clone - Interactive Quiz Game",
+    title: "BD Kahoot - Interactive Quiz Game",
     description: "An interactive quiz game platform where players can join rooms, answer questions, and compete on leaderboards.",
-    siteName: "Kahoot Clone",
+    siteName: "BD Kahoot",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Kahoot Clone - Interactive Quiz Game",
+    title: "BD Kahoot - Interactive Quiz Game",
     description: "An interactive quiz game platform where players can join rooms, answer questions, and compete on leaderboards.",
   },
   robots: {

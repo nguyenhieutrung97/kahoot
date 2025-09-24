@@ -75,7 +75,7 @@ export const getSearchParam = (
  */
 export const isValidRoomCode = (roomCode: string): boolean => {
   const trimmed = roomCode.trim();
-  if (trimmed.length === 0 || trimmed.length > 50) {
+  if (trimmed.length === 0 || trimmed.length > 10) {
     return false;
   }
   // Only allow alphanumeric characters (letters and numbers)
@@ -88,7 +88,7 @@ export const isValidRoomCode = (roomCode: string): boolean => {
  */
 export const isValidPlayerName = (name: string): boolean => {
   const trimmed = name.trim();
-  if (trimmed.length === 0 || trimmed.length > 50) {
+  if (trimmed.length === 0 || trimmed.length > 10) {
     return false;
   }
   // Allow letters, numbers, spaces, hyphens, apostrophes, and periods

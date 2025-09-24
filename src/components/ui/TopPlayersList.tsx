@@ -75,7 +75,7 @@ export const TopPlayersList: React.FC<TopPlayersListProps> = ({
           );
         })}
       </ul>
-      {(playerRank !== null || playerScore !== null) && (
+      {(playerRank != null) && (
         <div className="mt-3 text-[11px] text-gray-600">Your Rank: {playerRank ?? '-'} | Score: {playerScore ?? 0}</div>
       )}
     </div>

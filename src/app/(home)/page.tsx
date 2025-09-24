@@ -38,11 +38,11 @@ export default function Dashboard() {
     setError('');
 
     if (!isValidRoomCode(roomCode)) {
-      setError('Room code must contain only letters and numbers (1-50 characters)');
+      setError('Room code must contain only letters and numbers (1-10 characters)');
       return;
     }
     if (!isValidPlayerName(playerName)) {
-      setError('Name can only contain letters, numbers, spaces, hyphens, apostrophes, and periods (1-50 characters)');
+      setError('Name can only contain letters, numbers, spaces, hyphens, apostrophes, and periods (1-10 characters)');
       return;
     }
 

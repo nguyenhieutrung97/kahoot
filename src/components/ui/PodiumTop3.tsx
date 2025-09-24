@@ -20,7 +20,7 @@ export interface PodiumTop3Props {
 export const PodiumTop3: React.FC<PodiumTop3Props> = ({
   players,
   className = '',
-  title = 'Podium',
+  title = 'We have champions!',
   showScores = true,
   highlightChampion = true,
 }) => {
@@ -88,12 +88,6 @@ export const PodiumTop3: React.FC<PodiumTop3Props> = ({
               </div>
             </div>
         </div>
-      </div>
-      {/* Mini legend under podium */}
-      <div className="mt-4 flex justify-center gap-4 text-[10px] font-semibold tracking-wider text-gray-500 uppercase">
-        {first && <Pill label="1st" />}
-        {second && <Pill label="2nd" />}
-        {third && <Pill label="3rd" />}
       </div>
     </div>
   );
