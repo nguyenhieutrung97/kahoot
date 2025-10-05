@@ -44,28 +44,10 @@ export function DashboardSidebar({ isOpen, onClose, isCollapsed, onToggleCollaps
       href: "/admin"
     },
     {
-      id: "questions",
-      label: "Question",
-      icon: <FileQuestion className="h-5 w-5" />,
-      href: "/admin/questions"
-    },
-    {
-      id: "lobby",
-      label: "Lobby",
+      id: "host",
+      label: "Host",
       icon: <Users className="h-5 w-5" />,
-      href: "/admin/lobby"
-    },
-    {
-      id: "analytics",
-      label: "Analytics",
-      icon: <BarChart3 className="h-5 w-5" />,
-      href: "/admin/analytics"
-    },
-    {
-      id: "settings",
-      label: "Settings",
-      icon: <Settings className="h-5 w-5" />,
-      href: "/admin/settings"
+      href: "/admin/host"
     }
   ];
 

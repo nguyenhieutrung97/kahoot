@@ -40,9 +40,27 @@ async function apiRequest<T>(
 
   try {
     const response = await fetch(url, config);
-    
+
+    // No content (204) or content-length 0: return success without parsing
+    if (response.status === 204) {
+      return { success: true } as ApiResponse<T>;
+    }
+
+    // Try to read raw text first to safely handle empty bodies (even when status 200)
+    const contentType = response.headers.get('content-type') || '';
+    let rawText: string | null = null;
+    try {
+      rawText = await response.text();
+    } catch {
+      rawText = null;
+    }
+
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      // Attempt to parse error JSON if there is text, else construct generic error
+      let errorData: any = {};
+      if (rawText && rawText.trim().length) {
+        try { errorData = JSON.parse(rawText); } catch { /* ignore */ }
+      }
       throw new ApiError(
         errorData.message || `HTTP ${response.status}: ${response.statusText}`,
         response.status,
@@ -50,16 +68,29 @@ async function apiRequest<T>(
       );
     }
 
-    const data = await response.json();
-    return {
-      data,
-      success: true,
-    };
+    // Success path: if no body or empty string, return success without data
+    if (!rawText || !rawText.trim().length) {
+      return { success: true } as ApiResponse<T>;
+    }
+
+    // If not JSON content-type, just return raw text as any
+    if (!contentType.toLowerCase().includes('application/json')) {
+      return { data: rawText as any as T, success: true };
+    }
+
+    let data: any;
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      // Fallback: return raw text if parsing fails
+      data = rawText as any as T;
+    }
+
+    return { data, success: true } as ApiResponse<T>;
   } catch (error) {
     if (error instanceof ApiError) {
       throw error;
     }
-    
     throw new ApiError(
       error instanceof Error ? error.message : 'An unexpected error occurred',
       0,

@@ -62,7 +62,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <GameHeader title="DEVSLIKECODE" withSvgBorder />
+      <GameHeader title="QUIZ GAME" withSvgBorder />
       {kicked && (
         <div className="mx-auto max-w-xl mt-4 px-4">
           <div className="bg-red-50 border border-red-200 text-red-700 rounded-md p-4 text-sm font-medium flex items-start gap-3">

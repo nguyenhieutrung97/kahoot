@@ -108,6 +108,7 @@ export default function Lobby() {
   const didJoinRef = useRef(false);
   const { setResult } = useFinalResult(); // NEW
   const [showWaitingInfo, setShowWaitingInfo] = useState(false); // NEW waiting info flag
+  const gameTitleRef = useRef<string | null>(null); // cache first non-empty game title
 
   const { connected, client, joinGame, ensureConnected } = useGameHub({
     onGameEnded: (payload) => { // NEW
@@ -135,6 +136,15 @@ export default function Lobby() {
       router.replace(`/?kicked=1&reason=${encodeURIComponent(reason)}`);
     },
     onJoinedGame: (payload) => {
+      // --- handle and cache game title (duplicate key issue fallback) ---
+      try {
+        const rawTitle = (payload?.gameTitle ?? payload?.title ?? payload?.GameTitle ?? '') as string;
+        if (rawTitle && rawTitle.trim()) {
+          // store first non-empty
+          if (!gameTitleRef.current) gameTitleRef.current = rawTitle.trim();
+        }
+      } catch {}
+      // Persist session info
       try {
         const codeForKey = String(payload.roomCode || roomCode || joinCode || '').toUpperCase();
         const session = {
@@ -152,14 +162,17 @@ export default function Lobby() {
           localStorage.setItem('kahoot_player_session', JSON.stringify(global));
         } catch {}
       } catch {}
-      if (payload.gameTitle || payload.totalQuestions) {
+      // Game info (avoid overwriting with empty title)
+      const effectiveTitle = gameTitleRef.current || payload.gameTitle || 'Game';
+      if (effectiveTitle || payload.totalQuestions) {
         setGameInfo({
-          gameTitle: payload.gameTitle || 'Game',
+          gameTitle: effectiveTitle,
           gameDescription: payload.gameDescription,
           totalQuestions: payload.totalQuestions || 0,
           roomCode: payload.roomCode || roomCode,
         });
       }
+      // Players mapping
       if (payload.players && Array.isArray(payload.players)) {
         debugLogPlayers('JoinedGame/raw', payload.players);
         const serverPlayers = mapServerPlayers(payload.players);

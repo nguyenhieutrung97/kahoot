@@ -9,14 +9,9 @@ import { useFinalResult } from '@/context/FinalResultContext';
 import { normalizeLeaderboard, NormalizedLeaderboardPlayer } from '@/lib/normalizers/leaderboard';
 import TopPlayersList from '@/components/ui/TopPlayersList';
 import { useGameAudio } from '@/hooks/useGameAudio';
+import type { Answer } from '@/types/api';
 
-type Answer = {
-  id: string;
-  text: string;
-};
-
-// Lightweight event payload typing (extend as needed)
-interface NewQuestionPayload {
+type NewQuestionPayload = {
   questionIndex?: number;
   index?: number;
   questionText?: string;
@@ -34,14 +29,14 @@ interface NewQuestionPayload {
 }
 
 // Helper to extract answer display text
-const extractAnswerText = (a: any): string => {
+const extractAnswerText = (a: Answer): string => {
   if (a == null) return '';
   if (typeof a === 'string' || typeof a === 'number') return String(a);
-  const candidates = [a.title, a.text, a.answer, a.value, a.label, a.display, a.content];
+  const candidates = [a.text, a.title, a.value, a.label, a.display, a.content];
   for (const c of candidates) {
     if (c == null) continue;
     if (typeof c === 'string' || typeof c === 'number') return String(c);
-    if (typeof c === 'object' && c.text) return String(c.text);
+    if (typeof c === 'object' && c !== null && 'text' in c && typeof (c as any).text === 'string') return String((c as any).text);
   }
   try { return JSON.stringify(a); } catch { return String(a); }
 };
@@ -65,16 +60,18 @@ export default function QuestionPage() {
   const [correctAnswers, setCorrectAnswers] = useState<string[]>([]);
   const [playerRank, setPlayerRank] = useState<number | null>(null);
   const [playerScore, setPlayerScore] = useState<number | null>(null);
-  const [topPlayers, setTopPlayers] = useState<any[]>([]);
+  const [topPlayers, setTopPlayers] = useState<NormalizedLeaderboardPlayer[]>([]);
   const [normalizedTopPlayers, setNormalizedTopPlayers] = useState<NormalizedLeaderboardPlayer[]>([]); // NEW normalized list
   const [fatalError, setFatalError] = useState<string | null>(null); // NEW
   const timerRef = useRef<number | null>(null);
-  const autoFinalTimeoutRef = useRef<any>(null); // NEW
+  const autoFinalTimeoutRef = useRef<number | null>(null); // NEW
   const lastQuestionDoneRef = useRef(false); // NEW
   // New state to reflect current question number driven by NewQuestion events
   const [displayQuestionNumber, setDisplayQuestionNumber] = useState<number>(questionNumber);
   const [totalTime, setTotalTime] = useState<number | null>(null); // NEW total time for progress bar
   const [submittedSnapshot, setSubmittedSnapshot] = useState<number | null>(null); // NEW freeze value for bottom display
+  const [playerComment, setPlayerComment] = useState<string | null>(null); // NEW player comment state
+  const [totalQuestions, setTotalQuestions] = useState<number | null>(null); // NEW total questions
   
   // Music centralized via useGameAudio hook (replaces legacy inline audio logic)
   const {
@@ -87,7 +84,7 @@ export default function QuestionPage() {
   } = useGameAudio();
 
   const { connected, submitAnswer, submitMultipleAnswers } = useGameHub({
-    onError: (msg) => { // NEW
+    onError: (msg) => {
       const m = typeof msg === 'string' ? msg : (msg && (msg as any).message) || 'Unknown error';
       const lower = m.toLowerCase();
       if (lower.includes('session not found')) {
@@ -96,44 +93,41 @@ export default function QuestionPage() {
         setFatalError('Sorry player, an error occurred. Redirecting to home...');
       }
       clearTimer();
-      try { if (autoFinalTimeoutRef.current) clearTimeout(autoFinalTimeoutRef.current); } catch {}
+      if (autoFinalTimeoutRef.current) clearTimeout(autoFinalTimeoutRef.current);
       setTimeout(() => router.push('/'), 2000);
     },
     onFinalResults: (payload) => { setResult(payload); router.push('/final'); },
     onGameEnded: (payload) => { try { setResult(payload); } catch {}; router.push('/final'); },
-    onKickedFromGame: (payload: any) => { // NEW handler
-      try { (window as any).console?.log?.('KickedFromGame event', payload); } catch {}
+    onKickedFromGame: (payload: any) => {
       try { (submitAnswer as any)?.client?.stop?.(); } catch {}
       let reason = 'You have been kicked from the game by the host';
       if (payload) {
         if (typeof payload === 'string') reason = payload || reason; else reason = payload.reason || payload.message || reason;
       }
-      // Attempt to clear any per-room session keys (heuristic)
       try {
         for (let i = 0; i < localStorage.length; i++) {
           const k = localStorage.key(i) || '';
-            if (k.startsWith('kahoot_player_session:')) localStorage.removeItem(k);
+          if (k.startsWith('kahoot_player_session:')) localStorage.removeItem(k);
         }
       } catch {}
       router.replace(`/?kicked=1&reason=${encodeURIComponent(reason)}`);
     },
     onNewQuestion: (payload) => {
       try {
-        // Derive question index (0-based from server) and map to 1-based for display
         const rawIndex = typeof payload?.questionIndex === 'number'
           ? payload.questionIndex
           : typeof payload?.index === 'number'
             ? payload.index
             : (displayQuestionNumber - 1);
         setDisplayQuestionNumber(rawIndex);
-
-        // Robustly extract question text
+        // capture total questions
+        if (payload && (payload as any).totalQuestions) setTotalQuestions((payload as any).totalQuestions);
+        else if ((payload as any).TotalQuestions) setTotalQuestions((payload as any).TotalQuestions);
+        else if ((payload as any)?.question?.totalQuestions) setTotalQuestions((payload as any).question.totalQuestions);
         const qText = payload?.questionText || (payload as any)?.question?.text || (payload as any)?.text || (payload as any)?.question || '';
         setQuestionText(typeof qText === 'string' ? qText : JSON.stringify(qText));
-
         const answerArray = (payload.answers || payload.choices || []) as any[];
         setAnswers(answerArray.map((a: any, idx: number) => ({ id: String(a?.id ?? a?.answerId ?? a?.key ?? idx), text: extractAnswerText(a) })));
-
         const multi = !!(
           payload?.isMultipleChoice ||
           payload?.isMultiple ||
@@ -143,17 +137,14 @@ export default function QuestionPage() {
           payload?.type === 'MultipleChoice'
         );
         setIsMultipleChoice(multi);
-
         setSelectedIds([]);
         setSelected(null);
         setHasSubmitted(false);
         setShowResult(null);
         setCorrectAnswers([]);
-        setSubmittedSnapshot(null); // reset snapshot for new question
-
-        // Determine total time limit strictly from timeLimitSeconds (fallback to 20 if missing)
+        setSubmittedSnapshot(null);
         const totalLimit = (typeof payload?.timeLimitSeconds === 'number' && !isNaN(payload.timeLimitSeconds)) ? payload.timeLimitSeconds : 20;
-        setTotalTime(totalLimit); // track total
+        setTotalTime(totalLimit);
         let remaining = totalLimit;
         if (payload?.startTime && totalLimit > 0) {
           const startMs = Date.parse(payload.startTime);
@@ -163,13 +154,11 @@ export default function QuestionPage() {
           }
         }
         startTimer(remaining);
-        
-        // Play question start sound
         playEffect('question');
-        // Start background music for question
         startBackgroundMusic();
       } catch (e) {
-        console.error('Failed to prepare question', e);
+        setFatalError('Failed to prepare question. Redirecting to home...');
+        setTimeout(() => router.push('/'), 2000);
       }
     },
     onQuestionTimeEnded: (payload) => {
@@ -179,10 +168,12 @@ export default function QuestionPage() {
         let correct = false;
         let message = 'Time is up!';
         let correctAns: string[] = [];
+        let comment: string | null = null;
         if (payload && typeof payload === 'object') {
           if ('correct' in payload) correct = !!(payload as any).correct;
           if ('isCorrect' in payload) correct = !!(payload as any).isCorrect;
           if (typeof (payload as any).message === 'string') message = (payload as any).message;
+          if (typeof (payload as any).playerComment === 'string') comment = (payload as any).playerComment;
           if (Array.isArray((payload as any).correctAnswers)) {
             correctAns = (payload as any).correctAnswers.map((a: any) => typeof a === 'object' && a.id ? String(a.id) : String(a));
           } else if (Array.isArray((payload as any).answers)) {
@@ -192,7 +183,7 @@ export default function QuestionPage() {
         }
         setShowResult({ correct, message });
         setCorrectAnswers(correctAns);
-        
+        setPlayerComment(comment);
         // Play timeout sound
         playEffect('timeout');
       }
@@ -206,11 +197,17 @@ export default function QuestionPage() {
     onProceedingToNextQuestion: () => {},
     onPlayerQuestionResult: (payload) => {
       try {
+        // set totalQuestions if still null
+        if (totalQuestions == null) {
+          if (payload && (payload as any).totalQuestions) setTotalQuestions((payload as any).totalQuestions);
+          else if ((payload as any).TotalQuestions) setTotalQuestions((payload as any).TotalQuestions);
+        }
         // Do NOT clear timer or force timeLeft=0 so the progress bar keeps counting down post submission
         // Extract correctness
         const isCorrect = !!(payload?.isCorrect || payload?.correct);
         // Extract correct answers ids
         let correctIds: string[] = [];
+        let comment: string | null = null;
         if (Array.isArray(payload?.correctAnswers) && payload.correctAnswers.length) {
           correctIds = payload.correctAnswers.map((a: any) => String(a?.id ?? a?.answerId ?? a));
         } else if (Array.isArray(payload?.answers)) {
@@ -218,9 +215,11 @@ export default function QuestionPage() {
         } else if (payload?.correctAnswer) {
           correctIds = [String((payload as any).correctAnswer.id || (payload as any).correctAnswer.answerId || (payload as any).correctAnswer)];
         }
+        if (typeof payload?.playerComment === 'string') comment = payload.playerComment;
         setCorrectAnswers(correctIds);
         const msg = isCorrect ? 'Correct!' : 'Incorrect';
         setShowResult({ correct: isCorrect, message: msg });
+        setPlayerComment(comment);
         playEffect(isCorrect ? 'correct' : 'incorrect');
         stopBackgroundMusic();
         if (typeof payload?.currentRank === 'number') setPlayerRank(payload.currentRank);
@@ -228,14 +227,7 @@ export default function QuestionPage() {
         // Normalize leaderboard data from payload
         const lb = normalizeLeaderboard(payload);
         setNormalizedTopPlayers(lb.players.slice(0, 5));
-        setTopPlayers(lb.players.slice(0, 5).map(p => ({
-          playerId: p.id,
-            userName: p.name,
-            score: p.score,
-            rank: p.rank || undefined,
-            // keep any original timing fields
-            timeTaken: (p.raw && (p.raw.timeTaken ?? p.raw.answerTime))
-        })));
+        setTopPlayers(lb.players.slice(0, 5)); // Use normalized leaderboard directly
         setHasSubmitted(true);
       } catch (e) {
         console.error('Failed handling PlayerQuestionResult', e);
@@ -374,9 +366,15 @@ export default function QuestionPage() {
               </button>
               <select
                 value={bgTrack}
-                onChange={(e) => setBgTrack((e.target.value as 'energy' | 'mystery'))}
-                disabled={!musicEnabled}
-                className={`px-2 py-1 rounded-full border text-xs font-medium transition-colors ${!musicEnabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+                onChange={(e) => {
+                  const newTrack = e.target.value as 'energy' | 'mystery';
+                  setBgTrack(newTrack);
+                  if (musicEnabled && isBgPlaying) {
+                    stopBackgroundMusic(true);
+                    setTimeout(() => startBackgroundMusic(), 100);
+                  }
+                }}
+                className={`px-2 py-1 rounded-full border text-xs font-medium transition-colors`}
                 title="Background track"
               >
                 <option value="energy">Energy</option>
@@ -407,10 +405,10 @@ export default function QuestionPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5" key={displayQuestionNumber}>
             {answers.length > 0 ? answers.map((a, idx) => {
-              const isSelected = selectedIds.includes(a.id) || selected === a.id;
-              const isCorrect = showResult && correctAnswers.includes(a.id);
+              const answerId = a.id ?? '';
+              const isSelected = selectedIds.includes(answerId) || selected === answerId;
+              const isCorrect = showResult && correctAnswers.includes(answerId);
               const isIncorrectSelection = showResult && !isCorrect && isSelected;
-              // Removed (isMultipleChoice && isSelected) from disabled condition to allow toggling
               const disabled = !connected || hasSubmitted || (timeLeft !== null && timeLeft <= 0);
               const base = 'relative group p-4 rounded-xl border transition-all text-left shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2';
               const stateColor = isCorrect
@@ -422,14 +420,14 @@ export default function QuestionPage() {
                     : 'border-gray-200 bg-white hover:border-indigo-300';
               return (
                 <button
-                  key={a.id}
-                  onClick={() => handleSelect(a.id)}
+                  key={answerId}
+                  onClick={() => handleSelect(answerId)}
                   disabled={disabled}
                   className={`${base} ${stateColor} ${disabled && !showResult ? 'opacity-70 cursor-not-allowed' : ''}`}
                 >
                   <div className="flex items-start gap-3">
                     <div className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold shrink-0 shadow ${isCorrect ? 'bg-green-600 text-white' : isIncorrectSelection ? 'bg-red-600 text-white' : isSelected ? 'bg-indigo-500 text-white' : 'bg-gray-100 text-gray-600 group-hover:bg-indigo-500 group-hover:text-white transition-colors'}`}>{String.fromCharCode(65 + idx)}</div>
-                    <div className="flex-1 text-sm text-gray-700 font-medium leading-snug">{a.text}</div>
+                    <div className="flex-1 text-sm text-gray-700 font-medium leading-snug">{extractAnswerText(a)}</div>
                     {isCorrect ? <div className="text-green-600 font-bold text-lg leading-none">✓</div> : null}
                     {isIncorrectSelection ? <div className="text-red-600 font-bold text-lg leading-none">✗</div> : null}
                     {!isCorrect && !isIncorrectSelection && isSelected ? <div className="text-indigo-500 font-bold text-lg leading-none">•</div> : null}
@@ -468,21 +466,30 @@ export default function QuestionPage() {
                 {showResult.correct ? <span className="text-lg">🎉</span> : <span className="text-lg">⚠️</span>}
                 <span>{showResult.message}</span>
               </div>
+              {playerComment && (
+                <div className="mt-2 text-xs font-bold text-emerald-700">{playerComment}</div>
+              )}
               {correctAnswers.length > 0 && (
                 <div className="mt-2 text-xs font-normal text-gray-700">
-                  Correct answer{correctAnswers.length > 1 ? 's' : ''}: {answers.filter(a => correctAnswers.includes(a.id) || correctAnswers.includes(a.text)).map(a => a.text).join(', ')}
+                  Correct answer{correctAnswers.length > 1 ? 's' : ''}: {answers.filter(a => correctAnswers.includes(a.id ?? '') || correctAnswers.includes(extractAnswerText(a))).map(a => extractAnswerText(a)).join(', ')}
                 </div>
               )}
             </div>
           )}
 
           {showResult && topPlayers.length > 0 && (
-            <TopPlayersList
-              players={normalizedTopPlayers}
-              playerRank={playerRank}
-              playerScore={playerScore}
-              className="mt-6"
-            />
+            totalQuestions !== null && displayQuestionNumber === totalQuestions ? (
+              <div className="mt-6 text-center text-xs font-semibold text-gray-600 italic">
+                Waiting for final leaderboard…
+              </div>
+            ) : (
+              <TopPlayersList
+                players={normalizedTopPlayers}
+                playerRank={playerRank}
+                playerScore={playerScore}
+                className="mt-6"
+              />
+            )
           )}
 
           <div className="mt-8 flex items-center justify-between text-[11px] text-gray-500 font-medium">

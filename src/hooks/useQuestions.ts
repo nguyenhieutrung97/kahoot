@@ -35,6 +35,7 @@ export const useQuestions = (gameId: string | null) => {
     loading,
     error,
     refetch: fetchQuestions,
+    setQuestions,
   };
 };
 

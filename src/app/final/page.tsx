@@ -97,10 +97,12 @@ export default function FinalPage() {
   const { musicEnabled: musicOn, setMusicEnabled: setMusicOn, startChampionMusic, stopChampionMusic, championPlaying } = useGameAudio();
 
   useEffect(() => {
-    if (ready && musicOn) { startChampionMusic(); } else { stopChampionMusic(); }
-    return () => { // stop on unmount / route change
+    if (ready && musicOn) {
+      startChampionMusic();
+    } else {
       stopChampionMusic();
-    };
+    }
+    return () => { stopChampionMusic(); };
   }, [ready, musicOn, startChampionMusic, stopChampionMusic]);
 
   // Also stop champion music on browser/tab unload just in case
@@ -117,6 +119,13 @@ export default function FinalPage() {
     try { (client as any)?.stop?.(); } catch {}
     router.replace('/');
   };
+
+  // Extract personalized message from result or playerResultPayload
+  const playerMessage = useMemo(() => {
+    if (result && typeof result.message === 'string') return result.message;
+    if (playerResultPayload && typeof playerResultPayload.message === 'string') return playerResultPayload.message;
+    return null;
+  }, [result, playerResultPayload]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
@@ -157,9 +166,7 @@ export default function FinalPage() {
                 </button>
               </div>
             </div>
-
             {/* Podium for Top 3 */}
-            {/* Replaced podium & list with reusable components */}
             <PodiumTop3 players={players} className="mb-10" />
             <TopPlayersList
               players={players}
@@ -167,7 +174,12 @@ export default function FinalPage() {
               limit={10}
               className="mb-10"
             />
-
+            {/* Player recognition message below leaderboard */}
+            {playerMessage && (
+              <div className="mb-8 p-4 rounded-lg bg-gradient-to-r from-emerald-50 to-amber-50 border border-emerald-200 text-emerald-800 text-center text-base font-semibold shadow">
+                {playerMessage}
+              </div>
+            )}
             {/* Bottom large Back to Home button */}
             <div className="mt-10">
               <GameButton size="lg" variant="primary" fullWidth onClick={handleBackHome}>Back to Home</GameButton>

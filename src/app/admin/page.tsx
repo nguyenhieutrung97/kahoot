@@ -1,0 +1,417 @@
+"use client";
+
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
+import { DashboardHeader, DashboardSidebar, GamesManager, QuestionsManager } from '@/components/admin';
+import { useGames, useGameMutations } from '@/hooks/useGames';
+import { useGameHub } from '@/hooks/useGameHub';
+import { GameHeader } from '@/components/ui/GameHeader';
+import { GameState } from '@/types/api';
+
+interface LobbyPlayer { id?: string; playerId?: string; userName?: string; name?: string; isConnected?: boolean; joinedAt?: string; score?: number; rank?: number; }
+interface QuestionEnvelope { questionIndex?: number; totalQuestions?: number; questionText?: string; answers?: any[]; timeLimitSeconds?: number; startTime?: string; isMultipleChoice?: boolean; correctAnswers?: any[]; correctAnswer?: any; questionType?: string; }
+interface ManagedRoom { roomCode: string; gameId?: string; createdAt: number; phase: 'lobby'|'game'|'results'; players: number; autoShowResults?: boolean; title?: string; }
+
+export default function AdminGameManagerPage() {
+  const router = useRouter();
+
+  // Layout
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // Flow (for active room only)
+  const [phase, setPhase] = useState<'setup' | 'lobby' | 'game' | 'results'>('setup');
+
+  // Games
+  const gamesParams = useMemo(() => ({ take: 50 }), []);
+  const { games, loading: loadingGames, refetch: refetchGames } = useGames(gamesParams);
+  const { updateGameState } = useGameMutations();
+  const [selectedGameId, setSelectedGameId] = useState('');
+  const [autoShowResults, setAutoShowResults] = useState(true);
+
+  // Active room state
+  const [roomCode, setRoomCode] = useState('');
+  const [players, setPlayers] = useState<LobbyPlayer[]>([]);
+  const [canStart, setCanStart] = useState(false);
+
+  // Gameplay
+  const [question, setQuestion] = useState<QuestionEnvelope | null>(null);
+  const [questionAnswers, setQuestionAnswers] = useState<any[]>([]);
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [lastResults, setLastResults] = useState<any | null>(null);
+  const [finalResults, setFinalResults] = useState<any | null>(null);
+  const [statusMsg, setStatusMsg] = useState('');
+
+  // Timer
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const timerRef = useRef<any>(null);
+  const stopTimer = () => { if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; } };
+  const startTimer = useCallback((payload?: QuestionEnvelope) => {
+    stopTimer();
+    if (!payload) return;
+    let total = typeof payload.timeLimitSeconds === 'number' ? payload.timeLimitSeconds : 20;
+    if (payload.startTime) {
+      const ms = Date.parse(payload.startTime);
+      if (!isNaN(ms)) {
+        const elapsed = (Date.now() - ms) / 1000;
+        total = Math.max(0, Math.round(total - elapsed));
+      }
+    }
+    setTimeLeft(total);
+    if (total <= 0) return;
+    timerRef.current = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev === null) return prev;
+        if (prev <= 1) { stopTimer(); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+  }, []);
+  useEffect(() => () => stopTimer(), []);
+
+  // Room registry (multi-room management)
+  const [rooms, setRooms] = useState<ManagedRoom[]>([]);
+  const upsertRoom = useCallback((rc: string, patch: Partial<ManagedRoom>) => {
+    setRooms(prev => {
+      const idx = prev.findIndex(r => r.roomCode === rc);
+      if (idx === -1) return [...prev, { roomCode: rc, createdAt: Date.now(), phase: patch.phase || 'lobby', players: patch.players ?? 0, gameId: patch.gameId, autoShowResults: patch.autoShowResults, title: patch.title }];
+      const clone = [...prev];
+      clone[idx] = { ...clone[idx], ...patch } as ManagedRoom;
+      return clone;
+    });
+  }, []);
+
+  const switchRoom = async (rc: string) => {
+    if (!rc) return;
+    setRoomCode(rc);
+    setStatusMsg(`Switched to room ${rc}`);
+    try { await requestRoomStatus(rc); } catch {}
+  };
+  const forgetRoom = (rc: string) => {
+    setRooms(r => r.filter(x => x.roomCode !== rc));
+    if (roomCode === rc) { setRoomCode(''); setPhase('setup'); setPlayers([]); setQuestion(null); setLeaderboard([]); setFinalResults(null); }
+  };
+  const endRoom = async (rc: string) => { try { if (client) await (client as any).invoke('ShowFinalLeaderboard', rc); } catch {} finally { upsertRoom(rc, { phase: 'results' }); } };
+
+  // Manage mode (UI sections)
+  const [manageMode, setManageMode] = useState<'control'|'rooms'|'games'|'questions'>('control');
+  const [manageGameId, setManageGameId] = useState<string | null>(null);
+
+  const safeGames = Array.isArray(games) ? games : [];
+
+  // Hub wiring
+  const { connected, client, createGameRoom, startGame, proceedToNextQuestion, showFinalLeaderboard, requestRoomStatus } = useGameHub({
+    onRoomCreated: (payload: any) => {
+      const rc = payload.roomCode || '';
+      // Derive / inject gameTitle
+      const derivedTitle = payload.gameTitle || safeGames.find(g => g.id === selectedGameId)?.title || '';
+      if (derivedTitle && !payload.gameTitle) payload.gameTitle = derivedTitle; // augment event payload
+      setRoomCode(rc);
+      setPhase('lobby');
+      setStatusMsg(`Room created${derivedTitle ? ` • ${derivedTitle}`:''}`);
+      setPlayers(payload.players || []);
+      setCanStart(!!payload.canStart || (payload.players||[]).length>0);
+      if (rc) {
+        upsertRoom(rc, { phase: 'lobby', players: (payload.players||[]).length, gameId: selectedGameId, autoShowResults, title: derivedTitle || undefined });
+        setManageMode('rooms');
+      }
+    },
+    onLobbyInfo: (p: any) => {
+      if (phase === 'setup') setPhase('lobby');
+      setPlayers(p.players || []);
+      setCanStart(!!p.canStart || (p.players||[]).length>0);
+      if (roomCode) upsertRoom(roomCode, { players: (p.players||[]).length, phase: 'lobby' });
+    },
+    onPlayerJoined: (p: any) => {
+      setPlayers(p.players || []);
+      setCanStart((p.players||[]).length>0);
+      if (roomCode) upsertRoom(roomCode, { players: (p.players||[]).length });
+    },
+    onLobbyUpdate: (p: any) => { setPlayers(p.players || []); setCanStart(!!p.canStart || (p.players||[]).length>0); if (roomCode) upsertRoom(roomCode, { players: (p.players||[]).length }); },
+    onGameStarted: () => { setPhase('game'); setStatusMsg('Game started'); setQuestion(null); setLeaderboard([]); if (roomCode) upsertRoom(roomCode, { phase: 'game' }); },
+    onHostNewQuestion: (payload: QuestionEnvelope) => {
+      setQuestion(payload);
+      const answers = payload.answers || [];
+      setQuestionAnswers(answers.map((a:any,i:number)=>({ id: String(a.id ?? a.answerId ?? a.key ?? i), title: a.title || a.text || a.answer || a.value || `Answer ${i+1}`, isCorrect: !!(a.isCorrect || a.correct) })));
+      startTimer(payload);
+      setLastResults(null);
+    },
+    onQuestionResults: (payload: any) => { setLastResults(payload); if (Array.isArray(payload.leaderboard)) setLeaderboard(payload.leaderboard); stopTimer(); },
+    onProceedingToNextQuestion: () => { setQuestion(null); setQuestionAnswers([]); setLastResults(null); stopTimer(); },
+    onFinalResults: (payload: any) => { setFinalResults(payload); setPhase('results'); if (roomCode) upsertRoom(roomCode, { phase: 'results' }); },
+    onGameEnded: (payload: any) => { setFinalResults(payload); setPhase('results'); if (roomCode) upsertRoom(roomCode, { phase: 'results' }); },
+    onError: (m: any) => setStatusMsg(typeof m === 'string' ? m : (m?.message || 'Error'))
+  });
+
+  // Actions
+  const handleCreateRoom = async () => {
+    if (!selectedGameId) return;
+    const game = safeGames.find(g => g.id === selectedGameId);
+    try {
+      if (game && game.state === GameState.Draft) {
+        setStatusMsg('Preparing game (mark Ready)...');
+        try {
+          await updateGameState(game.id!, { id: game.id, userNTID: 'current-user-id', currentState: GameState.Draft, targetState: GameState.Ready });
+          setStatusMsg('Game marked Ready. Creating room...');
+          refetchGames?.();
+        } catch (e:any) { setStatusMsg(`Failed to set Ready: ${(e as Error).message}`); return; }
+      } else { setStatusMsg('Creating room...'); }
+      await createGameRoom(selectedGameId, autoShowResults).then(rc => { if (rc) { setStatusMsg(`Room created successfully (code: ${rc})`); if(!roomCode) setRoomCode(rc);} else { setStatusMsg('Room created successfully'); } });
+    } catch (e:any) { setStatusMsg(`Failed to create room: ${(e?.message)||'Unknown error'}`); }
+  };
+  const handleStartGame = async () => { if (!roomCode) return; try { await startGame(roomCode); } catch { setStatusMsg('Failed to start'); } };
+  const handleNextQuestion = async () => { if (!roomCode) return; try { await proceedToNextQuestion(roomCode); } catch { setStatusMsg('Failed next'); } };
+  const handleShowFinal = async () => { if (!roomCode) return; try { await showFinalLeaderboard(roomCode); } catch { setStatusMsg('Failed final'); } };
+  const handleKick = async (playerId?: string) => { if (!client || !roomCode || !playerId) return; try { await (client as any).invoke('KickPlayer', roomCode, playerId); } catch { setStatusMsg('Kick failed'); } };
+
+  // Derived
+  const totalQuestions = question?.totalQuestions || finalResults?.totalQuestions || 0;
+  const Badge = ({ children, color = 'bg-gray-200 text-gray-700' }: any) => <span className={`px-2 py-0.5 rounded text-xs font-semibold tracking-wide ${color}`}>{children}</span>;
+
+  return (
+    <div className="min-h-screen flex bg-gray-50">
+      <DashboardSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} isCollapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(s => !s)} onMenuClick={() => {}} />
+      <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
+        <DashboardHeader sidebarOpen={sidebarOpen} onMenuClick={() => setSidebarOpen(o => !o)} onProfileClick={() => {}} onSettingsClick={() => {}} />
+        <main className="flex-1 overflow-y-auto p-6 space-y-6">
+          <GameHeader title="ADMIN GAME CONTROL" withSvgBorder />
+          <div className="flex gap-2 flex-wrap text-xs">
+            <button onClick={() => setManageMode('control')} className={`px-3 py-1.5 rounded border ${manageMode==='control'?'bg-red-600 text-white border-red-600':'bg-white'}`}>Session Control</button>
+            <button onClick={() => setManageMode('rooms')} className={`px-3 py-1.5 rounded border ${manageMode==='rooms'?'bg-red-600 text-white border-red-600':'bg-white'}`}>Rooms</button>
+            <button onClick={() => { setManageMode('games'); setManageGameId(null); }} className={`px-3 py-1.5 rounded border ${manageMode==='games'?'bg-red-600 text-white border-red-600':'bg-white'}`}>Games</button>
+            <button onClick={() => { if (manageGameId) setManageMode('questions'); else setManageMode('games'); }} disabled={!manageGameId} className={`px-3 py-1.5 rounded border ${manageMode==='questions'?'bg-red-600 text-white border-red-600':'bg-white'} ${!manageGameId?'opacity-50 cursor-not-allowed':''}`}>Questions</button>
+          </div>
+          {statusMsg && <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-2 rounded text-sm">{statusMsg}</div>}
+
+          {manageMode==='rooms' && (
+            <div className="bg-white shadow rounded-xl p-6 border space-y-4">
+              <h2 className="text-lg font-bold tracking-wide text-gray-800 flex items-center gap-3">Managed Rooms <span className="text-xs font-normal text-gray-500">({rooms.length})</span></h2>
+              {!rooms.length && <div className="text-xs text-gray-500">No rooms created this session.</div>}
+              {!!rooms.length && (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs border">
+                    <thead className="bg-gray-50 text-gray-600">
+                      <tr>
+                        <th className="p-2 text-left">Room</th>
+                        <th className="p-2 text-left">Game</th>
+                        <th className="p-2 text-left">Players</th>
+                        <th className="p-2 text-left">Phase</th>
+                        <th className="p-2 text-left">Mode</th>
+                        <th className="p-2 text-left">Created</th>
+                        <th className="p-2" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rooms.map(r => {
+                        const title = r.title || safeGames.find(g => g.id === r.gameId)?.title || r.gameId || '—';
+                        return (
+                          <tr key={r.roomCode} className={`border-t hover:bg-gray-50 ${roomCode===r.roomCode?'bg-red-50':''}`}>
+                            <td className="p-2 font-semibold">{r.roomCode}</td>
+                            <td className="p-2 truncate max-w-[160px]" title={title}>{title}</td>
+                            <td className="p-2">{r.players}</td>
+                            <td className="p-2 capitalize">{r.phase}</td>
+                            <td className="p-2">{r.autoShowResults? 'Auto':'Manual'}</td>
+                            <td className="p-2">{new Date(r.createdAt).toLocaleTimeString()}</td>
+                            <td className="p-2">
+                              <div className="flex flex-wrap gap-1">
+                                <button onClick={() => switchRoom(r.roomCode)} className="px-2 py-1 rounded border bg-white hover:bg-gray-100">Switch</button>
+                                <button onClick={() => router.push(`/admin/host/${r.roomCode}?gameId=${r.gameId || ''}`)} className="px-2 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700">Host</button>
+                                {r.phase!=='results' && <button onClick={() => endRoom(r.roomCode)} className="px-2 py-1 rounded bg-green-600 text-white hover:bg-green-700">End</button>}
+                                <button onClick={() => forgetRoom(r.roomCode)} className="px-2 py-1 rounded bg-red-600 text-white hover:bg-red-700">Forget</button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {roomCode && <div className="text-[11px] text-gray-500">Active room: <span className="font-semibold">{roomCode}</span></div>}
+            </div>
+          )}
+
+          {manageMode==='control' && phase==='setup' && (
+            <div className="bg-white shadow rounded-xl p-6 border space-y-6">
+              <h2 className="text-lg font-bold tracking-wide text-gray-800 flex items-center gap-3">Setup Room {connected ? <Badge color="bg-green-100 text-green-700">Hub Connected</Badge> : <Badge color="bg-red-100 text-red-600">Hub Offline</Badge>}</h2>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wide text-gray-600 mb-1">Select Game</label>
+                  <select value={selectedGameId} onChange={e => setSelectedGameId(e.target.value)} className="w-full border rounded px-3 py-2 text-sm focus:ring-red-500 focus:border-red-500">
+                    <option value="">-- Choose Game --</option>
+                    {loadingGames && <option>Loading...</option>}
+                    {safeGames.map(g => <option key={g.id} value={g.id}>{g.title}</option>)}
+                  </select>
+                </div>
+                <div className="flex flex-col justify-end">
+                  <label className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gray-600 mb-1">Auto Show Results</label>
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" checked={autoShowResults} onChange={e => setAutoShowResults(e.target.checked)} />
+                    <span className="text-xs text-gray-600">Show each question's results automatically</span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <button onClick={handleCreateRoom} disabled={!selectedGameId} className="px-5 py-2 rounded bg-red-600 text-white text-sm font-semibold disabled:opacity-40">Create Room</button>
+                <button onClick={() => setSelectedGameId('')} className="px-4 py-2 rounded border text-sm font-medium">Reset</button>
+              </div>
+            </div>
+          )}
+
+          {manageMode==='control' && phase==='lobby' && (
+            <div className="grid gap-6 md:grid-cols-3">
+              <div className="md:col-span-2 bg-white p-6 rounded-xl border shadow space-y-4">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-3">
+                    <h3 className="font-bold text-gray-800 tracking-wide">Lobby</h3>
+                    <Badge color="bg-indigo-100 text-indigo-700">Room {roomCode || '—'}</Badge>
+                  </div>
+                  {roomCode && <button onClick={()=>router.push(`/admin/host/${roomCode}?gameId=${selectedGameId}`)} className="px-3 py-1.5 text-xs rounded bg-indigo-600 text-white font-semibold hover:bg-indigo-700">Open Host View</button>}
+                </div>
+                <div className="text-xs text-gray-500">Players joined: {players.length}</div>
+                <div className="grid md:grid-cols-2 gap-3">
+                  {players.map(p => { const id = p.playerId || p.id; return (
+                    <div key={id} className="border rounded-lg p-3 flex justify-between items-center bg-gray-50">
+                      <div className="text-sm font-semibold truncate">{p.userName || p.name || id}</div>
+                      <div className="flex items-center gap-2">
+                        {p.isConnected ? <Badge color="bg-green-100 text-green-700">On</Badge> : <Badge color="bg-red-100 text-red-600">Off</Badge>}
+                        <button onClick={() => handleKick(id)} className="text-xs px-2 py-1 rounded bg-red-600 text-white">Kick</button>
+                      </div>
+                    </div> ); })}
+                  {!players.length && <div className="text-xs text-gray-500 col-span-full">No players yet</div>}
+                </div>
+                <div className="flex gap-3 pt-2 flex-wrap">
+                  <button onClick={handleStartGame} disabled={!canStart} className="px-5 py-2 rounded bg-green-600 text-white text-sm font-semibold disabled:opacity-40">Start Game</button>
+                  <button onClick={() => { setPhase('setup'); setRoomCode(''); setPlayers([]); }} className="px-4 py-2 rounded border text-sm font-medium">Cancel Room</button>
+                </div>
+              </div>
+              <div className="bg-white p-6 rounded-xl border shadow space-y-3">
+                <h4 className="font-semibold text-sm uppercase text-gray-700 tracking-wide flex items-center justify-between">Room Info {roomCode && <button onClick={()=>router.push(`/admin/host/${roomCode}?gameId=${selectedGameId}`)} className="ml-2 px-2 py-1 text-[11px] rounded bg-indigo-600 text-white hover:bg-indigo-700">Manage</button>}</h4>
+                <div className="text-xs space-y-1">
+                  <div><span className="font-semibold">Game:</span> {safeGames.find(g=>g.id===selectedGameId)?.title || '—'}</div>
+                  <div><span className="font-semibold">Auto Results:</span> {autoShowResults? 'Yes':'No'}</div>
+                  <div><span className="font-semibold">Room Code:</span> {roomCode || '—'}</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {manageMode==='control' && phase==='game' && (
+            <div className="space-y-6">
+              <div className="grid md:grid-cols-3 gap-6">
+                <div className="md:col-span-2 bg-white rounded-xl border p-6 shadow space-y-4">
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <div className="flex items-center gap-2"><h3 className="font-bold text-gray-800 tracking-wide">Current Question</h3>{roomCode && <Badge color="bg-indigo-100 text-indigo-700">Room {roomCode}</Badge>}</div>
+                    {roomCode && <button onClick={()=>router.push(`/admin/host/${roomCode}?gameId=${selectedGameId}`)} className="px-3 py-1.5 text-xs rounded bg-indigo-600 text-white font-semibold hover:bg-indigo-700">Host View</button>}
+                  </div>
+                  {!question && <div className="text-xs text-gray-500">Waiting for next question...</div>}
+                  {question && (
+                    <div className="space-y-4">
+                      <div className="p-4 rounded bg-gray-50 border text-sm font-medium leading-relaxed">{question.questionText}</div>
+                      <div className="grid sm:grid-cols-2 gap-3">
+                        {questionAnswers.map(a => (
+                          <div key={a.id} className={`p-3 rounded border text-sm flex justify-between items-center ${a.isCorrect? 'bg-green-50 border-green-300':'bg-white'}`}> <span className="truncate pr-2">{a.title}</span> {a.isCorrect && <Badge color="bg-green-600 text-white">Correct</Badge>} </div>
+                        ))}
+                        {!questionAnswers.length && <div className="text-xs text-gray-500">No answers provided</div>}
+                      </div>
+                    </div>
+                  )}
+                  {lastResults && (
+                    <div className="mt-6 p-4 rounded border bg-white shadow-inner">
+                      <h4 className="font-semibold text-sm uppercase text-gray-700 mb-2 tracking-wide">Question Results</h4>
+                      <div className="text-xs text-gray-600 mb-3">Players answered: {lastResults.playersAnswered}/{lastResults.totalPlayers}</div>
+                      <div className="space-y-1 max-h-64 overflow-y-auto pr-1">
+                        {leaderboard.map((p, idx) => (
+                          <div key={p.playerId || idx} className="flex items-center justify-between text-sm border rounded px-3 py-1 bg-gray-50">
+                            <div className="flex items-center gap-2 truncate"><span className="text-xs font-bold text-gray-500 w-5">#{p.rank ?? (idx+1)}</span><span className="truncate">{p.userName || p.name}</span></div>
+                            <div className="flex items-center gap-3"><span className="text-xs text-indigo-600 font-semibold">{p.score} pts</span>{typeof p.progress !== 'undefined' && <Badge>{p.progress}</Badge>}</div>
+                          </div>
+                        ))}
+                        {!leaderboard.length && <div className="text-xs text-gray-500">No leaderboard data</div>}
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex gap-3 pt-4 flex-wrap">
+                    <button onClick={handleNextQuestion} className="px-4 py-2 bg-indigo-600 text-white rounded text-sm font-semibold">Next Question</button>
+                    <button onClick={handleShowFinal} className="px-4 py-2 bg-green-600 text-white rounded text-sm font-semibold">Show Final Leaderboard</button>
+                    <button onClick={() => { setPhase('setup'); setRoomCode(''); setPlayers([]); setQuestion(null); setLeaderboard([]); setFinalResults(null); }} className="px-4 py-2 border rounded text-sm font-medium">End Session</button>
+                    {roomCode && <button onClick={()=>router.push(`/admin/host/${roomCode}?gameId=${selectedGameId}`)} className="px-4 py-2 bg-indigo-50 text-indigo-700 rounded text-sm font-medium hover:bg-indigo-100">Manage Room</button>}
+                  </div>
+                </div>
+                <div className="space-y-6">
+                  <div className="bg-white p-6 rounded-xl border shadow space-y-3">
+                    <h4 className="font-semibold text-sm uppercase text-gray-700 tracking-wide">Players ({players.length})</h4>
+                    <div className="space-y-1 max-h-72 overflow-y-auto pr-1">
+                      {players.map(p => (
+                        <div key={p.playerId || p.id} className="flex items-center justify-between text-xs border rounded px-2 py-1 bg-gray-50">
+                          <span className="truncate">{p.userName || p.name}</span>
+                          <div className="flex items-center gap-1">
+                            {p.isConnected ? <Badge color="bg-green-100 text-green-700">on</Badge> : <Badge color="bg-red-100 text-red-600">off</Badge>}
+                            <button onClick={() => handleKick(p.playerId || p.id)} className="px-1.5 py-0.5 bg-red-500 text-white rounded">✕</button>
+                          </div>
+                        </div>
+                      ))}
+                      {!players.length && <div className="text-[10px] text-gray-500">No players</div>}
+                    </div>
+                  </div>
+                  {lastResults && (
+                    <div className="bg-white p-4 rounded-xl border shadow space-y-2">
+                      <h4 className="font-semibold text-xs uppercase text-gray-700 tracking-wide">Answer Stats</h4>
+                      <div className="space-y-1 max-h-56 overflow-y-auto pr-1">
+                        {(lastResults.answersWithStats || []).map((a: any) => (
+                          <div key={a.id} className={`flex items-center justify-between text-[11px] border rounded px-2 py-1 ${a.isCorrect ? 'bg-green-50 border-green-300':'bg-white'}`}>
+                            <span className="truncate pr-2">{a.title || a.text || a.id}</span>
+                            <span className="font-semibold text-gray-600">{a.playerCount}</span>
+                          </div>
+                        ))}
+                        {!(lastResults.answersWithStats || []).length && <div className="text-[10px] text-gray-400">No stats</div>}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {manageMode==='control' && phase==='results' && (
+            <div className="space-y-6">
+              <div className="bg-white p-6 rounded-xl border shadow space-y-4">
+                <h3 className="font-bold text-gray-800 tracking-wide flex items-center gap-3">Final Results {roomCode && <Badge color="bg-indigo-100 text-indigo-700">Room {roomCode}</Badge>} {roomCode && <button onClick={()=>router.push(`/admin/host/${roomCode}?gameId=${selectedGameId}`)} className="ml-auto px-3 py-1.5 text-xs rounded bg-indigo-600 text-white font-semibold hover:bg-indigo-700">Host View</button>}</h3>
+                {!finalResults && <div className="text-xs text-gray-500">Waiting for final results...</div>}
+                {finalResults && (
+                  <>
+                    <div className="grid md:grid-cols-4 gap-4 text-xs">
+                      <div className="p-3 rounded border bg-gray-50"><div className="font-semibold text-gray-600 mb-1">Players</div><div className="text-lg font-bold text-gray-900">{finalResults.totalPlayers || finalResults.playerCount || players.length}</div></div>
+                      <div className="p-3 rounded border bg-gray-50"><div className="font-semibold text-gray-600 mb-1">Questions</div><div className="text-lg font-bold text-gray-900">{finalResults.totalQuestions || totalQuestions}</div></div>
+                      <div className="p-3 rounded border bg-gray-50"><div className="font-semibold text-gray-600 mb-1">Winner</div><div className="text-sm font-bold text-green-700 truncate">{(finalResults.finalLeaderboard || finalResults.topPlayers || [])[0]?.userName || (finalResults.first?.name)}</div></div>
+                      <div className="p-3 rounded border bg-gray-50"><div className="font-semibold text-gray-600 mb-1">High Score</div><div className="text-lg font-bold text-indigo-700">{(finalResults.finalLeaderboard || finalResults.topPlayers || [])[0]?.score || finalResults.highestScore || 0}</div></div>
+                    </div>
+                    <div className="space-y-1 max-h-[420px] overflow-y-auto border rounded p-3 bg-gray-50">
+                      {(finalResults.finalLeaderboard || finalResults.topPlayers || finalResults.leaderboard || []).map((p:any, idx:number) => (
+                        <div key={p.playerId || p.id || idx} className={`flex items-center justify-between text-sm border rounded px-3 py-1 bg-white ${idx<3?'shadow-sm':''}`}> 
+                          <div className="flex items-center gap-2 truncate"><span className="text-xs font-bold text-gray-500 w-5">#{p.rank ?? (idx+1)}</span><span className="truncate font-medium">{p.userName || p.name}</span>{idx===0 && <Badge color="bg-yellow-400 text-gray-800">Champion</Badge>}</div>
+                          <div className="flex items-center gap-3"><span className="text-xs font-semibold text-indigo-600">{p.score} pts</span>{typeof p.progress !== 'undefined' && <Badge>{p.progress}</Badge>}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+                <div className="flex gap-3 pt-2">
+                  <button onClick={() => { setPhase('setup'); setRoomCode(''); setPlayers([]); setQuestion(null); setLeaderboard([]); setFinalResults(null); }} className="px-5 py-2 rounded bg-red-600 text-white text-sm font-semibold">New Session</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {manageMode==='games' && (
+            <div className="grid md:grid-cols-2 gap-6">
+              <GamesManager onSelectGame={(g:any)=>{ setManageGameId(g?.id||null); setManageMode('questions'); }} />
+              <div className="hidden md:block text-xs text-gray-500 p-6 border rounded-xl bg-white">Select a game to manage its questions.</div>
+            </div>
+          )}
+          {manageMode==='questions' && <QuestionsManager gameId={manageGameId} onBack={()=>setManageMode('games')} />}
+        </main>
+      </div>
+    </div>
+  );
+}

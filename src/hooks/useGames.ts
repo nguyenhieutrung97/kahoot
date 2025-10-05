@@ -21,13 +21,46 @@ export const useGames = (params?: GamesQueryParams) => {
     try {
       const response = await gamesApi.getGames(params);
       if (response.success && response.data) {
-        setGames(response.data.data);
-        setPagination({
-          totalCount: response.data.totalCount,
-          pageNumber: response.data.pageNumber,
-          pageSize: response.data.pageSize,
-          totalPages: response.data.totalPages,
-        });
+        const raw: any = response.data;
+        let list: Game[] = [];
+        let totalCount = 0;
+        let pageNumber = 1;
+        let pageSize = 10;
+        let totalPages = 0;
+
+        if (Array.isArray(raw)) {
+          // API returned a plain array
+          list = raw;
+          totalCount = raw.length;
+          pageSize = raw.length || 10;
+          totalPages = 1;
+        } else if (raw && Array.isArray(raw.data)) {
+          // Expected PaginatedResponse shape { data: [], totalCount, pageNumber, pageSize, totalPages }
+            list = raw.data;
+            totalCount = raw.totalCount ?? raw.data.length;
+            pageNumber = raw.pageNumber ?? 1;
+            pageSize = raw.pageSize ?? raw.data.length ?? 10;
+            totalPages = raw.totalPages ?? 1;
+        } else if (raw && Array.isArray(raw.items)) {
+          // Alternative paging shape { items: [], totalCount, page, pageSize, totalPages }
+            list = raw.items;
+            totalCount = raw.totalCount ?? raw.items.length;
+            pageNumber = raw.page ?? 1;
+            pageSize = raw.pageSize ?? raw.items.length ?? 10;
+            totalPages = raw.totalPages ?? Math.max(1, Math.ceil(totalCount / pageSize));
+        } else {
+          // Unknown shape: attempt to derive array from any enumerable property
+          const possibleArray = Object.values(raw || {}).find(v => Array.isArray(v)) as Game[] | undefined;
+          if (possibleArray) {
+            list = possibleArray;
+            totalCount = possibleArray.length;
+            pageSize = possibleArray.length || 10;
+            totalPages = 1;
+          }
+        }
+
+        setGames(Array.isArray(list) ? list : []);
+        setPagination({ totalCount, pageNumber, pageSize, totalPages });
       }
     } catch (err) {
       setError(apiUtils.handleApiError(err));
@@ -46,6 +79,8 @@ export const useGames = (params?: GamesQueryParams) => {
     error,
     pagination,
     refetch: fetchGames,
+    // expose internal setter for optimistic updates if needed
+    setGames,
   };
 };
 
