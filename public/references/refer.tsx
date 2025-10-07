@@ -7,7 +7,6 @@ import { useGames, useGameMutations } from '@/hooks/useGames';
 import { useGameHub } from '@/hooks/useGameHub';
 import { GameHeader } from '@/components/ui/GameHeader';
 import { GameState } from '@/types/api';
-import AIGameChat from '@/components/admin/AIGameChat';
 
 interface LobbyPlayer { id?: string; playerId?: string; userName?: string; name?: string; isConnected?: boolean; joinedAt?: string; score?: number; rank?: number; }
 interface QuestionEnvelope { questionIndex?: number; totalQuestions?: number; questionText?: string; answers?: any[]; timeLimitSeconds?: number; startTime?: string; isMultipleChoice?: boolean; correctAnswers?: any[]; correctAnswer?: any; questionType?: string; }
@@ -487,7 +486,6 @@ export default function AdminGameManagerPage() {
           {manageMode==='questions' && <QuestionsManager gameId={manageGameId} onBack={()=>setManageMode('games')} />}
         </main>
       </div>
-      <AIGameChat open={showAI} onClose={()=>setShowAI(false)} onGameCreated={(g)=>{ setShowAI(false); setStatusMsg?.(`AI created game: ${g.title}`); refetchGames?.(); }} />
     </div>
   );
 }

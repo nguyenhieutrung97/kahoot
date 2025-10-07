@@ -1,17 +1,14 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 
-interface HostRoomPageProps { params: { roomCode: string } }
-
+// Next.js 15 PageProps now types params as a Promise; accept that shape.
 export const dynamic = 'force-dynamic';
 
-export default function HostRoomPage({ params }: HostRoomPageProps) {
-  const room = params.roomCode;
-  // If we prefer central hosting under /admin/host, redirect there:
-  if (room) {
-    redirect(`/admin/host/${room}`);
+export default async function HostRoomPage({ params }: { params: Promise<{ roomCode?: string }> }) {
+  const { roomCode } = await params;
+  if (roomCode) {
+    redirect(`/admin/host/${roomCode}`);
   }
-  // Fallback (should not normally render because redirect fires)
   return (
     <div className="min-h-screen flex items-center justify-center p-10 text-sm text-gray-700">
       <div className="space-y-4 text-center">

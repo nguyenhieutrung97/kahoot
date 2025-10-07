@@ -7,6 +7,7 @@ import type { HubEventPayloads, HubEventHandlerProps } from '@/types/hub-events'
 // Derive internal handlers type from HubEventHandlerProps while preserving backwards compatibility
 type Handlers = HubEventHandlerProps & {
   onError?: (msg: string) => void; // keep explicit string form for convenience
+  onReconnected?: () => void; // NEW: fire when SignalR fully reconnected
 };
 
 export function useGameHub(handlers: Handlers = {}) {
@@ -27,7 +28,7 @@ export function useGameHub(handlers: Handlers = {}) {
     const c = connection;
     try {
       (c as any).onreconnecting?.(() => { if (mounted) setConnected(false); });
-      (c as any).onreconnected?.(() => { if (mounted) setConnected(true); });
+      (c as any).onreconnected?.(() => { if (mounted) { setConnected(true); try { handlersRef.current.onReconnected?.(); } catch {} } });
       (c as any).onclose?.(() => { if (mounted) setConnected(false); });
     } catch {}
 

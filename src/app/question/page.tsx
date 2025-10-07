@@ -68,15 +68,15 @@ export default function QuestionPage() {
   const lastQuestionDoneRef = useRef(false); // NEW
   // New state to reflect current question number driven by NewQuestion events
   const [displayQuestionNumber, setDisplayQuestionNumber] = useState<number>(questionNumber);
-  // Helper normalize index (treat 0-based values as +1 for display)
-  const normalizeDisplayIndex = (raw: number) => {
-    if (raw <= 0) return raw + 1; // if backend uses 0-based
-    return raw; // assume already 1-based
-  };
   const [totalTime, setTotalTime] = useState<number | null>(null); // NEW total time for progress bar
   const [submittedSnapshot, setSubmittedSnapshot] = useState<number | null>(null); // NEW freeze value for bottom display
   const [playerComment, setPlayerComment] = useState<string | null>(null); // NEW player comment state
   const [totalQuestions, setTotalQuestions] = useState<number | null>(null); // NEW total questions
+  const [rejoining, setRejoining] = useState(true); // NEW rejoin/loading state
+  const sessionKeyPrefix = 'kahoot_player_session:'; // NEW
+  const activeRoomCodeRef = useRef<string | null>(null); // NEW
+  const joinInProgressRef = useRef(false); // NEW guard
+  const joinedRef = useRef(false); // NEW guard
   
   // Music centralized via useGameAudio hook (replaces legacy inline audio logic)
   const {
@@ -88,7 +88,7 @@ export default function QuestionPage() {
     stopBackground: stopBackgroundMusic
   } = useGameAudio();
 
-  const { connected, submitAnswer, submitMultipleAnswers } = useGameHub({
+  const { connected, submitAnswer, submitMultipleAnswers, joinGame, ensureConnected, requestRoomStatus } = useGameHub({
     onError: (msg) => {
       const m = typeof msg === 'string' ? msg : (msg && (msg as any).message) || 'Unknown error';
       const lower = m.toLowerCase();
@@ -117,6 +117,24 @@ export default function QuestionPage() {
       } catch {}
       router.replace(`/?kicked=1&reason=${encodeURIComponent(reason)}`);
     },
+    onJoinedGame: (payload: any) => { // NEW persist & sync (updated)
+      joinedRef.current = true; // mark joined
+      joinInProgressRef.current = false;
+      try {
+        const rc = String(payload.roomCode || activeRoomCodeRef.current || '').toUpperCase();
+        const session = {
+          userName: payload.userName || payload.player?.userName || playerName,
+          playerId: payload.playerId || payload.player?.playerId || payload.player?.id,
+          roomCode: rc,
+          timestamp: Date.now(),
+        };
+        if (rc) localStorage.setItem(`${sessionKeyPrefix}${rc}`, JSON.stringify(session));
+        try { localStorage.setItem('kahoot_player_session', JSON.stringify({ userName: session.userName, timestamp: session.timestamp })); } catch {}
+        activeRoomCodeRef.current = rc || activeRoomCodeRef.current;
+      } catch {}
+      try { if (activeRoomCodeRef.current) requestRoomStatus(activeRoomCodeRef.current); } catch {}
+      setRejoining(false);
+    },
     onNewQuestion: (payload) => {
       try {
         const rawIndex = typeof payload?.questionIndex === 'number'
@@ -124,7 +142,7 @@ export default function QuestionPage() {
           : typeof payload?.index === 'number'
             ? payload.index
             : (displayQuestionNumber - 1);
-        setDisplayQuestionNumber(normalizeDisplayIndex(rawIndex));
+        setDisplayQuestionNumber(rawIndex);
         // capture total questions
         if (payload && (payload as any).totalQuestions) setTotalQuestions((payload as any).totalQuestions);
         else if ((payload as any).TotalQuestions) setTotalQuestions((payload as any).TotalQuestions);
@@ -323,6 +341,75 @@ export default function QuestionPage() {
     );
   }
 
+  // NEW helper to locate stored session for this player
+  const findStoredSession = useCallback(() => {
+    if (typeof window === 'undefined') return null;
+    const targetName = (playerName || '').toUpperCase();
+    let latest: any = null;
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i) || '';
+        if (!key.startsWith(sessionKeyPrefix)) continue;
+        const raw = localStorage.getItem(key);
+        if (!raw) continue;
+        let parsed: any = null;
+        try { parsed = JSON.parse(raw); } catch { continue; }
+        if (!parsed || !parsed.userName) continue;
+        if (targetName && parsed.userName.toUpperCase() !== targetName) continue;
+        if (!latest || (parsed.timestamp || 0) > (latest.timestamp || 0)) latest = parsed;
+      }
+    } catch {}
+    return latest;
+  }, [playerName]);
+
+  // NEW auto join on mount / reload
+  useEffect(() => {
+    let cancelled = false;
+    const attempt = async (attemptNo = 1) => {
+      if (cancelled || joinedRef.current) return;
+      const sess = findStoredSession();
+      if (!sess) {
+        setTimeout(() => { if (!cancelled) router.replace('/'); }, 1000);
+        return;
+      }
+      activeRoomCodeRef.current = sess.roomCode || activeRoomCodeRef.current;
+      if (joinInProgressRef.current) { // wait and retry until finished or joined
+        if (!cancelled && !joinedRef.current && attemptNo <= 15) setTimeout(() => attempt(attemptNo + 1), 200);
+        return;
+      }
+      joinInProgressRef.current = true;
+      try {
+        await ensureConnected();
+        // Invoke join directly (ensureConnected already starts connection)
+        await joinGame(sess.roomCode, (sess.userName || playerName || '').toUpperCase(), sess.playerId || null);
+        // If server doesn't emit JoinedGame quickly, fallback after delay
+        setTimeout(() => {
+          if (!joinedRef.current && !cancelled) {
+            joinInProgressRef.current = false; // allow another attempt
+            if (attemptNo <= 8) attempt(attemptNo + 1); else setRejoining(false);
+          }
+        }, 1200);
+      } catch (err: any) {
+        const msg = String(err?.message || err || '').toLowerCase();
+        // Treat duplicate/already joined as success
+        if (msg.includes('already') && msg.includes('join')) {
+          joinedRef.current = true;
+          setRejoining(false);
+          joinInProgressRef.current = false;
+          try { if (activeRoomCodeRef.current) requestRoomStatus(activeRoomCodeRef.current); } catch {}
+          return;
+        }
+        // eslint-disable-next-line no-console
+        console.warn('Rejoin attempt failed', err);
+        joinInProgressRef.current = false;
+        if (!cancelled && attemptNo <= 8) setTimeout(() => attempt(attemptNo + 1), 400 * attemptNo); else setRejoining(false);
+      }
+    };
+    attempt();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
       <GameHeader title="QUESTION" withSvgBorder />
@@ -332,6 +419,12 @@ export default function QuestionPage() {
             <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center z-10">
               <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin mb-3" />
               <div className="text-xs font-semibold text-gray-600 tracking-wider uppercase">Connecting…</div>
+            </div>
+          )}
+          {rejoining && connected && (
+            <div className="absolute inset-0 bg-white/70 backdrop-blur-sm flex flex-col items-center justify-center z-10">
+              <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-3" />
+              <div className="text-[11px] font-semibold text-gray-600 tracking-wider uppercase">Rejoining game…</div>
             </div>
           )}
           <div className="absolute inset-0 pointer-events-none opacity-5 bg-[radial-gradient(circle_at_20%_20%,#f87171,transparent_60%)]" />
