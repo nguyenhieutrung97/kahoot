@@ -42,7 +42,7 @@ function synthesizeQuestions(messages: ChatMessage[]): Draft {
 
 // Server AI suggestion
 async function fetchServerSuggestion(specMessage: string): Promise<Draft | null> {
-  const base = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://localhost:7007';
+  const base = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.trungtero.com';
   try {
     const res = await fetch(`${base}/api/OpenAI/chat`, {
       method: 'POST',
