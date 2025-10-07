@@ -28,11 +28,11 @@ type NewQuestionPayload = {
   startTime?: string;
 }
 
-// Helper to extract answer display text
-const extractAnswerText = (a: Answer): string => {
+// Helper to extract answer display text (accept any because server payloads vary)
+const extractAnswerText = (a: any): string => {
   if (a == null) return '';
   if (typeof a === 'string' || typeof a === 'number') return String(a);
-  const candidates = [a.text, a.title, a.value, a.label, a.display, a.content];
+  const candidates = [(a as any).text, (a as any).title, (a as any).value, (a as any).label, (a as any).display, (a as any).content];
   for (const c of candidates) {
     if (c == null) continue;
     if (typeof c === 'string' || typeof c === 'number') return String(c);

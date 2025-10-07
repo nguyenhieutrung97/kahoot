@@ -309,7 +309,7 @@ export default function Lobby() {
     if (!joinCode || !playerName) return undefined;
     let cancelled = false;
     const attemptJoin = async (attempt = 1) => {
-      if (allowJoinRef.current === false) { setInitializing(false); return; }
+      if (allowJoinRef.current !== true) { setInitializing(false); return; }
       try {
         await ensureConnected();
         if (cancelled || didJoinRef.current) return;
@@ -317,7 +317,7 @@ export default function Lobby() {
           if (attempt <= 5) setTimeout(() => attemptJoin(attempt + 1), 300 * attempt);
           return;
         }
-        if (allowJoinRef.current === false) { setInitializing(false); return; }
+  if (allowJoinRef.current !== true) { setInitializing(false); return; }
         didJoinRef.current = true;
         let playerId: string | null = null;
         try {
