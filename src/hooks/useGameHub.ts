@@ -39,28 +39,31 @@ export function useGameHub(handlers: Handlers = {}) {
     const attach = <K extends keyof HubEventPayloads>(event: K) => {
       const prop = `on${event}` as keyof Handlers;
       on(event, (p: HubEventPayloads[K]) => (handlersRef.current as any)[prop]?.(p));
+      return event as string;
     };
 
-    // Known events list (excluding RoomCreated for custom logic below)
-    const baseEvents: (keyof HubEventPayloads | string)[] = [
-      'Error','JoinedGame','PlayerJoined','LobbyInfo','LobbyUpdate','GameStarted','gamestarted','NewQuestion','HostNewQuestion','AnswerSubmitted','PlayerQuestionResult','QuestionTimeEnded','QuestionResults','ProceedingToNextQuestion','FinalResults','GameEnded','RoomStatus','PlayerDisconnected','HostDisconnected','RoomClosed','KickedFromGame','ReconnectState','AllPlayersAnswered','PlayerProgress'
-    ];
+    // Maintain a list of actually attached events for proper cleanup
+    const attached: string[] = [];
 
-    (['Error','JoinedGame','PlayerJoined','LobbyInfo','LobbyUpdate','GameStarted','NewQuestion','HostNewQuestion','AnswerSubmitted','PlayerQuestionResult','QuestionTimeEnded','QuestionResults','ProceedingToNextQuestion','FinalResults','GameEnded','RoomStatus','PlayerDisconnected','HostDisconnected','RoomClosed','KickedFromGame','ReconnectState','AllPlayersAnswered','PlayerProgress'] as (keyof HubEventPayloads)[]).forEach(e => attach(e));
-    // Custom RoomCreated handling to resolve pending promises
+    const baseEvents: (keyof HubEventPayloads)[] = [
+      'Error','JoinedGame','PlayerJoined','LobbyInfo','LobbyUpdate','GameStarted','NewQuestion','HostNewQuestion','AnswerSubmitted','PlayerQuestionResult','QuestionTimeEnded','QuestionResults','ProceedingToNextQuestion','FinalResults','GameEnded','RoomStatus','PlayerDisconnected','HostDisconnected','RoomClosed','KickedFromGame','ReconnectState','AllPlayersAnswered','PlayerProgress'
+    ];
+    baseEvents.forEach(e => attached.push(attach(e)));
+
+    // Custom events / aliases
     on('RoomCreated', (p: any) => {
       try {
         const code = p?.roomCode || p?.code || '';
         if (code && pendingRoomResolvers.current.length) {
-          pendingRoomResolvers.current.forEach(r => r(code));
-          pendingRoomResolvers.current = [];
+          const resolvers = [...pendingRoomResolvers.current];
+          pendingRoomResolvers.current = []; // clear first to avoid double resolve
+          resolvers.forEach(r => r(code));
         }
       } catch {}
       (handlersRef.current as any).onRoomCreated?.(p);
-    });
-    // Extra lowercase alias
-    on('gamestarted', (p: any) => (handlersRef.current as any).onGameStarted?.(p));
-    on('error', (p: any) => (handlersRef.current as any).onError?.(typeof p === 'string' ? p : (p?.message || 'Error')));
+    }); attached.push('RoomCreated');
+    on('gamestarted', (p: any) => (handlersRef.current as any).onGameStarted?.(p)); attached.push('gamestarted');
+    on('error', (p: any) => (handlersRef.current as any).onError?.(typeof p === 'string' ? p : (p?.message || 'Error'))); attached.push('error');
 
     const startIfNeeded = async () => {
       try { await ensureStarted(c); if (mounted) setConnected(true); } catch (err) { if (mounted) setConnected(false); handlersRef.current.onError?.((err as Error)?.message || 'Failed to connect'); }
@@ -70,7 +73,7 @@ export function useGameHub(handlers: Handlers = {}) {
     return () => {
       mounted = false;
       try { (c as any).onreconnecting?.(null); (c as any).onreconnected?.(null); (c as any).onclose?.(null); } catch {}
-      baseEvents.forEach(e => off(e as string));
+      attached.forEach(ev => off(ev));
     };
   }, [connection]);
 
@@ -83,30 +86,29 @@ export function useGameHub(handlers: Handlers = {}) {
       const eventPromise = new Promise<string>(resolve => {
         pendingRoomResolvers.current.push(resolve);
       });
+      let resolved = false;
+      const resolveAll = (code: string) => {
+        if (resolved) return; // guard double resolve
+        resolved = true;
+        const resolvers = [...pendingRoomResolvers.current];
+        pendingRoomResolvers.current = [];
+        resolvers.forEach(r => r(code));
+      };
       let invokeResult: any;
       try {
         invokeResult = await connection.invoke('CreateGameRoom', gameId, autoShowResults);
       } catch (err) {
-        // if invoke fails, clear pending resolvers
         pendingRoomResolvers.current = [];
         throw err;
       }
-      // If server directly returns room code/object with code use it, else wait for event
       if (typeof invokeResult === 'string' && invokeResult.trim()) {
-        const code = invokeResult.trim();
-        pendingRoomResolvers.current.forEach(r => r(code));
-        pendingRoomResolvers.current = [];
-        return code;
+        resolveAll(invokeResult.trim());
+        return invokeResult.trim();
       }
       if (invokeResult && typeof invokeResult === 'object') {
         const code = invokeResult.roomCode || invokeResult.code;
-        if (code) {
-          pendingRoomResolvers.current.forEach(r => r(code));
-            pendingRoomResolvers.current = [];
-          return code;
-        }
+        if (code) { resolveAll(code); return code; }
       }
-      // Fallback: wait up to 5s for event
       const timeoutPromise = new Promise<string>(resolve => setTimeout(() => resolve(''), 5000));
       return Promise.race([eventPromise, timeoutPromise]);
     },
@@ -114,59 +116,44 @@ export function useGameHub(handlers: Handlers = {}) {
     startGame: async (roomCode: string) => { await ensureStarted(connection); return connection.invoke('StartGame', roomCode); },
     submitAnswer: async (answerId: string) => { await ensureStarted(connection); return connection.invoke('SubmitAnswer', answerId); },
     submitMultipleAnswers: async (answerIds: string[]) => { await ensureStarted(connection); return connection.invoke('SubmitMultipleAnswers', answerIds); },
-    requestRoomStatus: async (roomCode?: string) => {
+    requestRoomStatus: async (roomCode?: string): Promise<any> => {
       await ensureStarted(connection);
-
-      // If we have a cached successful method, try it first
+      const missingPattern = (msg: string) => {
+        const lower = msg.toLowerCase();
+        return lower.includes('does not exist') || lower.includes('no method') || lower.includes('could not find');
+      };
       if (statusMethodRef.current) {
-        const m = statusMethodRef.current;
         try {
-          if (typeof roomCode !== 'undefined') {
-            return await connection.invoke(m, roomCode);
-          }
-          return await connection.invoke(m);
-        } catch (err) {
-          // If cached method now fails because it no longer exists, clear cache and continue
-          const msg = String((err as any)?.message || '').toLowerCase();
-            if (msg.includes('does not exist') || msg.includes('no method') || msg.includes('could not find')) {
-              statusMethodRef.current = null;
-            } else {
-              // Non-missing error -> rethrow
-              throw err;
-            }
+          return await (typeof roomCode !== 'undefined' ? connection.invoke(statusMethodRef.current, roomCode) : connection.invoke(statusMethodRef.current));
+        } catch (err: any) {
+          const msg = String(err?.message || '');
+            if (missingPattern(msg)) statusMethodRef.current = null; else throw err;
         }
       }
-
-      // Candidate hub methods (exclude event names like LobbyInfo / RoomStatus to avoid invoke errors)
       const methodCandidates = [ 'GetRoomStatus','GetLobbyInfo','GetRoom','GetLobby' ];
       let lastErr: any = null;
       for (const m of methodCandidates) {
-        const variants: (()=>Promise<any>)[] = [];
-        if (typeof roomCode !== 'undefined') variants.push(() => connection.invoke(m, roomCode));
-        variants.push(() => connection.invoke(m));
-        for (const call of variants) {
+        const calls: (()=>Promise<any>)[] = [];
+        if (typeof roomCode !== 'undefined') calls.push(() => connection.invoke(m, roomCode));
+        calls.push(() => connection.invoke(m));
+        for (const attempt of calls) {
           try {
-            const res = await call();
-            statusMethodRef.current = m; // cache
-            return res;
+            const res = await attempt();
+            statusMethodRef.current = m;
+            return { ok: true, method: m, data: res };
           } catch (err) {
             lastErr = err;
-            const msg = String((err as any)?.message || '').toLowerCase();
-            if (msg.includes('does not exist') || msg.includes('no method') || msg.includes('could not find')) {
-              continue; // try next method
-            }
-            // Non-missing error: continue trying others but keep lastErr
-            continue;
+            const msg = String((err as any)?.message || '');
+            if (missingPattern(msg)) continue; // try next method
           }
         }
       }
       if (lastErr) {
-        const msg = String((lastErr as any)?.message || '').toLowerCase();
-        if (msg.includes('does not exist') || msg.includes('no method') || msg.includes('could not find')) {
-          return; // swallow missing-method only cases
-        }
-        throw lastErr;
+        const msg = String(lastErr?.message || '');
+        if (missingPattern(msg)) return { ok: false, reason: 'missing-methods' };
+        return { ok: false, reason: 'error', error: msg };
       }
+      return { ok: false, reason: 'unknown' };
     },
     proceedToNextQuestion: async (roomCode: string) => { await ensureStarted(connection); return connection.invoke('ProceedToNextQuestion', roomCode); },
     showFinalLeaderboard: async (roomCode: string) => { await ensureStarted(connection); return connection.invoke('ShowFinalLeaderboard', roomCode); },

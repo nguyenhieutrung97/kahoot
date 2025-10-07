@@ -56,7 +56,6 @@ export default function AdminGameManagerPage() {
   const [loadingMap, setLoadingMap] = useState<Record<string, boolean>>({});
   const setLoading = (k: string, v: boolean) => setLoadingMap(m => ({ ...m, [k]: v }));
   const Spinner = ({ size='w-4 h-4' }: { size?: string }) => <span className={`${size} inline-block border-2 border-current border-t-transparent rounded-full animate-spin`}></span>;
-  const [showAI, setShowAI] = useState(false);
 
   // Timer
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
@@ -190,6 +189,8 @@ export default function AdminGameManagerPage() {
   // Derived
   const totalQuestions = question?.totalQuestions || finalResults?.totalQuestions || 0;
   const Badge = ({ children, color = 'bg-gray-200 text-gray-700' }: any) => <span className={`px-2 py-0.5 rounded text-xs font-semibold tracking-wide ${color}`}>{children}</span>;
+
+  const [showAI, setShowAI] = useState(false);
 
   return (
     <div className="min-h-screen flex bg-gray-50">
@@ -486,7 +487,7 @@ export default function AdminGameManagerPage() {
           {manageMode==='questions' && <QuestionsManager gameId={manageGameId} onBack={()=>setManageMode('games')} />}
         </main>
       </div>
-      <AIGameChat open={showAI} onClose={()=>setShowAI(false)} onGameCreated={(g)=>{ setShowAI(false); setStatusMsg(`AI created game: ${g.title}`); refetchGames?.(); setManageMode('games'); }} />
+      <AIGameChat open={showAI} onClose={()=>setShowAI(false)} onGameCreated={(g)=>{ setShowAI(false); setStatusMsg?.(`AI created game: ${g.title}`); refetchGames?.(); }} />
     </div>
   );
 }

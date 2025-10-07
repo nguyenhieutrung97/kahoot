@@ -114,15 +114,15 @@ export default function Dashboard() {
               >
                 ENTER LOBBY
               </GameButton>
-              <a
-                href="references/host.html"
-                target="_blank"
-                rel="noopener noreferrer"
+              {/* Replaced test host link with Admin redirect button */}
+              <button
+                type="button"
+                onClick={() => router.push('/admin')}
                 className="mt-2 inline-flex items-center justify-center w-full px-6 py-3 rounded-md border-2 border-gray-300 text-gray-700 font-bold uppercase tracking-wide hover:bg-gray-50 transition-colors"
               >
-                <span className="mr-2">🧪</span>
-                Create Game (Testing)
-              </a>
+                <span className="mr-2">🛠️</span>
+                Admin Dashboard
+              </button>
             </div>
           </form>
         </div>

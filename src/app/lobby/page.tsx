@@ -241,6 +241,50 @@ export default function Lobby() {
     },
   });
 
+  // Pre-flight: verify room/game session state is Lobby (1) before attempting join
+  const allowJoinRef = useRef<boolean | null>(null);
+  const preflightCheckedRef = useRef(false);
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      if (!joinCode || preflightCheckedRef.current) return;
+      preflightCheckedRef.current = true;
+      try {
+        await ensureConnected();
+        // Attempt to request status via hub; if fails silently allow (fallback)
+        const hub: any = (client as any);
+        if (hub?.invoke) {
+          const methodCandidates = ['GetRoomStatus','GetLobbyInfo','GetRoom','GetLobby'];
+          for (const m of methodCandidates) {
+            try {
+              const res = await hub.invoke(m, joinCode);
+              if (cancelled) return;
+              const stateVal = res?.sessionState ?? res?.gameSessionState ?? res?.state ?? res?.status;
+              // Accept numeric codes; treat string mapping
+              let numeric: number | undefined = undefined;
+              if (typeof stateVal === 'number') numeric = stateVal; else if (typeof stateVal === 'string') {
+                const map: Record<string, number> = { active:0,lobby:1,inprogress:2,waitingforhost:3,completed:4,cancelled:4,canceled:4 };
+                numeric = map[stateVal.replace(/\s+/g,'').toLowerCase()];
+              }
+              if (typeof numeric === 'number') {
+                allowJoinRef.current = (numeric === 1); // only Lobby
+                if (numeric !== 1) {
+                  setError('Game not joinable (not in lobby).');
+                }
+                break;
+              }
+            } catch (e:any) {
+              const msg = String(e?.message||'').toLowerCase();
+              if (msg.includes('does not exist')) continue;
+            }
+          }
+        }
+      } catch {}
+    };
+    run();
+    return () => { cancelled = true; };
+  }, [joinCode, client, ensureConnected]);
+
   const isActualGameId = gameId && gameId.length > 10;
   const { game, error: gameError } = useGame(isActualGameId ? gameId : null);
   const { questions, error: questionsError } = useQuestions(isActualGameId ? gameId : null);
@@ -265,6 +309,7 @@ export default function Lobby() {
     if (!joinCode || !playerName) return undefined;
     let cancelled = false;
     const attemptJoin = async (attempt = 1) => {
+      if (allowJoinRef.current === false) { setInitializing(false); return; }
       try {
         await ensureConnected();
         if (cancelled || didJoinRef.current) return;
@@ -272,6 +317,7 @@ export default function Lobby() {
           if (attempt <= 5) setTimeout(() => attemptJoin(attempt + 1), 300 * attempt);
           return;
         }
+        if (allowJoinRef.current === false) { setInitializing(false); return; }
         didJoinRef.current = true;
         let playerId: string | null = null;
         try {
@@ -285,7 +331,6 @@ export default function Lobby() {
         await joinGame(joinCode, playerName.toUpperCase(), playerId ?? null);
         setTimeout(() => { if (initializing) setInitializing(false); }, 1500);
       } catch (err) {
-        // eslint-disable-next-line no-console
         console.error('Join attempt failed', err);
         if (attempt <= 5 && !cancelled) setTimeout(() => attemptJoin(attempt + 1), 400 * attempt);
         else if (initializing) setInitializing(false);

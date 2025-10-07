@@ -68,6 +68,11 @@ export default function QuestionPage() {
   const lastQuestionDoneRef = useRef(false); // NEW
   // New state to reflect current question number driven by NewQuestion events
   const [displayQuestionNumber, setDisplayQuestionNumber] = useState<number>(questionNumber);
+  // Helper normalize index (treat 0-based values as +1 for display)
+  const normalizeDisplayIndex = (raw: number) => {
+    if (raw <= 0) return raw + 1; // if backend uses 0-based
+    return raw; // assume already 1-based
+  };
   const [totalTime, setTotalTime] = useState<number | null>(null); // NEW total time for progress bar
   const [submittedSnapshot, setSubmittedSnapshot] = useState<number | null>(null); // NEW freeze value for bottom display
   const [playerComment, setPlayerComment] = useState<string | null>(null); // NEW player comment state
@@ -119,7 +124,7 @@ export default function QuestionPage() {
           : typeof payload?.index === 'number'
             ? payload.index
             : (displayQuestionNumber - 1);
-        setDisplayQuestionNumber(rawIndex);
+        setDisplayQuestionNumber(normalizeDisplayIndex(rawIndex));
         // capture total questions
         if (payload && (payload as any).totalQuestions) setTotalQuestions((payload as any).totalQuestions);
         else if ((payload as any).TotalQuestions) setTotalQuestions((payload as any).TotalQuestions);

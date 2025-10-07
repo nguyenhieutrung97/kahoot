@@ -99,6 +99,23 @@ async function apiRequest<T>(
   }
 }
 
+// Helper: try multiple endpoint variants (casing) until one succeeds (non-404)
+async function apiRequestVariants<T>(endpoints: string[], options: RequestInit = {}): Promise<ApiResponse<T>> {
+  let lastErr: any = null;
+  for (const ep of endpoints) {
+    try {
+      return await apiRequest<T>(ep, options);
+    } catch (e) {
+      lastErr = e;
+      if (e instanceof ApiError && e.statusCode === 404) {
+        continue; // try next variant
+      }
+      throw e; // non-404 propagate immediately
+    }
+  }
+  throw lastErr || new Error('All endpoint variants failed');
+}
+
 // Custom Error class
 class ApiError extends Error {
   constructor(
@@ -132,10 +149,15 @@ export const gamesApi = {
 
   // POST /api/Games
   async createGame(command: CreateGameCommand): Promise<ApiResponse<Game>> {
-    return apiRequest<Game>('/api/Games', {
+    const resp = await apiRequest<Game | string>('/api/Games', {
       method: 'POST',
       body: JSON.stringify(command),
     });
+    if (resp.success && typeof resp.data === 'string') {
+      // Backend returned just an ID string; wrap it into a Game-like object
+      return { success: true, data: { id: resp.data, title: command.title, description: command.description } as Game };
+    }
+    return resp as ApiResponse<Game>;
   },
 
   // GET /api/Games/{id}
@@ -169,81 +191,84 @@ export const gamesApi = {
 
 // Questions API
 export const questionsApi = {
-  // GET /api/games/{gameId}/Questions
+  // GET /api/Games/{gameId}/Questions (fallback: /api/games/{gameId}/Questions)
   async getQuestions(gameId: string): Promise<ApiResponse<Question[]>> {
-    return apiRequest<Question[]>(`/api/games/${encodeURIComponent(gameId)}/Questions`);
+    return apiRequestVariants<Question[]>([
+      `/api/Games/${encodeURIComponent(gameId)}/Questions`,
+      `/api/games/${encodeURIComponent(gameId)}/Questions`
+    ]);
   },
 
-  // POST /api/games/{gameId}/Questions
+  // POST create question
   async createQuestion(gameId: string, command: CreateQuestionCommand): Promise<ApiResponse<Question>> {
-    return apiRequest<Question>(`/api/games/${encodeURIComponent(gameId)}/Questions`, {
-      method: 'POST',
-      body: JSON.stringify(command),
-    });
+    return apiRequestVariants<Question>([
+      `/api/Games/${encodeURIComponent(gameId)}/Questions`,
+      `/api/games/${encodeURIComponent(gameId)}/Questions`
+    ], { method: 'POST', body: JSON.stringify(command) });
   },
 
-  // GET /api/games/{gameId}/Questions/{id}
+  // GET single question
   async getQuestion(gameId: string, id: string): Promise<ApiResponse<Question>> {
-    return apiRequest<Question>(`/api/games/${encodeURIComponent(gameId)}/Questions/${encodeURIComponent(id)}`);
+    return apiRequestVariants<Question>([
+      `/api/Games/${encodeURIComponent(gameId)}/Questions/${encodeURIComponent(id)}`,
+      `/api/games/${encodeURIComponent(gameId)}/Questions/${encodeURIComponent(id)}`
+    ]);
   },
 
-  // PATCH /api/games/{gameId}/Questions/{id}
+  // PATCH update question
   async updateQuestion(gameId: string, id: string, command: UpdateQuestionCommand): Promise<ApiResponse<Question>> {
-    return apiRequest<Question>(`/api/games/${encodeURIComponent(gameId)}/Questions/${encodeURIComponent(id)}`, {
-      method: 'PATCH',
-      body: JSON.stringify(command),
-    });
+    return apiRequestVariants<Question>([
+      `/api/Games/${encodeURIComponent(gameId)}/Questions/${encodeURIComponent(id)}`,
+      `/api/games/${encodeURIComponent(gameId)}/Questions/${encodeURIComponent(id)}`
+    ], { method: 'PATCH', body: JSON.stringify(command) });
   },
 
-  // DELETE /api/games/{gameId}/Questions/{id}
+  // DELETE question
   async deleteQuestion(gameId: string, id: string): Promise<ApiResponse<void>> {
-    return apiRequest<void>(`/api/games/${encodeURIComponent(gameId)}/Questions/${encodeURIComponent(id)}`, {
-      method: 'DELETE',
-    });
+    return apiRequestVariants<void>([
+      `/api/Games/${encodeURIComponent(gameId)}/Questions/${encodeURIComponent(id)}`,
+      `/api/games/${encodeURIComponent(gameId)}/Questions/${encodeURIComponent(id)}`
+    ], { method: 'DELETE' });
   },
 };
 
 // Answers API
 export const answersApi = {
-  // GET /api/games/{gameId}/questions/{questionId}/Answers
   async getAnswers(gameId: string, questionId: string): Promise<ApiResponse<Answer[]>> {
-    return apiRequest<Answer[]>(`/api/games/${encodeURIComponent(gameId)}/questions/${encodeURIComponent(questionId)}/Answers`);
+    return apiRequestVariants<Answer[]>([
+      `/api/Games/${encodeURIComponent(gameId)}/Questions/${encodeURIComponent(questionId)}/Answers`,
+      `/api/games/${encodeURIComponent(gameId)}/questions/${encodeURIComponent(questionId)}/Answers`
+    ]);
   },
-
-  // GET /api/games/{gameId}/questions/{questionId}/Answers/{Id}
   async getAnswer(gameId: string, questionId: string, id: string): Promise<ApiResponse<Answer>> {
-    return apiRequest<Answer>(`/api/games/${encodeURIComponent(gameId)}/questions/${encodeURIComponent(questionId)}/Answers/${encodeURIComponent(id)}`);
+    return apiRequestVariants<Answer>([
+      `/api/Games/${encodeURIComponent(gameId)}/Questions/${encodeURIComponent(questionId)}/Answers/${encodeURIComponent(id)}`,
+      `/api/games/${encodeURIComponent(gameId)}/questions/${encodeURIComponent(questionId)}/Answers/${encodeURIComponent(id)}`
+    ]);
   },
-
-  // POST /api/games/{gameId}/questions/{questionId}/Answers/create
   async createAnswers(gameId: string, questionId: string, command: CreateAnswerCommand): Promise<ApiResponse<Answer[]>> {
-    return apiRequest<Answer[]>(`/api/games/${encodeURIComponent(gameId)}/questions/${encodeURIComponent(questionId)}/Answers/create`, {
-      method: 'POST',
-      body: JSON.stringify(command),
-    });
+    return apiRequestVariants<Answer[]>([
+      `/api/Games/${encodeURIComponent(gameId)}/Questions/${encodeURIComponent(questionId)}/Answers/create`,
+      `/api/games/${encodeURIComponent(gameId)}/questions/${encodeURIComponent(questionId)}/Answers/create`
+    ], { method: 'POST', body: JSON.stringify(command) });
   },
-
-  // PATCH /api/games/{gameId}/questions/{questionId}/Answers
   async updateAnswers(gameId: string, questionId: string, command: UpdateAnswerCommand): Promise<ApiResponse<Answer[]>> {
-    return apiRequest<Answer[]>(`/api/games/${encodeURIComponent(gameId)}/questions/${encodeURIComponent(questionId)}/Answers`, {
-      method: 'PATCH',
-      body: JSON.stringify(command),
-    });
+    return apiRequestVariants<Answer[]>([
+      `/api/Games/${encodeURIComponent(gameId)}/Questions/${encodeURIComponent(questionId)}/Answers`,
+      `/api/games/${encodeURIComponent(gameId)}/questions/${encodeURIComponent(questionId)}/Answers`
+    ], { method: 'PATCH', body: JSON.stringify(command) });
   },
-
-  // POST /api/games/{gameId}/questions/{questionId}/Answers/delete
   async deleteAnswers(gameId: string, questionId: string, command: DeleteAnswersCommand): Promise<ApiResponse<void>> {
-    return apiRequest<void>(`/api/games/${encodeURIComponent(gameId)}/questions/${encodeURIComponent(questionId)}/Answers/delete`, {
-      method: 'POST',
-      body: JSON.stringify(command),
-    });
+    return apiRequestVariants<void>([
+      `/api/Games/${encodeURIComponent(gameId)}/Questions/${encodeURIComponent(questionId)}/Answers/delete`,
+      `/api/games/${encodeURIComponent(gameId)}/questions/${encodeURIComponent(questionId)}/Answers/delete`
+    ], { method: 'POST', body: JSON.stringify(command) });
   },
-
-  // DELETE /api/games/{gameId}/questions/{questionId}/Answers/{id}
   async deleteAnswer(gameId: string, questionId: string, id: string): Promise<ApiResponse<void>> {
-    return apiRequest<void>(`/api/games/${encodeURIComponent(gameId)}/questions/${encodeURIComponent(questionId)}/Answers/${encodeURIComponent(id)}`, {
-      method: 'DELETE',
-    });
+    return apiRequestVariants<void>([
+      `/api/Games/${encodeURIComponent(gameId)}/Questions/${encodeURIComponent(questionId)}/Answers/${encodeURIComponent(id)}`,
+      `/api/games/${encodeURIComponent(gameId)}/questions/${encodeURIComponent(questionId)}/Answers/${encodeURIComponent(id)}`
+    ], { method: 'DELETE' });
   },
 };
 
