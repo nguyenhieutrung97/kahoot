@@ -8,6 +8,7 @@ import { useGameHub } from '@/hooks/useGameHub';
 import { useGame } from '@/hooks/useGames';
 import { useQuestions } from '@/hooks/useQuestions';
 import { GameState } from '@/types/api';
+import { isGameReadyForLobby } from '@/lib/state-parsers';
 import { useFinalResult } from '@/context/FinalResultContext'; // NEW
 
 interface Player {
@@ -263,12 +264,13 @@ export default function Lobby() {
               // Accept numeric codes; treat string mapping
               let numeric: number | undefined = undefined;
               if (typeof stateVal === 'number') numeric = stateVal; else if (typeof stateVal === 'string') {
-                const map: Record<string, number> = { active:0,lobby:1,inprogress:2,waitingforhost:3,completed:4,cancelled:4,canceled:4 };
+                const map: Record<string, number> = { lobby:0, active:0, inprogress:1, waitingforhost:2, completed:3, canceled:4 };
                 numeric = map[stateVal.replace(/\s+/g,'').toLowerCase()];
               }
               if (typeof numeric === 'number') {
-                allowJoinRef.current = (numeric === 1); // only Lobby
-                if (numeric !== 1) {
+                // Backend mapping: Lobby=0 => joinable
+                allowJoinRef.current = (numeric === 0);
+                if (numeric !== 0) {
                   setError('Game not joinable (not in lobby).');
                 }
                 break;
@@ -309,7 +311,9 @@ export default function Lobby() {
     if (!joinCode || !playerName) return undefined;
     let cancelled = false;
     const attemptJoin = async (attempt = 1) => {
-      if (allowJoinRef.current !== true) { setInitializing(false); return; }
+      // Only block join when we know for sure the session is NOT joinable (explicit false).
+      if ((allowJoinRef.current as any) === false) { setInitializing(false); return; }
+      try { console.debug && console.debug('[Lobby] attemptJoin', { attempt, joinCode, playerName, allowJoin: allowJoinRef.current, clientState: (client as any)?.state, connected }); } catch {}
       try {
         await ensureConnected();
         if (cancelled || didJoinRef.current) return;
@@ -317,8 +321,8 @@ export default function Lobby() {
           if (attempt <= 5) setTimeout(() => attemptJoin(attempt + 1), 300 * attempt);
           return;
         }
-  if (allowJoinRef.current !== true) { setInitializing(false); return; }
-        didJoinRef.current = true;
+  if ((allowJoinRef.current as any) === false) { setInitializing(false); return; }
+  didJoinRef.current = true;
         let playerId: string | null = null;
         try {
           const raw = localStorage.getItem(sessionKeyFor(joinCode));
@@ -328,7 +332,14 @@ export default function Lobby() {
             playerId = session.playerId;
           }
         } catch {}
-        await joinGame(joinCode, playerName.toUpperCase(), playerId ?? null);
+        try {
+          console.debug && console.debug('[Lobby] invoking joinGame', { joinCode, playerName, playerId });
+          await joinGame(joinCode, playerName.toUpperCase(), playerId ?? null);
+          console.debug && console.debug('[Lobby] joinGame returned');
+        } catch (e) {
+          console.error('[Lobby] joinGame threw', e);
+          throw e;
+        }
         setTimeout(() => { if (initializing) setInitializing(false); }, 1500);
       } catch (err) {
         console.error('Join attempt failed', err);
@@ -349,7 +360,7 @@ export default function Lobby() {
 
   // Countdown auto-start (only if we have local questions set etc.)
   useEffect(() => {
-    if (game && game.state === GameState.Ready && questions && questions.length > 0 && !error) {
+    if (game && isGameReadyForLobby(game.state) && questions && questions.length > 0 && !error) {
       const t = setInterval(() => setCountdown(prev => prev - 1), 1000);
       return () => clearInterval(t);
     }
@@ -370,7 +381,7 @@ export default function Lobby() {
   // Show informational banner if game not ready or questions missing / waiting on more players
   useEffect(() => {
     if (initializing) { setShowWaitingInfo(false); return; }
-    const gameReady = game && game.state === GameState.Ready;
+    const gameReady = game && isGameReadyForLobby(game.state);
     const hasQuestions = !!(questions && questions.length > 0);
     const canCountdown = gameReady && hasQuestions && players.length > 0;
     if (!canCountdown) {

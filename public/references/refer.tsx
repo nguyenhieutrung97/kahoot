@@ -18,7 +18,7 @@ const parseSessionState = (p: any): number | undefined => {
   const raw = p.sessionState ?? p.gameSessionState ?? p.state ?? p.status;
   if (typeof raw === 'number') return raw;
   if (typeof raw === 'string') {
-    const map: Record<string, number> = { active:0, lobby:1, inprogress:2, waitingforhost:3, completed:4, cancelled:4, canceled:4 };
+    const map: Record<string, number> = { active:0, lobby:1, inprogress:2, waitingforhost:3, completed:4, cancelled:4};
     return map[raw.replace(/\s+/g,'').toLowerCase()];
   }
 };

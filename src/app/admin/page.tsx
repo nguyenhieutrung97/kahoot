@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardHeader, DashboardSidebar, GamesManager, QuestionsManager } from '@/components/admin';
 import { useGames, useGameMutations } from '@/hooks/useGames';
+import { isGameDraft } from '@/lib/state-parsers';
 import { useGameHub } from '@/hooks/useGameHub';
 import { GameHeader } from '@/components/ui/GameHeader';
 import { GameState } from '@/types/api';
@@ -13,13 +14,20 @@ interface LobbyPlayer { id?: string; playerId?: string; userName?: string; name?
 interface QuestionEnvelope { questionIndex?: number; totalQuestions?: number; questionText?: string; answers?: any[]; timeLimitSeconds?: number; startTime?: string; isMultipleChoice?: boolean; correctAnswers?: any[]; correctAnswer?: any; questionType?: string; }
 interface ManagedRoom { roomCode: string; gameId?: string; createdAt: number; phase: 'lobby'|'game'|'results'; players: number; autoShowResults?: boolean; title?: string; sessionState?: number; }
 
-// Helper to parse backend session state to numeric code (Active=0, Lobby=1, InProgress=2, WaitingForHost=3, Completed=4, Canceled=5)
+// Helper to parse backend session state to numeric code matching Backend.Domain.Enums.GameSessionState
+// Backend: Lobby=0, InProgress=1, WaitingForHost=2, Completed=3, Canceled=4
 const parseSessionState = (p: any): number | undefined => {
   if (!p) return undefined;
   const raw = p.sessionState ?? p.gameSessionState ?? p.state ?? p.status;
   if (typeof raw === 'number') return raw;
   if (typeof raw === 'string') {
-    const map: Record<string, number> = { active:0, lobby:1, inprogress:2, waitingforhost:3, completed:4, cancelled:4, canceled:4 };
+    const map: Record<string, number> = {
+      lobby: 0,
+      inprogress: 1,
+      waitingforhost: 2,
+      completed: 3,
+      canceled: 4,  // American spelling (matches backend)
+    };
     return map[raw.replace(/\s+/g,'').toLowerCase()];
   }
 };
@@ -170,7 +178,7 @@ export default function AdminGameManagerPage() {
     setLoading('createRoom', true);
     const game = safeGames.find(g => g.id === selectedGameId);
     try {
-      if (game && game.state === GameState.Draft) {
+  if (game && isGameDraft(game.state)) {
         setStatusMsg('Preparing game (mark Ready)...');
         try {
           await updateGameState(game.id!, { id: game.id, userNTID: 'current-user-id', currentState: GameState.Draft, targetState: GameState.Ready });

@@ -14,13 +14,13 @@ export enum QuestionType {
   TrueFalse = 2
 }
 
-// Align with backend BDKahoot.Domain.Enums.GameSessionState
+// Align with backend Backend.Domain.Enums.GameSessionState
 export enum GameSessionState {
-  Lobby = 0,
-  InProgress = 1,
-  WaitingForHost = 2,
-  Completed = 3,
-  Cancelled = 4,
+  Lobby = 0,          // Players can join, waiting for host to start
+  InProgress = 1,     // Game is running, no new players can join
+  WaitingForHost = 2, // All players answered, waiting for host to proceed
+  Completed = 3,      // Game finished
+  Canceled = 4       // Game was cancelled by host disconnected
 }
 
 export enum SortDirection {
