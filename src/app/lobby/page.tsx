@@ -109,6 +109,8 @@ export default function Lobby() {
   const didJoinRef = useRef(false);
   const { setResult } = useFinalResult(); // NEW
   const [showWaitingInfo, setShowWaitingInfo] = useState(false); // NEW waiting info flag
+  const [sessionActivated, setSessionActivated] = useState(false); // NEW session activation flag
+  const [activationMessage, setActivationMessage] = useState(''); // NEW activation message
   const gameTitleRef = useRef<string | null>(null); // cache first non-empty game title
 
   const { connected, client, joinGame, ensureConnected } = useGameHub({
@@ -235,6 +237,17 @@ export default function Lobby() {
       const startedGameId = payload?.gameId || gameId;
       router.push(`/question?gameId=${encodeURIComponent(startedGameId)}&name=${encodeURIComponent(playerName)}&questionNumber=1`);
     },
+    onSessionActivated: (payload) => {
+      setSessionActivated(true);
+      setActivationMessage(payload.message || 'Game session has been activated!');
+      setError(''); // Clear any previous errors
+      setShowWaitingInfo(false);
+      // Auto-hide the activation message after 5 seconds
+      setTimeout(() => {
+        setSessionActivated(false);
+        setActivationMessage('');
+      }, 5000);
+    },
     onError: (msg) => {
       const text = typeof msg === 'string' ? msg : (msg && (msg as any).message) || 'Connection error';
       setError(text);
@@ -271,7 +284,12 @@ export default function Lobby() {
                 // Backend mapping: Lobby=0 => joinable
                 allowJoinRef.current = (numeric === 0);
                 if (numeric !== 0) {
-                  setError('Game not joinable (not in lobby).');
+                  if (numeric === 3) { // Completed state
+                    setError('The game session has not been activated yet. Please wait for the host to activate the session.');
+                    setShowWaitingInfo(true);
+                  } else {
+                    setError('Game not joinable (not in lobby).');
+                  }
                 }
                 break;
               }
@@ -451,6 +469,41 @@ export default function Lobby() {
           </div>
         }
       />
+      
+      {/* Session Activation Notification */}
+      {sessionActivated && (
+        <div className="mx-4 sm:mx-6 mt-4">
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 shadow-lg">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                <span className="text-white text-lg">✓</span>
+              </div>
+              <div>
+                <h3 className="font-semibold text-green-800">Session Activated!</h3>
+                <p className="text-sm text-green-700">{activationMessage}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Waiting for Activation Info */}
+      {showWaitingInfo && !sessionActivated && (
+        <div className="mx-4 sm:mx-6 mt-4">
+          <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-xl p-4 shadow-lg">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center">
+                <span className="text-white text-lg">⏳</span>
+              </div>
+              <div>
+                <h3 className="font-semibold text-amber-800">Waiting for Host</h3>
+                <p className="text-sm text-amber-700">The game session has not been activated yet. Please wait for the host to activate the session.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <main className={`px-4 sm:px-6 py-6 min-h-[calc(100vh-120px)] ${hideScroll ? 'overflow-hidden' : 'overflow-y-auto'} flex flex-col`}> {/* added responsive padding & flex */}
         <div className="mb-6 sm:mb-8 text-center">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 uppercase tracking-wide mb-3 sm:mb-4">PARTICIPANTS</h2>

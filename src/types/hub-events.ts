@@ -115,6 +115,7 @@ export interface HubEventPayloads {
   ReconnectState: any;
   AllPlayersAnswered: { questionIndex?: number; totalPlayers?: number; [k: string]: any };
   PlayerProgress: PlayerProgressEvent;
+  SessionActivated: { roomCode?: string; message?: string; gameTitle?: string; state?: string; [k: string]: any };
   // Allow unknown future events
   [other: string]: any;
 }
