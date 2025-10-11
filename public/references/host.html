@@ -429,7 +429,7 @@ async function initConnection(){
     if (connection && connection.state === signalR.HubConnectionState.Connected) return connection;
     if (connection) { try { await connection.stop(); } catch(_){} }
     connection = new signalR.HubConnectionBuilder()
-      .withUrl('https://localhost:7007/gameHub', { skipNegotiation: true, transport: signalR.HttpTransportType.WebSockets })
+      .withUrl('https://api.trungtero.com/gameHub', { skipNegotiation: true, transport: signalR.HttpTransportType.WebSockets })
       .configureLogging(signalR.LogLevel.Information)
       .withAutomaticReconnect([0,2000,5000,10000])
       .build();

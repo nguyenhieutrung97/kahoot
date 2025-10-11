@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { getGameHub, ensureStarted } from '@/lib/gameHub';
+import { getGameHub, ensureStarted, forceReconnect, startConnectionHealthCheck, stopConnectionHealthCheck, getConnectionStatus } from '@/lib/gameHub';
 import type { HubEventPayloads, HubEventHandlerProps } from '@/types/hub-events';
 
 // Derive internal handlers type from HubEventHandlerProps while preserving backwards compatibility
@@ -13,6 +13,8 @@ type Handlers = HubEventHandlerProps & {
 export function useGameHub(handlers: Handlers = {}) {
   const connRef = useRef<ReturnType<typeof getGameHub> | null>(null);
   const [connected, setConnected] = useState(false);
+  const [reconnecting, setReconnecting] = useState(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
   const handlersRef = useRef<Handlers>({});
   useEffect(() => { handlersRef.current = handlers; }, [handlers]);
   const pendingRoomResolvers = useRef<((rc: string)=>void)[]>([]); // always non-null
@@ -26,10 +28,32 @@ export function useGameHub(handlers: Handlers = {}) {
   useEffect(() => {
     let mounted = true;
     const c = connection;
+    
+    // Start health monitoring when hook mounts
+    startConnectionHealthCheck();
+    
     try {
-      (c as any).onreconnecting?.(() => { if (mounted) setConnected(false); });
-      (c as any).onreconnected?.(() => { if (mounted) { setConnected(true); try { handlersRef.current.onReconnected?.(); } catch {} } });
-      (c as any).onclose?.(() => { if (mounted) setConnected(false); });
+      (c as any).onreconnecting?.(() => { 
+        if (mounted) { 
+          setConnected(false); 
+          setReconnecting(true);
+          setConnectionError(null);
+        } 
+      });
+      (c as any).onreconnected?.(() => { 
+        if (mounted) { 
+          setConnected(true); 
+          setReconnecting(false);
+          setConnectionError(null);
+          try { handlersRef.current.onReconnected?.(); } catch {} 
+        } 
+      });
+      (c as any).onclose?.(() => { 
+        if (mounted) { 
+          setConnected(false); 
+          setReconnecting(false);
+        } 
+      });
     } catch {}
 
     const off = (name: string) => c.off(name as any);
@@ -67,12 +91,25 @@ export function useGameHub(handlers: Handlers = {}) {
     on('error', (p: any) => (handlersRef.current as any).onError?.(typeof p === 'string' ? p : (p?.message || 'Error'))); attached.push('error');
 
     const startIfNeeded = async () => {
-      try { await ensureStarted(c); if (mounted) setConnected(true); } catch (err) { if (mounted) setConnected(false); handlersRef.current.onError?.((err as Error)?.message || 'Failed to connect'); }
+      try { 
+        await ensureStarted(c); 
+        if (mounted) { 
+          setConnected(true); 
+          setConnectionError(null);
+        } 
+      } catch (err) { 
+        if (mounted) { 
+          setConnected(false); 
+          setConnectionError((err as Error)?.message || 'Failed to connect');
+        } 
+        handlersRef.current.onError?.((err as Error)?.message || 'Failed to connect'); 
+      }
     };
     startIfNeeded();
 
     return () => {
       mounted = false;
+      stopConnectionHealthCheck();
       try { (c as any).onreconnecting?.(null); (c as any).onreconnected?.(null); (c as any).onclose?.(null); } catch {}
       attached.forEach(ev => off(ev));
     };
@@ -80,8 +117,24 @@ export function useGameHub(handlers: Handlers = {}) {
 
   return {
     connected,
+    reconnecting,
+    connectionError,
     client: connection,
     ensureConnected: () => ensureStarted(connection),
+    forceReconnect: async () => {
+      setReconnecting(true);
+      setConnectionError(null);
+      try {
+        await forceReconnect();
+        setConnected(true);
+        setReconnecting(false);
+      } catch (err) {
+        setConnectionError((err as Error)?.message || 'Reconnection failed');
+        setReconnecting(false);
+        throw err;
+      }
+    },
+    getConnectionStatus: () => getConnectionStatus(),
     createGameRoom: async (gameId: string, autoShowResults = true): Promise<string> => {
       await ensureStarted(connection);
       const eventPromise = new Promise<string>(resolve => {
@@ -158,6 +211,8 @@ export function useGameHub(handlers: Handlers = {}) {
     },
     proceedToNextQuestion: async (roomCode: string) => { await ensureStarted(connection); return connection.invoke('ProceedToNextQuestion', roomCode); },
     showFinalLeaderboard: async (roomCode: string) => { await ensureStarted(connection); return connection.invoke('ShowFinalLeaderboard', roomCode); },
+    updateAutoShowResults: async (roomCode: string, autoShowResults: boolean) => { await ensureStarted(connection); return connection.invoke('UpdateAutoShowResults', roomCode, autoShowResults); },
+    activateGameSession: async (roomCode: string) => { await ensureStarted(connection); return connection.invoke('ActivateGameSession', roomCode); },
   };
 }
 

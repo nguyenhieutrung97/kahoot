@@ -7,12 +7,13 @@ import { useGames, useGameMutations } from '@/hooks/useGames';
 import { isGameDraft } from '@/lib/state-parsers';
 import { useGameHub } from '@/hooks/useGameHub';
 import { GameHeader } from '@/components/ui/GameHeader';
+import { ConnectionStatus } from '@/components/ui/ConnectionStatus';
 import { GameState } from '@/types/api';
 import AIGameChat from '@/components/admin/AIGameChat';
 
 interface LobbyPlayer { id?: string; playerId?: string; userName?: string; name?: string; isConnected?: boolean; joinedAt?: string; score?: number; rank?: number; }
 interface QuestionEnvelope { questionIndex?: number; totalQuestions?: number; questionText?: string; answers?: any[]; timeLimitSeconds?: number; startTime?: string; isMultipleChoice?: boolean; correctAnswers?: any[]; correctAnswer?: any; questionType?: string; }
-interface ManagedRoom { roomCode: string; gameId?: string; createdAt: number; phase: 'lobby'|'game'|'results'; players: number; autoShowResults?: boolean; title?: string; sessionState?: number; }
+interface ManagedRoom { roomCode: string; gameId?: string; createdAt: number; phase: 'setup'|'lobby'|'game'|'results'; players: number; autoShowResults?: boolean; title?: string; sessionState?: number; }
 
 // Helper to parse backend session state to numeric code matching Backend.Domain.Enums.GameSessionState
 // Backend: Lobby=0, InProgress=1, WaitingForHost=2, Completed=3, Canceled=4
@@ -131,18 +132,18 @@ export default function AdminGameManagerPage() {
   const suppressLobbyInfoRef = useRef(false); // suppress LobbyInfo right after creation
 
   // Hub wiring
-  const { connected, client, createGameRoom, startGame, proceedToNextQuestion, showFinalLeaderboard, requestRoomStatus } = useGameHub({
+  const { connected, reconnecting, connectionError, client, createGameRoom, startGame, proceedToNextQuestion, showFinalLeaderboard, requestRoomStatus, activateGameSession } = useGameHub({
     onRoomCreated: (payload: any) => {
       const rc = payload.roomCode || '';
       const derivedTitle = payload.gameTitle || safeGames.find(g => g.id === selectedGameId)?.title || '';
       if (derivedTitle && !payload.gameTitle) payload.gameTitle = derivedTitle;
       setRoomCode(rc);
-      setStatusMsg(`Room created${derivedTitle ? ` • ${derivedTitle}`:''} (click Rooms > Host to manage)`);
+      setStatusMsg(`Room created${derivedTitle ? ` • ${derivedTitle}`:''} (Game session is in Completed state - click Rooms > Host to activate)`);
       setPlayers(payload.players || []);
       setCanStart(!!payload.canStart || (payload.players||[]).length>0);
       const sessionState = parseSessionState(payload);
       if (rc) {
-        upsertRoom(rc, { phase: 'lobby', players: (payload.players||[]).length, gameId: selectedGameId, autoShowResults, title: derivedTitle || undefined, sessionState });
+        upsertRoom(rc, { phase: 'setup', players: (payload.players||[]).length, gameId: selectedGameId, autoShowResults, title: derivedTitle || undefined, sessionState });
         setManageMode('rooms');
       }
     },
@@ -200,56 +201,155 @@ export default function AdminGameManagerPage() {
   const Badge = ({ children, color = 'bg-gray-200 text-gray-700' }: any) => <span className={`px-2 py-0.5 rounded text-xs font-semibold tracking-wide ${color}`}>{children}</span>;
 
   return (
-    <div className="min-h-screen flex bg-gray-50">
+    <div className="min-h-screen flex bg-gradient-to-br from-slate-50 via-white to-slate-100">
       <DashboardSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} isCollapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(s => !s)} onMenuClick={() => {}} />
       <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
         <DashboardHeader sidebarOpen={sidebarOpen} onMenuClick={() => setSidebarOpen(o => !o)} onProfileClick={() => {}} onSettingsClick={() => {}} />
-        <main className="flex-1 overflow-y-auto p-6 space-y-6">
-          <GameHeader title="ADMIN GAME CONTROL" withSvgBorder />
-          <div className="flex gap-2 flex-wrap text-xs">
-            <button onClick={() => setManageMode('control')} className={`px-3 py-1.5 rounded border ${manageMode==='control'?'bg-red-600 text-white border-red-600':'bg-white'}`}>Session Control</button>
-            <button onClick={() => setManageMode('rooms')} className={`px-3 py-1.5 rounded border ${manageMode==='rooms'?'bg-red-600 text-white border-red-600':'bg-white'}`}>Rooms</button>
-            <button onClick={() => { setManageMode('games'); setManageGameId(null); }} className={`px-3 py-1.5 rounded border ${manageMode==='games'?'bg-red-600 text-white border-red-600':'bg-white'}`}>Games</button>
-            <button onClick={() => { if (manageGameId) setManageMode('questions'); else setManageMode('games'); }} disabled={!manageGameId} className={`px-3 py-1.5 rounded border ${manageMode==='questions'?'bg-red-600 text-white border-red-600':'bg-white'} ${!manageGameId?'opacity-50 cursor-not-allowed':''}`}>Questions</button>
-            <button onClick={()=> setShowAI(true)} className="px-3 py-1.5 rounded border bg-indigo-50 text-indigo-700 hover:bg-indigo-100">AI Builder</button>
+        <main className="flex-1 overflow-y-auto p-8 space-y-8">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+              Admin Game Control
+            </h1>
+            <p className="text-slate-600">Manage your quiz games and active sessions</p>
           </div>
-          {statusMsg && <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-2 rounded text-sm">{statusMsg}</div>}
+          <div className="flex gap-1 flex-wrap">
+            <button 
+              onClick={() => setManageMode('control')} 
+              className={`px-6 py-3 rounded-xl font-medium text-sm transition-all duration-300 ${
+                manageMode==='control'
+                  ?'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-lg'
+                  :'bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200'
+              }`}
+            >
+              Session Control
+            </button>
+            <button 
+              onClick={() => setManageMode('rooms')} 
+              className={`px-6 py-3 rounded-xl font-medium text-sm transition-all duration-300 ${
+                manageMode==='rooms'
+                  ?'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-lg'
+                  :'bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200'
+              }`}
+            >
+              Rooms
+            </button>
+            <button 
+              onClick={() => { setManageMode('games'); setManageGameId(null); }} 
+              className={`px-6 py-3 rounded-xl font-medium text-sm transition-all duration-300 ${
+                manageMode==='games'
+                  ?'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-lg'
+                  :'bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200'
+              }`}
+            >
+              Games
+            </button>
+            <button 
+              onClick={() => { if (manageGameId) setManageMode('questions'); else setManageMode('games'); }} 
+              disabled={!manageGameId} 
+              className={`px-6 py-3 rounded-xl font-medium text-sm transition-all duration-300 ${
+                manageMode==='questions'
+                  ?'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-lg'
+                  :'bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200'
+              } ${!manageGameId?'opacity-50 cursor-not-allowed':''}`}
+            >
+              Questions
+            </button>
+            <button 
+              onClick={()=> setShowAI(true)} 
+              className="px-6 py-3 rounded-xl font-medium text-sm bg-gradient-to-r from-purple-50 to-purple-100 text-purple-700 hover:from-purple-100 hover:to-purple-200 border border-purple-200 transition-all duration-300"
+            >
+              AI Builder
+            </button>
+          </div>
+          {statusMsg && (
+            <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200/50 text-amber-800 px-6 py-4 rounded-2xl text-sm font-medium shadow-sm backdrop-blur-sm">
+              {statusMsg}
+            </div>
+          )}
 
           {manageMode==='rooms' && (
-            <div className="bg-white shadow rounded-xl p-6 border space-y-4">
-              <h2 className="text-lg font-bold tracking-wide text-gray-800 flex items-center gap-3">Managed Rooms <span className="text-xs font-normal text-gray-500">({rooms.length})</span></h2>
+            <div className="bg-gradient-to-br from-white to-slate-50/50 shadow-xl rounded-2xl p-8 border border-slate-200/50 space-y-6 backdrop-blur-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+                    Managed Rooms
+                  </h2>
+                  <p className="text-slate-600 text-sm mt-1">{rooms.length} active room{rooms.length !== 1 ? 's' : ''}</p>
+                </div>
+              </div>
               {!rooms.length && <div className="text-xs text-gray-500">No rooms created this session.</div>}
               {!!rooms.length && (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-xs border">
-                    <thead className="bg-gray-50 text-gray-600">
-                      <tr>
-                        <th className="p-2 text-left">Room</th>
-                        <th className="p-2 text-left">Game</th>
-                        <th className="p-2 text-left">Players</th>
-                        <th className="p-2 text-left">Phase</th>
-                        <th className="p-2 text-left">Mode</th>
-                        <th className="p-2 text-left">Created</th>
-                        <th className="p-2" />
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-200">
+                        <th className="p-4 text-left font-semibold text-slate-700">Room</th>
+                        <th className="p-4 text-left font-semibold text-slate-700">Game</th>
+                        <th className="p-4 text-left font-semibold text-slate-700">Players</th>
+                        <th className="p-4 text-left font-semibold text-slate-700">Phase</th>
+                        <th className="p-4 text-left font-semibold text-slate-700">Mode</th>
+                        <th className="p-4 text-left font-semibold text-slate-700">Created</th>
+                        <th className="p-4" />
                       </tr>
                     </thead>
                     <tbody>
                       {rooms.map(r => {
                         const title = r.title || safeGames.find(g => g.id === r.gameId)?.title || r.gameId || '—';
                         return (
-                          <tr key={r.roomCode} className={`border-t hover:bg-gray-50 ${roomCode===r.roomCode?'bg-red-50':''}`}>
-                            <td className="p-2 font-semibold">{r.roomCode}</td>
-                            <td className="p-2 truncate max-w-[160px]" title={title}>{title}</td>
-                            <td className="p-2">{r.players}</td>
-                            <td className="p-2 capitalize">{r.phase}</td>
-                            <td className="p-2">{r.autoShowResults? 'Auto':'Manual'}</td>
-                            <td className="p-2">{new Date(r.createdAt).toLocaleTimeString()}</td>
-                            <td className="p-2">
-                              <div className="flex flex-wrap gap-1">
-                                <button onClick={() => switchRoom(r.roomCode)} className="px-2 py-1 rounded border bg-white hover:bg-gray-100">Switch</button>
-                                <button disabled={r.sessionState!==0} title={r.sessionState!==0? 'Can host only when state Active (0)':''} onClick={() => router.push(`/admin/host/${r.roomCode}?gameId=${r.gameId || ''}`)} className={`px-2 py-1 rounded text-white ${r.sessionState===0? 'bg-indigo-600 hover:bg-indigo-700':'bg-gray-400 cursor-not-allowed'}`}>Host</button>
-                                {r.phase!=='results' && <button onClick={() => endRoom(r.roomCode)} className="px-2 py-1 rounded bg-green-600 text-white hover:bg-green-700">End</button>}
-                                <button onClick={() => forgetRoom(r.roomCode)} className="px-2 py-1 rounded bg-red-600 text-white hover:bg-red-700">Forget</button>
+                          <tr key={r.roomCode} className={`border-b border-slate-100 hover:bg-slate-50/50 transition-colors duration-200 ${roomCode===r.roomCode?'bg-indigo-50/50':''}`}>
+                            <td className="p-4 font-semibold text-slate-900">{r.roomCode}</td>
+                            <td className="p-4 truncate max-w-[160px] text-slate-700" title={title}>{title}</td>
+                            <td className="p-4">
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
+                                {r.players}
+                              </span>
+                            </td>
+                            <td className="p-4">
+                              <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                                r.phase === 'setup' ? 'bg-amber-100 text-amber-800' :
+                                r.phase === 'lobby' ? 'bg-blue-100 text-blue-800' :
+                                r.phase === 'game' ? 'bg-green-100 text-green-800' :
+                                'bg-purple-100 text-purple-800'
+                              }`}>
+                                {r.phase === 'setup' ? 'Completed' : r.phase}
+                              </span>
+                            </td>
+                            <td className="p-4">
+                              <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                                r.autoShowResults ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-800'
+                              }`}>
+                                {r.autoShowResults? 'Auto':'Manual'}
+                              </span>
+                            </td>
+                            <td className="p-4 text-slate-600 text-sm">{new Date(r.createdAt).toLocaleTimeString()}</td>
+                            <td className="p-4">
+                              <div className="flex flex-wrap gap-2">
+                                <button 
+                                  onClick={() => switchRoom(r.roomCode)} 
+                                  className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium transition-all duration-200 hover:shadow-sm"
+                                >
+                                  Switch
+                                </button>
+                                <button 
+                                  onClick={() => router.push(`/admin/host/${r.roomCode}?gameId=${r.gameId || ''}`)} 
+                                  className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-indigo-700 text-white hover:from-indigo-700 hover:to-indigo-800 text-xs font-medium transition-all duration-200 hover:shadow-md"
+                                >
+                                  {r.phase === 'setup' ? 'Activate' : 'Host'}
+                                </button>
+                                {r.phase!=='results' && (
+                                  <button 
+                                    onClick={() => endRoom(r.roomCode)} 
+                                    className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 text-xs font-medium transition-all duration-200 hover:shadow-md"
+                                  >
+                                    End
+                                  </button>
+                                )}
+                                <button 
+                                  onClick={() => forgetRoom(r.roomCode)} 
+                                  className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800 text-xs font-medium transition-all duration-200 hover:shadow-md"
+                                >
+                                  Forget
+                                </button>
                               </div>
                             </td>
                           </tr>
@@ -265,7 +365,10 @@ export default function AdminGameManagerPage() {
 
           {manageMode==='control' && phase==='setup' && (
             <div className="bg-white shadow rounded-xl p-6 border space-y-6">
-              <h2 className="text-lg font-bold tracking-wide text-gray-800 flex items-center gap-3">Setup Room {connected ? <Badge color="bg-green-100 text-green-700">Hub Connected</Badge> : <Badge color="bg-red-100 text-red-600">Hub Offline</Badge>}</h2>
+              <h2 className="text-lg font-bold tracking-wide text-gray-800 flex items-center gap-3">
+                Setup Room 
+                <ConnectionStatus showDetails={true} />
+              </h2>
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wide text-gray-600 mb-1">Select Game</label>

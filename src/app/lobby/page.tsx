@@ -264,7 +264,7 @@ export default function Lobby() {
               // Accept numeric codes; treat string mapping
               let numeric: number | undefined = undefined;
               if (typeof stateVal === 'number') numeric = stateVal; else if (typeof stateVal === 'string') {
-                const map: Record<string, number> = { lobby:0, active:0, inprogress:1, waitingforhost:2, completed:3, canceled:4 };
+                const map: Record<string, number> = { lobby:0, inprogress:1, waitingforhost:2, completed:3, canceled:4 };
                 numeric = map[stateVal.replace(/\s+/g,'').toLowerCase()];
               }
               if (typeof numeric === 'number') {

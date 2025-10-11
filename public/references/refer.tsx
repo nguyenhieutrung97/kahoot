@@ -18,7 +18,7 @@ const parseSessionState = (p: any): number | undefined => {
   const raw = p.sessionState ?? p.gameSessionState ?? p.state ?? p.status;
   if (typeof raw === 'number') return raw;
   if (typeof raw === 'string') {
-    const map: Record<string, number> = { active:0, lobby:1, inprogress:2, waitingforhost:3, completed:4, cancelled:4};
+    const map: Record<string, number> = { lobby:1, inprogress:2, waitingforhost:3, completed:4, cancelled:4};
     return map[raw.replace(/\s+/g,'').toLowerCase()];
   }
 };
@@ -239,7 +239,7 @@ export default function AdminGameManagerPage() {
                             <td className="p-2">
                               <div className="flex flex-wrap gap-1">
                                 <button onClick={() => switchRoom(r.roomCode)} className="px-2 py-1 rounded border bg-white hover:bg-gray-100">Switch</button>
-                                <button disabled={r.sessionState!==0} title={r.sessionState!==0? 'Can host only when state Active (0)':''} onClick={() => router.push(`/admin/host/${r.roomCode}?gameId=${r.gameId || ''}`)} className={`px-2 py-1 rounded text-white ${r.sessionState===0? 'bg-indigo-600 hover:bg-indigo-700':'bg-gray-400 cursor-not-allowed'}`}>Host</button>
+                                <button onClick={() => router.push(`/admin/host/${r.roomCode}?gameId=${r.gameId || ''}`)} className="px-2 py-1 rounded text-white bg-indigo-600 hover:bg-indigo-700">Host</button>
                                 {r.phase!=='results' && <button onClick={() => endRoom(r.roomCode)} className="px-2 py-1 rounded bg-green-600 text-white hover:bg-green-700">End</button>}
                                 <button onClick={() => forgetRoom(r.roomCode)} className="px-2 py-1 rounded bg-red-600 text-white hover:bg-red-700">Forget</button>
                               </div>

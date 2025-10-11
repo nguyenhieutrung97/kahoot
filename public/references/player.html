@@ -857,7 +857,7 @@
                 console.log("🔄 Creating new SignalR connection...");
                 // Create new connection without authentication (anonymous for players)
                 const connectionBuilder = new signalR.HubConnectionBuilder()
-                    // .withUrl("https://localhost:7007/gameHub")
+                    // .withUrl("https://api.trungtero.com/gameHub")
                     .withUrl("https://api.trungtero.com/gameHub", {
                         transport: signalR.HttpTransportType.WebSockets,
                         skipNegotiation: true,
