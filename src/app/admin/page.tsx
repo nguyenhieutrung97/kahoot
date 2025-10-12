@@ -765,13 +765,14 @@ export default function AdminGameManagerPage() {
             </button>
             <button 
               onClick={()=> setShowAI(true)} 
-              className="group relative px-6 py-3 rounded-2xl font-semibold text-sm bg-gradient-to-r from-purple-500/10 to-pink-500/10 text-purple-700 hover:from-purple-500/20 hover:to-pink-500/20 border border-purple-200/50 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 backdrop-blur-sm"
+              className="group relative px-3 sm:px-4 lg:px-6 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-semibold text-xs sm:text-sm bg-gradient-to-r from-purple-500/10 to-pink-500/10 text-purple-700 hover:from-purple-500/20 hover:to-pink-500/20 border border-purple-200/50 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 backdrop-blur-sm flex-1 sm:flex-none min-w-0"
             >
-              <div className="flex items-center gap-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex items-center gap-1 sm:gap-2 justify-center">
+                <svg className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                 </svg>
-                AI Builder
+                <span className="truncate hidden sm:inline">AI Builder</span>
+                <span className="truncate sm:hidden">AI</span>
               </div>
             </button>
           </div>
@@ -827,43 +828,45 @@ export default function AdminGameManagerPage() {
           )}
 
           {manageMode==='rooms' && (
-            <div className="bg-white/80 backdrop-blur-xl shadow-2xl rounded-3xl p-8 border border-white/20 space-y-8">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
-                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white/80 backdrop-blur-xl shadow-2xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 border border-white/20 space-y-4 sm:space-y-6 lg:space-y-8">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
+                    <svg className="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                     </svg>
                   </div>
-                  <div>
-                    <h2 className="text-3xl font-bold bg-gradient-to-r from-slate-900 via-indigo-900 to-purple-900 bg-clip-text text-transparent">
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-slate-900 via-indigo-900 to-purple-900 bg-clip-text text-transparent leading-tight">
                       Managed Rooms
                     </h2>
-                    <p className="text-slate-600 text-lg font-medium mt-1">{managedRooms.length} active room{managedRooms.length !== 1 ? 's' : ''}</p>
+                    <p className="text-slate-600 text-sm sm:text-base lg:text-lg font-medium mt-1">{managedRooms.length} active room{managedRooms.length !== 1 ? 's' : ''}</p>
                   </div>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex gap-2 sm:gap-3 flex-wrap">
                   <button 
                     onClick={() => setManageMode('control')} 
-                    className="px-6 py-3 rounded-2xl border border-slate-200/50 bg-white/80 backdrop-blur-sm hover:bg-white text-slate-700 text-sm font-semibold transition-all duration-300 hover:shadow-lg transform hover:scale-105"
+                    className="px-3 sm:px-4 lg:px-6 py-2 sm:py-3 rounded-xl sm:rounded-2xl border border-slate-200/50 bg-white/80 backdrop-blur-sm hover:bg-white text-slate-700 text-xs sm:text-sm font-semibold transition-all duration-300 hover:shadow-lg transform hover:scale-105 flex-1 sm:flex-none"
                   >
-                    <div className="flex items-center gap-2">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex items-center gap-1 sm:gap-2 justify-center">
+                      <svg className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                       </svg>
-                      Create New Room
+                      <span className="truncate hidden sm:inline">Create New Room</span>
+                      <span className="truncate sm:hidden">Create</span>
                     </div>
                   </button>
                   <button 
                     onClick={() => setManageMode('room-management')} 
-                    className="px-6 py-3 rounded-2xl border border-slate-200/50 bg-white/80 backdrop-blur-sm hover:bg-white text-slate-700 text-sm font-semibold transition-all duration-300 hover:shadow-lg transform hover:scale-105"
+                    className="px-3 sm:px-4 lg:px-6 py-2 sm:py-3 rounded-xl sm:rounded-2xl border border-slate-200/50 bg-white/80 backdrop-blur-sm hover:bg-white text-slate-700 text-xs sm:text-sm font-semibold transition-all duration-300 hover:shadow-lg transform hover:scale-105 flex-1 sm:flex-none"
                   >
-                    <div className="flex items-center gap-2">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex items-center gap-1 sm:gap-2 justify-center">
+                      <svg className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
-                      Advanced Management
+                      <span className="truncate hidden sm:inline">Advanced Management</span>
+                      <span className="truncate sm:hidden">Advanced</span>
                     </div>
                   </button>
                 </div>
