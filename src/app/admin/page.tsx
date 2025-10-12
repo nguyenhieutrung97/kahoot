@@ -945,24 +945,24 @@ export default function AdminGameManagerPage() {
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
                     {managedRooms.map(r => {
                       const title = r.gameTitle || safeGames.find(g => g.id === r.gameId)?.title || r.gameId || '—';
                       return (
-                        <div key={r.roomCode} className={`group relative bg-white/80 backdrop-blur-xl rounded-2xl p-6 border transition-all duration-300 hover:shadow-xl hover:scale-105 ${
+                        <div key={r.roomCode} className={`group relative bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl p-4 sm:p-6 border transition-all duration-300 hover:shadow-xl hover:scale-105 ${
                           roomCode===r.roomCode 
                             ? 'border-indigo-300 shadow-lg shadow-indigo-500/20' 
                             : 'border-slate-200/50 shadow-lg hover:border-slate-300'
                         }`}>
                           {/* Room Code Header */}
-                          <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-                                <span className="text-white font-bold text-sm">{r.roomCode.slice(0, 2)}</span>
+                          <div className="flex items-center justify-between mb-3 sm:mb-4">
+                            <div className="flex items-center gap-2 sm:gap-3">
+                              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                                <span className="text-white font-bold text-xs sm:text-sm">{r.roomCode.slice(0, 2)}</span>
                               </div>
-                              <div>
-                                <h3 className="font-bold text-lg text-slate-900">{r.roomCode}</h3>
-                                <p className="text-sm text-slate-600">{new Date(r.createdAt).toLocaleTimeString()}</p>
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-bold text-base sm:text-lg text-slate-900 truncate">{r.roomCode}</h3>
+                                <p className="text-xs sm:text-sm text-slate-600">{new Date(r.createdAt).toLocaleTimeString()}</p>
                               </div>
                             </div>
                             <div className={`w-3 h-3 rounded-full ${
@@ -974,24 +974,24 @@ export default function AdminGameManagerPage() {
                           </div>
 
                           {/* Game Info */}
-                          <div className="mb-4">
-                            <h4 className="font-semibold text-slate-800 mb-1">Game</h4>
-                            <p className="text-slate-600 text-sm truncate" title={title}>{title}</p>
+                          <div className="mb-3 sm:mb-4">
+                            <h4 className="font-semibold text-slate-800 mb-1 text-sm sm:text-base">Game</h4>
+                            <p className="text-slate-600 text-xs sm:text-sm truncate" title={title}>{title}</p>
                           </div>
 
                           {/* Stats */}
-                          <div className="flex items-center gap-4 mb-6">
-                            <div className="flex items-center gap-2">
-                              <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <div className="flex items-center gap-2 sm:gap-4 mb-4 sm:mb-6">
+                            <div className="flex items-center gap-1 sm:gap-2">
+                              <svg className="w-3 h-3 sm:w-4 sm:h-4 text-slate-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                               </svg>
-                              <span className="text-sm font-medium text-slate-700">{r.playerCount} players</span>
+                              <span className="text-xs sm:text-sm font-medium text-slate-700">{r.playerCount} players</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div className="flex items-center gap-1 sm:gap-2">
+                              <svg className="w-3 h-3 sm:w-4 sm:h-4 text-slate-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                               </svg>
-                              <span className={`text-sm font-medium ${
+                              <span className={`text-xs sm:text-sm font-medium ${
                                 r.autoShowResults ? 'text-emerald-700' : 'text-slate-700'
                               }`}>
                                 {r.autoShowResults ? 'Auto' : 'Manual'}
@@ -1000,8 +1000,8 @@ export default function AdminGameManagerPage() {
                           </div>
 
                           {/* Status Badge */}
-                          <div className="mb-6">
-                            <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold ${
+                          <div className="mb-4 sm:mb-6">
+                            <span className={`inline-flex items-center px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-semibold ${
                               getGameSessionStateString(r.state) === 'Completed' ? 'bg-amber-100 text-amber-800' :
                               getGameSessionStateString(r.state) === 'Lobby' ? 'bg-blue-100 text-blue-800' :
                               getGameSessionStateString(r.state) === 'InProgress' ? 'bg-green-100 text-green-800' :
@@ -1012,24 +1012,24 @@ export default function AdminGameManagerPage() {
                           </div>
 
                           {/* Action Buttons */}
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-wrap gap-1 sm:gap-2">
                             <button 
                               onClick={() => switchRoom(r.roomCode)} 
-                              className="flex-1 px-3 py-2 rounded-xl border border-slate-200 bg-white/80 hover:bg-white text-slate-700 text-xs font-semibold transition-all duration-200 hover:shadow-md"
+                              className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border border-slate-200 bg-white/80 hover:bg-white text-slate-700 text-xs font-semibold transition-all duration-200 hover:shadow-md"
                               title="Switch to this room for management"
                             >
                               Switch
                             </button>
                             <button 
                               onClick={() => loadRoomStatus(r.roomCode)} 
-                              className="flex-1 px-3 py-2 rounded-xl border border-slate-200 bg-white/80 hover:bg-white text-slate-700 text-xs font-semibold transition-all duration-200 hover:shadow-md"
+                              className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border border-slate-200 bg-white/80 hover:bg-white text-slate-700 text-xs font-semibold transition-all duration-200 hover:shadow-md"
                               title="Refresh room status from server"
                             >
                               Refresh
                             </button>
                             <button 
                               onClick={() => router.push(`/admin/host/${r.roomCode}?gameId=${r.gameId || ''}`)} 
-                              className={`flex-1 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 hover:shadow-md ${
+                              className={`flex-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs font-semibold transition-all duration-200 hover:shadow-md ${
                                 getGameSessionStateString(r.state) === 'Completed' || getGameSessionStateString(r.state) === 'Canceled'
                                   ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white hover:from-indigo-700 hover:to-indigo-800'
                                   : 'bg-gradient-to-r from-gray-400 to-gray-500 text-white cursor-not-allowed opacity-60'
@@ -1055,7 +1055,7 @@ export default function AdminGameManagerPage() {
                                     setStatusMsg(`Failed to end room ${r.roomCode}`);
                                   }
                                 }} 
-                                className="flex-1 px-3 py-2 rounded-xl bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 text-xs font-semibold transition-all duration-200 hover:shadow-md"
+                                className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 text-xs font-semibold transition-all duration-200 hover:shadow-md"
                                 title="End the current session to allow hosting new games"
                               >
                                 End
@@ -1066,7 +1066,7 @@ export default function AdminGameManagerPage() {
                                 setRoomToDelete({ roomCode: r.roomCode, gameTitle: title });
                                 setShowDeleteConfirm(true);
                               }} 
-                              className="flex-1 px-3 py-2 rounded-xl bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800 text-xs font-semibold transition-all duration-200 hover:shadow-md"
+                              className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800 text-xs font-semibold transition-all duration-200 hover:shadow-md"
                               title="Delete room permanently from the system"
                             >
                               Delete
@@ -1371,54 +1371,54 @@ export default function AdminGameManagerPage() {
       <AIGameChat open={showAI} onClose={()=>setShowAI(false)} onGameCreated={(g)=>{ setShowAI(false); setStatusMsg(`AI created game: ${g.title}`); refetchGames?.(); setManageMode('games'); }} />
       
       {/* Beautiful Delete Confirmation Modal */}
-      {showDeleteConfirm && roomToDelete && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white/95 backdrop-blur-xl rounded-3xl p-8 max-w-md w-full shadow-2xl border border-white/20 transform transition-all duration-300 scale-100">
+        {showDeleteConfirm && roomToDelete && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4">
+            <div className="bg-white/95 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 max-w-md w-full shadow-2xl border border-white/20 transform transition-all duration-300 scale-100">
             {/* Header */}
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-red-500 to-pink-600 flex items-center justify-center shadow-lg">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-br from-red-500 to-pink-600 flex items-center justify-center shadow-lg">
+                <svg className="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
               </div>
-              <div>
-                <h3 className="text-2xl font-bold text-slate-900">Delete Room</h3>
-                <p className="text-slate-600">This action cannot be undone</p>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-xl sm:text-2xl font-bold text-slate-900">Delete Room</h3>
+                <p className="text-sm sm:text-base text-slate-600">This action cannot be undone</p>
               </div>
             </div>
 
             {/* Content */}
-            <div className="mb-8">
-              <p className="text-slate-700 text-lg mb-4">
+            <div className="mb-6 sm:mb-8">
+              <p className="text-slate-700 text-base sm:text-lg mb-3 sm:mb-4">
                 Are you sure you want to permanently delete room <span className="font-bold text-slate-900">{roomToDelete.roomCode}</span>?
               </p>
               {roomToDelete.gameTitle && (
-                <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200">
-                  <p className="text-sm text-slate-600 mb-1">Game:</p>
-                  <p className="font-semibold text-slate-800">{roomToDelete.gameTitle}</p>
+                <div className="bg-slate-50 rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-slate-200">
+                  <p className="text-xs sm:text-sm text-slate-600 mb-1">Game:</p>
+                  <p className="font-semibold text-sm sm:text-base text-slate-800">{roomToDelete.gameTitle}</p>
                 </div>
               )}
-              <div className="mt-4 p-4 bg-red-50 rounded-2xl border border-red-200">
-                <div className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-red-50 rounded-xl sm:rounded-2xl border border-red-200">
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
                   </svg>
                   <div>
-                    <p className="text-sm font-semibold text-red-800 mb-1">Warning</p>
-                    <p className="text-sm text-red-700">This will permanently remove the room and all its data from the system.</p>
+                    <p className="text-xs sm:text-sm font-semibold text-red-800 mb-1">Warning</p>
+                    <p className="text-xs sm:text-sm text-red-700">This will permanently remove the room and all its data from the system.</p>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Actions */}
-            <div className="flex gap-3">
+            <div className="flex gap-2 sm:gap-3">
               <button
                 onClick={() => {
                   setShowDeleteConfirm(false);
                   setRoomToDelete(null);
                 }}
-                className="flex-1 px-6 py-3 rounded-2xl border border-slate-200 bg-white/80 backdrop-blur-sm hover:bg-white text-slate-700 text-sm font-semibold transition-all duration-300 hover:shadow-lg transform hover:scale-105"
+                className="flex-1 px-4 sm:px-6 py-2 sm:py-3 rounded-xl sm:rounded-2xl border border-slate-200 bg-white/80 backdrop-blur-sm hover:bg-white text-slate-700 text-xs sm:text-sm font-semibold transition-all duration-300 hover:shadow-lg transform hover:scale-105"
               >
                 Cancel
               </button>
@@ -1435,13 +1435,13 @@ export default function AdminGameManagerPage() {
                     setStatusMsg(`Failed to delete room ${roomToDelete.roomCode}`);
                   }
                 }}
-                className="flex-1 px-6 py-3 rounded-2xl bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800 text-sm font-semibold transition-all duration-300 hover:shadow-xl transform hover:scale-105"
+                className="flex-1 px-4 sm:px-6 py-2 sm:py-3 rounded-xl sm:rounded-2xl bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800 text-xs sm:text-sm font-semibold transition-all duration-300 hover:shadow-xl transform hover:scale-105"
               >
-                <div className="flex items-center justify-center gap-2">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex items-center justify-center gap-1 sm:gap-2">
+                  <svg className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
-                  Delete Room
+                  <span className="truncate">Delete Room</span>
                 </div>
               </button>
             </div>
