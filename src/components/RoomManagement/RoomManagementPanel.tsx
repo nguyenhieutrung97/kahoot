@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRoomManagement } from '../../hooks/useRoomManagement';
-import { RoomManagementInfo } from '../../services/roomManagementService';
+import { RoomManagementInfo, getGameSessionStateString } from '../../services/roomManagementService';
 import { Loader2, Users, Clock, Settings, Trash2, Power, PowerOff, Eye, EyeOff } from 'lucide-react';
 
 interface RoomManagementPanelProps {
@@ -208,8 +208,8 @@ export const RoomManagementPanel: React.FC<RoomManagementPanelProps> = ({
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <h4 className="font-semibold text-gray-900">{room.roomCode}</h4>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStateColor(room.state)}`}>
-                          {room.state}
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStateColor(getGameSessionStateString(room.state))}`}>
+                          {getGameSessionStateString(room.state)}
                         </span>
                       </div>
                       <p className="text-sm text-gray-600 mb-2">{room.gameTitle}</p>
@@ -225,7 +225,7 @@ export const RoomManagementPanel: React.FC<RoomManagementPanelProps> = ({
                       </div>
                     </div>
                     <div className="flex flex-col gap-1">
-                      {room.state === 'Completed' && (
+                      {getGameSessionStateString(room.state) === 'Completed' && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -237,7 +237,7 @@ export const RoomManagementPanel: React.FC<RoomManagementPanelProps> = ({
                           <Power className="w-4 h-4" />
                         </button>
                       )}
-                      {room.state === 'Lobby' && (
+                      {getGameSessionStateString(room.state) === 'Lobby' && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -249,7 +249,7 @@ export const RoomManagementPanel: React.FC<RoomManagementPanelProps> = ({
                           <PowerOff className="w-4 h-4" />
                         </button>
                       )}
-                      {(room.state === 'Lobby' || room.state === 'InProgress') && (
+                      {(getGameSessionStateString(room.state) === 'Lobby' || getGameSessionStateString(room.state) === 'InProgress') && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -304,8 +304,8 @@ export const RoomManagementPanel: React.FC<RoomManagementPanelProps> = ({
                   </div>
                   <div>
                     <span className="font-medium text-gray-600">State:</span>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStateColor(selectedRoom.state)}`}>
-                      {selectedRoom.state}
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStateColor(getGameSessionStateString(selectedRoom.state))}`}>
+                      {getGameSessionStateString(selectedRoom.state)}
                     </span>
                   </div>
                   <div>
