@@ -76,13 +76,19 @@ export default function AdminHostRoomPage(props: { params: Promise<{ roomCode: s
       if (Array.isArray(payload.leaderboard)) setLeaderboard(payload.leaderboard); 
       stopTimer(); 
       // Start auto-advance countdown if enabled
-      if (autoShowResults && !payload.isLastQuestion) {
+      if (autoShowResults) {
         setAutoAdvanceCountdown(1);
         stopAutoAdvanceTimer();
         autoAdvanceTimerRef.current = setInterval(() => {
           setAutoAdvanceCountdown(prev => {
             if (prev === null || prev <= 1) {
               stopAutoAdvanceTimer();
+              // Auto-advance: either proceed to next question or show final leaderboard
+              if (payload.isLastQuestion) {
+                showFinalLeaderboard(roomCode);
+              } else {
+                proceedToNextQuestion(roomCode);
+              }
               return null;
             }
             return prev - 1;

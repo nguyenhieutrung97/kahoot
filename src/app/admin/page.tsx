@@ -10,6 +10,8 @@ import { GameHeader } from '@/components/ui/GameHeader';
 import { ConnectionStatus } from '@/components/ui/ConnectionStatus';
 import { GameState } from '@/types/api';
 import AIGameChat from '@/components/admin/AIGameChat';
+import { RoomManagementPanel } from '@/components/RoomManagement';
+import { useRoomManagement } from '@/hooks/useRoomManagement';
 
 interface LobbyPlayer { id?: string; playerId?: string; userName?: string; name?: string; isConnected?: boolean; joinedAt?: string; score?: number; rank?: number; }
 interface QuestionEnvelope { questionIndex?: number; totalQuestions?: number; questionText?: string; answers?: any[]; timeLimitSeconds?: number; startTime?: string; isMultipleChoice?: boolean; correctAnswers?: any[]; correctAnswer?: any; questionType?: string; }
@@ -66,11 +68,18 @@ export default function AdminGameManagerPage() {
   const setLoading = (k: string, v: boolean) => setLoadingMap(m => ({ ...m, [k]: v }));
   const Spinner = ({ size='w-4 h-4' }: { size?: string }) => <span className={`${size} inline-block border-2 border-current border-t-transparent rounded-full animate-spin`}></span>;
   const [showAI, setShowAI] = useState(false);
+  const [activationFailed, setActivationFailed] = useState(false);
+  const [autoAdvanceCountdown, setAutoAdvanceCountdown] = useState<number | null>(null);
+
+  // Room Management
+  const roomManagement = useRoomManagement();
 
   // Timer
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const timerRef = useRef<any>(null);
+  const autoAdvanceTimerRef = useRef<any>(null);
   const stopTimer = () => { if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; } };
+  const stopAutoAdvanceTimer = () => { if (autoAdvanceTimerRef.current) { clearInterval(autoAdvanceTimerRef.current); autoAdvanceTimerRef.current = null; } };
   const startTimer = useCallback((payload?: QuestionEnvelope) => {
     stopTimer();
     if (!payload) return;
@@ -124,7 +133,7 @@ export default function AdminGameManagerPage() {
   const endRoom = async (rc: string) => { try { if (client) await (client as any).invoke('ShowFinalLeaderboard', rc); } catch {} finally { upsertRoom(rc, { phase: 'results' }); } };
 
   // Manage mode (UI sections)
-  const [manageMode, setManageMode] = useState<'control'|'rooms'|'games'|'questions'>('control');
+  const [manageMode, setManageMode] = useState<'control'|'rooms'|'games'|'questions'|'room-management'>('control');
   const [manageGameId, setManageGameId] = useState<string | null>(null);
 
   const safeGames = Array.isArray(games) ? games : [];
@@ -133,18 +142,39 @@ export default function AdminGameManagerPage() {
 
   // Hub wiring
   const { connected, reconnecting, connectionError, client, createGameRoom, startGame, proceedToNextQuestion, showFinalLeaderboard, requestRoomStatus, activateGameSession } = useGameHub({
-    onRoomCreated: (payload: any) => {
+    onRoomCreated: async (payload: any) => {
       const rc = payload.roomCode || '';
       const derivedTitle = payload.gameTitle || safeGames.find(g => g.id === selectedGameId)?.title || '';
       if (derivedTitle && !payload.gameTitle) payload.gameTitle = derivedTitle;
       setRoomCode(rc);
-      setStatusMsg(`Room created${derivedTitle ? ` • ${derivedTitle}`:''} (Game session is in Completed state - click Rooms > Host to activate)`);
+      setStatusMsg(`Room created${derivedTitle ? ` • ${derivedTitle}`:''} - Activating session...`);
       setPlayers(payload.players || []);
       setCanStart(!!payload.canStart || (payload.players||[]).length>0);
       const sessionState = parseSessionState(payload);
       if (rc) {
         upsertRoom(rc, { phase: 'setup', players: (payload.players||[]).length, gameId: selectedGameId, autoShowResults, title: derivedTitle || undefined, sessionState });
         setManageMode('rooms');
+        
+        // Automatically activate the session after a short delay
+        try {
+          setStatusMsg(`Room created${derivedTitle ? ` • ${derivedTitle}`:''} - Activating session...`);
+          setActivationFailed(false);
+          await new Promise(resolve => setTimeout(resolve, 1500)); // Wait 1.5 seconds for better reliability
+          
+          // Add timeout for session activation
+          const activationPromise = activateGameSession(rc);
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Session activation timed out')), 8000)
+          );
+          
+          await Promise.race([activationPromise, timeoutPromise]);
+          setStatusMsg(`Room created${derivedTitle ? ` • ${derivedTitle}`:''} - Session activated! Players can now join. Go to "Rooms" tab to manage.`);
+          setActivationFailed(false);
+        } catch (error) {
+          console.error('Session activation failed:', error);
+          setStatusMsg(`Room created${derivedTitle ? ` • ${derivedTitle}`:''} - Session created but activation failed. Go to "Rooms" tab and click "Activate" to allow players to join.`);
+          setActivationFailed(true);
+        }
       }
     },
     onLobbyInfo: (p: any) => {
@@ -158,6 +188,11 @@ export default function AdminGameManagerPage() {
       if (roomCode) upsertRoom(roomCode, { players: (p.players||[]).length });
     },
     onLobbyUpdate: (p: any) => { setPlayers(p.players || []); setCanStart(!!p.canStart || (p.players||[]).length>0); if (roomCode) upsertRoom(roomCode, { players: (p.players||[]).length }); },
+    onSessionActivated: (payload: any) => {
+      setStatusMsg(`Session activated! ${payload.message || 'Players can now join the game.'}`);
+      setActivationFailed(false); // Clear the failed flag when session is activated
+      if (roomCode) upsertRoom(roomCode, { phase: 'lobby', sessionState: 1 }); // 1 = Lobby state
+    },
     onGameStarted: () => { setPhase('game'); setStatusMsg('Game started'); setQuestion(null); setLeaderboard([]); if (roomCode) upsertRoom(roomCode, { phase: 'game' }); },
     onHostNewQuestion: (payload: QuestionEnvelope) => {
       setQuestion(payload);
@@ -166,10 +201,34 @@ export default function AdminGameManagerPage() {
       startTimer(payload);
       setLastResults(null);
     },
-    onQuestionResults: (payload: any) => { setLastResults(payload); if (Array.isArray(payload.leaderboard)) setLeaderboard(payload.leaderboard); stopTimer(); },
-    onProceedingToNextQuestion: () => { setQuestion(null); setQuestionAnswers([]); setLastResults(null); stopTimer(); },
-    onFinalResults: (payload: any) => { setFinalResults(payload); setPhase('results'); if (roomCode) upsertRoom(roomCode, { phase: 'results' }); },
-    onGameEnded: (payload: any) => { setFinalResults(payload); setPhase('results'); if (roomCode) upsertRoom(roomCode, { phase: 'results' }); },
+    onQuestionResults: (payload: any) => { 
+      setLastResults(payload); 
+      if (Array.isArray(payload.leaderboard)) setLeaderboard(payload.leaderboard); 
+      stopTimer(); 
+      // Start auto-advance countdown if enabled
+      if (autoShowResults) {
+        setAutoAdvanceCountdown(1);
+        stopAutoAdvanceTimer();
+        autoAdvanceTimerRef.current = setInterval(() => {
+          setAutoAdvanceCountdown(prev => {
+            if (prev === null || prev <= 1) {
+              stopAutoAdvanceTimer();
+              // Auto-advance: either proceed to next question or show final leaderboard
+              if (payload.isLastQuestion) {
+                handleShowFinal();
+              } else {
+                handleNextQuestion();
+              }
+              return null;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+      }
+    },
+    onProceedingToNextQuestion: () => { setQuestion(null); setQuestionAnswers([]); setLastResults(null); stopTimer(); stopAutoAdvanceTimer(); setAutoAdvanceCountdown(null); },
+    onFinalResults: (payload: any) => { setFinalResults(payload); setPhase('results'); stopAutoAdvanceTimer(); setAutoAdvanceCountdown(null); if (roomCode) upsertRoom(roomCode, { phase: 'results' }); },
+    onGameEnded: (payload: any) => { setFinalResults(payload); setPhase('results'); stopAutoAdvanceTimer(); setAutoAdvanceCountdown(null); if (roomCode) upsertRoom(roomCode, { phase: 'results' }); },
     onError: (m: any) => setStatusMsg(typeof m === 'string' ? m : (m?.message || 'Error'))
   });
 
@@ -177,9 +236,10 @@ export default function AdminGameManagerPage() {
   const handleCreateRoom = async () => {
     if (!selectedGameId || loadingMap.createRoom) return;
     setLoading('createRoom', true);
+    setActivationFailed(false); // Reset activation failed flag
     const game = safeGames.find(g => g.id === selectedGameId);
     try {
-  if (game && isGameDraft(game.state)) {
+      if (game && isGameDraft(game.state)) {
         setStatusMsg('Preparing game (mark Ready)...');
         try {
           await updateGameState(game.id!, { id: game.id, userNTID: 'current-user-id', currentState: GameState.Draft, targetState: GameState.Ready });
@@ -187,14 +247,46 @@ export default function AdminGameManagerPage() {
           refetchGames?.();
         } catch (e:any) { setStatusMsg(`Failed to set Ready: ${(e as Error).message}`); return; }
       } else { setStatusMsg('Creating room...'); }
-      await createGameRoom(selectedGameId, autoShowResults).then(rc => { if (rc) { setStatusMsg(`Room created successfully (code: ${rc})`); if(!roomCode) setRoomCode(rc);} else { setStatusMsg('Room created successfully'); } });
-    } catch (e:any) { setStatusMsg(`Failed to create room: ${(e?.message)||'Unknown error'}`); }
+      
+      // Use the new room management service
+      try {
+        const newRoom = await roomManagement.createRoom(selectedGameId, autoShowResults);
+        setStatusMsg(`Room created successfully (code: ${newRoom.roomCode}) - Session activated! Players can now join. Go to "Rooms" tab to manage.`);
+        if(!roomCode) setRoomCode(newRoom.roomCode);
+        setActivationFailed(false);
+      } catch (roomError) {
+        // Fallback to SignalR method if API fails
+        const createRoomPromise = createGameRoom(selectedGameId, autoShowResults);
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Room creation timed out')), 10000)
+        );
+        
+        const rc = await Promise.race([createRoomPromise, timeoutPromise]);
+        if (rc && typeof rc === 'string' && rc.trim()) { 
+          setStatusMsg(`Room created successfully (code: ${rc})`); 
+          if(!roomCode) setRoomCode(rc);
+        } else { 
+          setStatusMsg('Room created successfully'); 
+        }
+      }
+    } catch (e:any) { 
+      console.error('Room creation failed:', e);
+      setStatusMsg(`Failed to create room: ${(e?.message)||'Unknown error'}`); 
+    }
     finally { setLoading('createRoom', false); }
   };
   const handleStartGame = async () => { if (!roomCode || loadingMap.startGame) return; setLoading('startGame', true); try { await startGame(roomCode); } catch { setStatusMsg('Failed to start'); } finally { setLoading('startGame', false); } };
   const handleNextQuestion = async () => { if (!roomCode || loadingMap.nextQuestion) return; setLoading('nextQuestion', true); try { await proceedToNextQuestion(roomCode); } catch { setStatusMsg('Failed next'); } finally { setLoading('nextQuestion', false); } };
   const handleShowFinal = async () => { if (!roomCode || loadingMap.showFinal) return; setLoading('showFinal', true); try { await showFinalLeaderboard(roomCode); } catch { setStatusMsg('Failed final'); } finally { setLoading('showFinal', false); } };
   const handleKick = async (playerId?: string) => { if (!client || !roomCode || !playerId) return; try { await (client as any).invoke('KickPlayer', roomCode, playerId); } catch { setStatusMsg('Kick failed'); } };
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      stopTimer();
+      stopAutoAdvanceTimer();
+    };
+  }, []);
 
   // Derived
   const totalQuestions = question?.totalQuestions || finalResults?.totalQuestions || 0;
@@ -234,6 +326,16 @@ export default function AdminGameManagerPage() {
               Rooms
             </button>
             <button 
+              onClick={() => setManageMode('room-management')} 
+              className={`px-6 py-3 rounded-xl font-medium text-sm transition-all duration-300 ${
+                manageMode==='room-management'
+                  ?'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-lg'
+                  :'bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200'
+              }`}
+            >
+              Room Management
+            </button>
+            <button 
               onClick={() => { setManageMode('games'); setManageGameId(null); }} 
               className={`px-6 py-3 rounded-xl font-medium text-sm transition-all duration-300 ${
                 manageMode==='games'
@@ -263,7 +365,31 @@ export default function AdminGameManagerPage() {
           </div>
           {statusMsg && (
             <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200/50 text-amber-800 px-6 py-4 rounded-2xl text-sm font-medium shadow-sm backdrop-blur-sm">
-              {statusMsg}
+              <div className="flex items-center justify-between">
+                <span>{statusMsg}</span>
+                {activationFailed && roomCode && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        setLoading('activateSession', true);
+                        await activateGameSession(roomCode);
+                        setStatusMsg(`Session activated successfully! Players can now join room ${roomCode}.`);
+                        setActivationFailed(false);
+                      } catch (error) {
+                        console.error('Manual activation failed:', error);
+                        setStatusMsg(`Failed to activate session. Please try again or go to "Rooms" tab.`);
+                      } finally {
+                        setLoading('activateSession', false);
+                      }
+                    }}
+                    disabled={loadingMap.activateSession}
+                    className="ml-4 px-3 py-1.5 bg-amber-600 text-white rounded-lg text-xs font-semibold hover:bg-amber-700 disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {loadingMap.activateSession && <Spinner size="w-3 h-3" />}
+                    Activate Now
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
@@ -276,11 +402,60 @@ export default function AdminGameManagerPage() {
                   </h2>
                   <p className="text-slate-600 text-sm mt-1">{rooms.length} active room{rooms.length !== 1 ? 's' : ''}</p>
                 </div>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => setManageMode('control')} 
+                    className="px-4 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-medium transition-all duration-200 hover:shadow-sm"
+                  >
+                    Create New Room
+                  </button>
+                  <button 
+                    onClick={() => setManageMode('room-management')} 
+                    className="px-4 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-medium transition-all duration-200 hover:shadow-sm"
+                  >
+                    Advanced Management
+                  </button>
+                </div>
               </div>
-              {!rooms.length && <div className="text-xs text-gray-500">No rooms created this session.</div>}
+              {!rooms.length && (
+                <div className="text-center py-12">
+                  <div className="text-gray-400 mb-4">
+                    <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-700 mb-2">No Rooms Yet</h3>
+                  <p className="text-gray-500 text-sm mb-4">Create your first game room to start hosting quiz sessions.</p>
+                  <button 
+                    onClick={() => setManageMode('control')} 
+                    className="px-6 py-3 rounded-lg bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800 text-sm font-medium transition-all duration-200 hover:shadow-md"
+                  >
+                    Create Your First Room
+                  </button>
+                </div>
+              )}
               {!!rooms.length && (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                <div className="space-y-4">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="text-blue-600 mt-0.5">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-semibold text-blue-800 mb-1">How to Manage Rooms</h4>
+                        <ul className="text-xs text-blue-700 space-y-1">
+                          <li><strong>Switch:</strong> Select this room for active management</li>
+                          <li><strong>Activate/Host:</strong> {rooms.some(r => r.phase === 'setup') ? 'Activate completed sessions or open host control' : 'Open host control panel for active sessions'}</li>
+                          <li><strong>End:</strong> End the current game session</li>
+                          <li><strong>Forget:</strong> Remove from this management list</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-slate-200">
                         <th className="p-4 text-left font-semibold text-slate-700">Room</th>
@@ -327,12 +502,14 @@ export default function AdminGameManagerPage() {
                                 <button 
                                   onClick={() => switchRoom(r.roomCode)} 
                                   className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium transition-all duration-200 hover:shadow-sm"
+                                  title="Switch to this room for management"
                                 >
                                   Switch
                                 </button>
                                 <button 
                                   onClick={() => router.push(`/admin/host/${r.roomCode}?gameId=${r.gameId || ''}`)} 
                                   className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-indigo-700 text-white hover:from-indigo-700 hover:to-indigo-800 text-xs font-medium transition-all duration-200 hover:shadow-md"
+                                  title={r.phase === 'setup' ? 'Activate session to allow players to join' : 'Open host control panel'}
                                 >
                                   {r.phase === 'setup' ? 'Activate' : 'Host'}
                                 </button>
@@ -340,6 +517,7 @@ export default function AdminGameManagerPage() {
                                   <button 
                                     onClick={() => endRoom(r.roomCode)} 
                                     className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 text-xs font-medium transition-all duration-200 hover:shadow-md"
+                                    title="End the current session"
                                   >
                                     End
                                   </button>
@@ -347,6 +525,7 @@ export default function AdminGameManagerPage() {
                                 <button 
                                   onClick={() => forgetRoom(r.roomCode)} 
                                   className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800 text-xs font-medium transition-all duration-200 hover:shadow-md"
+                                  title="Remove from managed rooms list"
                                 >
                                   Forget
                                 </button>
@@ -357,6 +536,7 @@ export default function AdminGameManagerPage() {
                       })}
                     </tbody>
                   </table>
+                  </div>
                 </div>
               )}
               {roomCode && <div className="text-[11px] text-gray-500">Active room: <span className="font-semibold">{roomCode}</span></div>}
@@ -472,6 +652,18 @@ export default function AdminGameManagerPage() {
                       </div>
                     </div>
                   )}
+                  {/* Auto-advance countdown indicator */}
+                  {autoAdvanceCountdown !== null && (
+                    <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg mb-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
+                        <span className="text-sm font-medium">
+                          Auto-advancing in {autoAdvanceCountdown} second{autoAdvanceCountdown !== 1 ? 's' : ''}...
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  
                   <div className="flex gap-3 pt-4 flex-wrap">
                     <button onClick={handleNextQuestion} disabled={loadingMap.nextQuestion} className="px-4 py-2 bg-indigo-600 text-white rounded text-sm font-semibold flex items-center gap-2 disabled:opacity-50">
                       {loadingMap.nextQuestion && <Spinner />}
@@ -595,6 +787,18 @@ export default function AdminGameManagerPage() {
             </div>
           )}
           {manageMode==='questions' && <QuestionsManager gameId={manageGameId} onBack={()=>setManageMode('games')} />}
+          
+          {manageMode==='room-management' && (
+            <div className="bg-white border rounded-xl shadow p-6 space-y-6">
+              <RoomManagementPanel 
+                onRoomSelected={(room) => {
+                  console.log('Room selected:', room);
+                  // You can add additional logic here if needed
+                }}
+                onBack={() => setManageMode('control')}
+              />
+            </div>
+          )}
         </main>
       </div>
       <AIGameChat open={showAI} onClose={()=>setShowAI(false)} onGameCreated={(g)=>{ setShowAI(false); setStatusMsg(`AI created game: ${g.title}`); refetchGames?.(); setManageMode('games'); }} />

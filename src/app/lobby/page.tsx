@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { GameHeader } from '@/components/ui/GameHeader';
 import { getDeterministicAvatar } from '@/lib/utils';
 import { useGameHub } from '@/hooks/useGameHub';
@@ -113,6 +113,17 @@ export default function Lobby() {
   const [activationMessage, setActivationMessage] = useState(''); // NEW activation message
   const gameTitleRef = useRef<string | null>(null); // cache first non-empty game title
 
+  // Memoize player mapping function to prevent unnecessary re-renders
+  const mapServerPlayersMemo = useCallback((rawPlayers: any[]): Player[] => {
+    return rawPlayers.map((raw: any) => ({
+      id: raw.playerId || raw.id || generatePlayerId(),
+      name: raw.name || raw.userName || 'Unknown',
+      connectionId: raw.connectionId,
+      avatar: getAvatar(raw.name || raw.userName || 'Unknown'),
+      joinedAt: raw.joinedAt || new Date().toISOString(),
+    }));
+  }, []);
+
   const { connected, client, joinGame, ensureConnected } = useGameHub({
     onGameEnded: (payload) => { // NEW
       try { setResult(payload); } catch {}
@@ -178,14 +189,14 @@ export default function Lobby() {
       // Players mapping
       if (payload.players && Array.isArray(payload.players)) {
         debugLogPlayers('JoinedGame/raw', payload.players);
-        const serverPlayers = mapServerPlayers(payload.players);
+        const serverPlayers = mapServerPlayersMemo(payload.players);
         debugLogPlayers('JoinedGame/mapped', serverPlayers as any);
         setPlayers(serverPlayers);
         try {
           const myId = payload.playerId || payload.player?.playerId || payload.player?.id;
           const myName = payload.userName || payload.player?.userName || payload.player?.name || playerName;
           if (myId || myName) {
-            const found = serverPlayers.find(p => (myId && String(p.id) === String(myId)) || (myName && p.name && p.name.toUpperCase() === myName.toUpperCase()));
+            const found = serverPlayers.find((p: Player) => (myId && String(p.id) === String(myId)) || (myName && p.name && p.name.toUpperCase() === myName.toUpperCase()));
             if (found) setCurrentPlayer(found);
             else setCurrentPlayer({
               id: myId || generatePlayerId(),
@@ -202,7 +213,7 @@ export default function Lobby() {
     onLobbyInfo: (payload) => {
       if (payload.players && Array.isArray(payload.players)) {
         debugLogPlayers('LobbyInfo/raw', payload.players);
-        const serverPlayers = mapServerPlayers(payload.players);
+        const serverPlayers = mapServerPlayersMemo(payload.players);
         debugLogPlayers('LobbyInfo/mapped', serverPlayers as any);
         setPlayers(serverPlayers);
         try {
@@ -210,7 +221,7 @@ export default function Lobby() {
           const session = raw ? JSON.parse(raw) : null;
           const sessionId = session?.playerId;
           const sessionName = session?.userName;
-          const found = serverPlayers.find(p => (sessionId && String(p.id) === String(sessionId)) || (sessionName && p.name && p.name.toUpperCase() === sessionName.toUpperCase()));
+          const found = serverPlayers.find((p: Player) => (sessionId && String(p.id) === String(sessionId)) || (sessionName && p.name && p.name.toUpperCase() === sessionName.toUpperCase()));
           if (found) setCurrentPlayer(found);
         } catch {}
       }
@@ -219,7 +230,7 @@ export default function Lobby() {
     onLobbyUpdate: (payload) => {
       if (payload && Array.isArray(payload.players)) {
         debugLogPlayers('LobbyUpdate/raw', payload.players);
-        const serverPlayers = mapServerPlayers(payload.players);
+        const serverPlayers = mapServerPlayersMemo(payload.players);
         debugLogPlayers('LobbyUpdate/mapped', serverPlayers as any);
         setPlayers(serverPlayers);
       }
@@ -228,7 +239,7 @@ export default function Lobby() {
     onPlayerJoined: (payload) => {
       if (payload && Array.isArray(payload.players)) {
         debugLogPlayers('PlayerJoined/raw', payload.players);
-        const serverPlayers = mapServerPlayers(payload.players);
+        const serverPlayers = mapServerPlayersMemo(payload.players);
         debugLogPlayers('PlayerJoined/mapped', serverPlayers as any);
         setPlayers(serverPlayers);
       }

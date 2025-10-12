@@ -286,7 +286,7 @@ export default function QuestionPage() {
 
   useEffect(() => () => { clearTimer(); }, [clearTimer]);
 
-  const handleSelect = (id: string) => {
+  const handleSelect = useCallback((id: string) => {
     if (!connected || hasSubmitted || (timeLeft !== null && timeLeft <= 0)) return;
     if (isMultipleChoice) {
       // Toggle selection (allow deselect)
@@ -295,9 +295,9 @@ export default function QuestionPage() {
     }
     // SingleChoice: just select, do not submit yet
     setSelected(id);
-  };
+  }, [connected, hasSubmitted, timeLeft, isMultipleChoice]);
 
-  const handleSubmitSingle = async () => {
+  const handleSubmitSingle = useCallback(async () => {
     if (hasSubmitted || !selected) return;
     setHasSubmitted(true);
     setShowResult(null);
@@ -308,9 +308,9 @@ export default function QuestionPage() {
       console.error('Submit failed', e);
       setHasSubmitted(false);
     }
-  };
+  }, [hasSubmitted, selected, submittedSnapshot, timeLeft, submitAnswer]);
 
-  const handleSubmitMultiple = async () => {
+  const handleSubmitMultiple = useCallback(async () => {
     if (hasSubmitted || selectedIds.length === 0) return;
     setHasSubmitted(true);
     setShowResult(null);
@@ -322,7 +322,7 @@ export default function QuestionPage() {
       console.error('Submit multiple failed', e);
       setHasSubmitted(false);
     }
-  };
+  }, [hasSubmitted, selectedIds, submittedSnapshot, timeLeft, submitMultipleAnswers]);
 
   // Early error UI
   if (fatalError) {
