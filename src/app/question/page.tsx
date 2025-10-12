@@ -169,13 +169,27 @@ export default function QuestionPage() {
         const totalLimit = (typeof payload?.timeLimitSeconds === 'number' && !isNaN(payload.timeLimitSeconds)) ? payload.timeLimitSeconds : 20;
         setTotalTime(totalLimit);
         let remaining = totalLimit;
+        
+        // Calculate elapsed time if startTime is provided
         if (payload?.startTime && totalLimit > 0) {
           const startMs = Date.parse(payload.startTime);
           if (!isNaN(startMs)) {
             const elapsed = (Date.now() - startMs) / 1000;
-            remaining = Math.max(0, Math.round(totalLimit - elapsed));
+            // Ensure we don't show negative time or time that's too short
+            // If elapsed time is more than 80% of total time, use full time limit
+            // This handles cases where startTime might be incorrect or there are network delays
+            if (elapsed >= 0 && elapsed < totalLimit * 0.8) {
+              remaining = Math.max(0, Math.round(totalLimit - elapsed));
+            } else {
+              // Use full time limit if elapsed time is suspicious
+              remaining = totalLimit;
+            }
           }
         }
+        
+        // Debug logging (remove in production)
+        // console.log('Timer Debug:', { timeLimitSeconds: payload?.timeLimitSeconds, totalLimit, startTime: payload?.startTime, elapsed: payload?.startTime ? (Date.now() - Date.parse(payload.startTime)) / 1000 : 0, remaining });
+        
         startTimer(remaining);
         playEffect('question');
         startBackgroundMusic();

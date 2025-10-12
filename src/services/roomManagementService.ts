@@ -1,11 +1,28 @@
 import { apiRequest } from '@/lib/api-client';
 
+// Helper function to convert GameSessionState enum values to strings
+export const getGameSessionStateString = (state: string | number): string => {
+  if (typeof state === 'string') {
+    return state; // Already a string
+  }
+  
+  // Convert numeric enum values to strings
+  switch (state) {
+    case 0: return 'Lobby';
+    case 1: return 'InProgress';
+    case 2: return 'WaitingForHost';
+    case 3: return 'Completed';
+    case 4: return 'Canceled';
+    default: return 'Unknown';
+  }
+};
+
 export interface RoomManagementInfo {
   roomCode: string;
   gameId: string;
   gameTitle: string;
   hostConnectionId: string;
-  state: 'Completed' | 'Lobby' | 'InProgress' | 'WaitingForHost';
+  state: 'Completed' | 'Lobby' | 'InProgress' | 'WaitingForHost' | 'Canceled' | number; // Support both string and numeric enum values
   createdAt: string;
   lastActivity?: string;
   playerCount: number;

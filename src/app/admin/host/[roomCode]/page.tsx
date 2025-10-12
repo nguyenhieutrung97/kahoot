@@ -37,13 +37,26 @@ export default function AdminHostRoomPage(props: { params: Promise<{ roomCode: s
     stopTimer();
     if (!payload) return;
     let total = typeof payload.timeLimitSeconds === 'number' ? payload.timeLimitSeconds : 20;
+    
+    // Calculate elapsed time if startTime is provided
     if (payload.startTime) {
       const ms = Date.parse(payload.startTime);
       if (!isNaN(ms)) {
         const elapsed = (Date.now() - ms) / 1000;
-        total = Math.max(0, Math.round(total - elapsed));
+        // Ensure we don't show negative time or time that's too short
+        // If elapsed time is more than 80% of total time, use full time limit
+        if (elapsed >= 0 && elapsed < total * 0.8) {
+          total = Math.max(0, Math.round(total - elapsed));
+        } else {
+          // Use full time limit if elapsed time is suspicious
+          total = typeof payload.timeLimitSeconds === 'number' ? payload.timeLimitSeconds : 20;
+        }
       }
     }
+    
+    // Debug logging (remove in production)
+    // console.log('Host Timer Debug:', { timeLimitSeconds: payload.timeLimitSeconds, startTime: payload.startTime, elapsed: payload.startTime ? (Date.now() - Date.parse(payload.startTime)) / 1000 : 0, finalTime: total });
+    
     setTimeLeft(total);
     if (total <= 0) return;
     timerRef.current = setInterval(() => {

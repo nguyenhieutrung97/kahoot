@@ -12,6 +12,7 @@ import { GameState } from '@/types/api';
 import AIGameChat from '@/components/admin/AIGameChat';
 import { RoomManagementPanel } from '@/components/RoomManagement';
 import { useRoomManagement } from '@/hooks/useRoomManagement';
+import { getGameSessionStateString } from '@/services/roomManagementService';
 
 interface LobbyPlayer { id?: string; playerId?: string; userName?: string; name?: string; isConnected?: boolean; joinedAt?: string; score?: number; rank?: number; }
 interface QuestionEnvelope { questionIndex?: number; totalQuestions?: number; questionText?: string; answers?: any[]; timeLimitSeconds?: number; startTime?: string; isMultipleChoice?: boolean; correctAnswers?: any[]; correctAnswer?: any; questionType?: string; }
@@ -59,6 +60,20 @@ export default function AdminGameManagerPage() {
   const { updateGameState } = useGameMutations();
   const [selectedGameId, setSelectedGameId] = useState('');
   const [autoShowResults, setAutoShowResults] = useState(true);
+
+  // Room Management
+  const { 
+    rooms: managedRooms, 
+    loading: loadingManagedRooms, 
+    error: roomManagementError,
+    loadRooms: loadManagedRooms,
+    endRoom: endManagedRoom,
+    deleteRoom: deleteManagedRoom
+  } = useRoomManagement();
+
+  // Confirmation modal state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [roomToDelete, setRoomToDelete] = useState<{ roomCode: string; gameTitle: string } | null>(null);
 
   // Active room state
   const [roomCode, setRoomCode] = useState('');
@@ -137,13 +152,26 @@ export default function AdminGameManagerPage() {
     stopTimer();
     if (!payload) return;
     let total = typeof payload.timeLimitSeconds === 'number' ? payload.timeLimitSeconds : 20;
+    
+    // Calculate elapsed time if startTime is provided
     if (payload.startTime) {
       const ms = Date.parse(payload.startTime);
       if (!isNaN(ms)) {
         const elapsed = (Date.now() - ms) / 1000;
-        total = Math.max(0, Math.round(total - elapsed));
+        // Ensure we don't show negative time or time that's too short
+        // If elapsed time is more than 80% of total time, use full time limit
+        if (elapsed >= 0 && elapsed < total * 0.8) {
+          total = Math.max(0, Math.round(total - elapsed));
+        } else {
+          // Use full time limit if elapsed time is suspicious
+          total = typeof payload.timeLimitSeconds === 'number' ? payload.timeLimitSeconds : 20;
+        }
       }
     }
+    
+    // Debug logging (remove in production)
+    // console.log('Admin Timer Debug:', { timeLimitSeconds: payload.timeLimitSeconds, startTime: payload.startTime, elapsed: payload.startTime ? (Date.now() - Date.parse(payload.startTime)) / 1000 : 0, finalTime: total });
+    
     setTimeLeft(total);
     if (total <= 0) return;
     timerRef.current = setInterval(() => {
@@ -670,7 +698,10 @@ export default function AdminGameManagerPage() {
               </div>
             </button>
             <button 
-              onClick={() => setManageMode('rooms')} 
+              onClick={() => {
+                setManageMode('rooms');
+                loadManagedRooms(); // Load active rooms from server
+              }} 
               className={`group relative px-6 py-3 rounded-2xl font-semibold text-sm transition-all duration-300 transform hover:scale-105 ${
                 manageMode==='rooms'
                   ?'bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 text-white shadow-xl shadow-indigo-500/25'
@@ -807,7 +838,7 @@ export default function AdminGameManagerPage() {
                     <h2 className="text-3xl font-bold bg-gradient-to-r from-slate-900 via-indigo-900 to-purple-900 bg-clip-text text-transparent">
                       Managed Rooms
                     </h2>
-                    <p className="text-slate-600 text-lg font-medium mt-1">{rooms.length} active room{rooms.length !== 1 ? 's' : ''}</p>
+                    <p className="text-slate-600 text-lg font-medium mt-1">{managedRooms.length} active room{managedRooms.length !== 1 ? 's' : ''}</p>
                   </div>
                 </div>
                 <div className="flex gap-3">
@@ -836,7 +867,38 @@ export default function AdminGameManagerPage() {
                   </button>
                 </div>
               </div>
-              {!rooms.length && (
+              {loadingManagedRooms && (
+                <div className="text-center py-16">
+                  <div className="w-24 h-24 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
+                    <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                  <h3 className="text-2xl font-bold text-slate-800 mb-3">Loading Rooms...</h3>
+                  <p className="text-slate-600 text-lg">Fetching active rooms from server</p>
+                </div>
+              )}
+              {roomManagementError && (
+                <div className="text-center py-16">
+                  <div className="w-24 h-24 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-red-100 to-pink-100 flex items-center justify-center">
+                    <svg className="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-2xl font-bold text-red-800 mb-3">Error Loading Rooms</h3>
+                  <p className="text-red-600 text-lg mb-8 max-w-md mx-auto">{roomManagementError}</p>
+                  <button 
+                    onClick={() => loadManagedRooms()} 
+                    className="px-8 py-4 rounded-2xl bg-gradient-to-r from-red-600 via-pink-600 to-red-700 text-white hover:from-red-700 hover:via-pink-700 hover:to-red-800 text-lg font-semibold transition-all duration-300 hover:shadow-xl transform hover:scale-105"
+                  >
+                    <div className="flex items-center gap-3">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      Retry
+                    </div>
+                  </button>
+                </div>
+              )}
+              {!loadingManagedRooms && !roomManagementError && !managedRooms.length && (
                 <div className="text-center py-16">
                   <div className="w-24 h-24 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
                     <svg className="w-12 h-12 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -858,7 +920,7 @@ export default function AdminGameManagerPage() {
                   </button>
                 </div>
               )}
-              {!!rooms.length && (
+              {!loadingManagedRooms && !roomManagementError && !!managedRooms.length && (
                 <div className="space-y-6">
                   <div className="bg-gradient-to-r from-blue-50/80 to-indigo-50/80 border border-blue-200/50 rounded-2xl p-6 backdrop-blur-sm">
                     <div className="flex items-start gap-4">
@@ -871,17 +933,17 @@ export default function AdminGameManagerPage() {
                         <h4 className="text-lg font-bold text-blue-900 mb-2">How to Manage Rooms</h4>
                         <ul className="text-sm text-blue-800 space-y-2">
                           <li className="flex items-center gap-2"><span className="w-2 h-2 bg-blue-400 rounded-full"></span><strong>Switch:</strong> Select this room for active management</li>
-                          <li className="flex items-center gap-2"><span className="w-2 h-2 bg-blue-400 rounded-full"></span><strong>Activate/Host:</strong> {rooms.some(r => r.phase === 'setup') ? 'Activate completed sessions or open host control' : 'Open host control panel for active sessions'}</li>
-                          <li className="flex items-center gap-2"><span className="w-2 h-2 bg-blue-400 rounded-full"></span><strong>End:</strong> End the current game session</li>
-                          <li className="flex items-center gap-2"><span className="w-2 h-2 bg-blue-400 rounded-full"></span><strong>Forget:</strong> Remove from this management list</li>
+                          <li className="flex items-center gap-2"><span className="w-2 h-2 bg-blue-400 rounded-full"></span><strong>Activate/Host:</strong> {managedRooms.some(r => getGameSessionStateString(r.state) === 'Completed' || getGameSessionStateString(r.state) === 'Canceled') ? 'Activate completed/canceled sessions to allow players to join' : 'End active sessions first, then activate to host new games'}</li>
+                          <li className="flex items-center gap-2"><span className="w-2 h-2 bg-blue-400 rounded-full"></span><strong>End:</strong> End active sessions (Lobby/InProgress/WaitingForHost) to allow hosting new games</li>
+                          <li className="flex items-center gap-2"><span className="w-2 h-2 bg-blue-400 rounded-full"></span><strong>Delete:</strong> Permanently delete room from the system</li>
                         </ul>
                       </div>
                     </div>
                   </div>
                   
                   <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {rooms.map(r => {
-                      const title = r.title || safeGames.find(g => g.id === r.gameId)?.title || r.gameId || '—';
+                    {managedRooms.map(r => {
+                      const title = r.gameTitle || safeGames.find(g => g.id === r.gameId)?.title || r.gameId || '—';
                       return (
                         <div key={r.roomCode} className={`group relative bg-white/80 backdrop-blur-xl rounded-2xl p-6 border transition-all duration-300 hover:shadow-xl hover:scale-105 ${
                           roomCode===r.roomCode 
@@ -900,9 +962,9 @@ export default function AdminGameManagerPage() {
                               </div>
                             </div>
                             <div className={`w-3 h-3 rounded-full ${
-                              r.phase === 'setup' ? 'bg-amber-400' :
-                              r.phase === 'lobby' ? 'bg-blue-400' :
-                              r.phase === 'game' ? 'bg-green-400' :
+                              getGameSessionStateString(r.state) === 'Completed' ? 'bg-amber-400' :
+                              getGameSessionStateString(r.state) === 'Lobby' ? 'bg-blue-400' :
+                              getGameSessionStateString(r.state) === 'InProgress' ? 'bg-green-400' :
                               'bg-purple-400'
                             }`}></div>
                           </div>
@@ -919,7 +981,7 @@ export default function AdminGameManagerPage() {
                               <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                               </svg>
-                              <span className="text-sm font-medium text-slate-700">{r.players} players</span>
+                              <span className="text-sm font-medium text-slate-700">{r.playerCount} players</span>
                             </div>
                             <div className="flex items-center gap-2">
                               <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -936,12 +998,12 @@ export default function AdminGameManagerPage() {
                           {/* Status Badge */}
                           <div className="mb-6">
                             <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold ${
-                              r.phase === 'setup' ? 'bg-amber-100 text-amber-800' :
-                              r.phase === 'lobby' ? 'bg-blue-100 text-blue-800' :
-                              r.phase === 'game' ? 'bg-green-100 text-green-800' :
+                              getGameSessionStateString(r.state) === 'Completed' ? 'bg-amber-100 text-amber-800' :
+                              getGameSessionStateString(r.state) === 'Lobby' ? 'bg-blue-100 text-blue-800' :
+                              getGameSessionStateString(r.state) === 'InProgress' ? 'bg-green-100 text-green-800' :
                               'bg-purple-100 text-purple-800'
                             }`}>
-                              {r.phase === 'setup' ? 'Completed' : r.phase}
+                              {getGameSessionStateString(r.state)}
                             </span>
                           </div>
 
@@ -963,26 +1025,47 @@ export default function AdminGameManagerPage() {
                             </button>
                             <button 
                               onClick={() => router.push(`/admin/host/${r.roomCode}?gameId=${r.gameId || ''}`)} 
-                              className="flex-1 px-3 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 text-white hover:from-indigo-700 hover:to-indigo-800 text-xs font-semibold transition-all duration-200 hover:shadow-md"
-                              title={r.phase === 'setup' ? 'Activate session to allow players to join' : 'Open host control panel'}
+                              className={`flex-1 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 hover:shadow-md ${
+                                getGameSessionStateString(r.state) === 'Completed' || getGameSessionStateString(r.state) === 'Canceled'
+                                  ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white hover:from-indigo-700 hover:to-indigo-800'
+                                  : 'bg-gradient-to-r from-gray-400 to-gray-500 text-white cursor-not-allowed opacity-60'
+                              }`}
+                              disabled={getGameSessionStateString(r.state) !== 'Completed' && getGameSessionStateString(r.state) !== 'Canceled'}
+                              title={
+                                getGameSessionStateString(r.state) === 'Completed' || getGameSessionStateString(r.state) === 'Canceled'
+                                  ? 'Activate session to allow players to join'
+                                  : 'End the current game first to host a new session'
+                              }
                             >
-                              {r.phase === 'setup' ? 'Activate' : 'Host'}
+                              {getGameSessionStateString(r.state) === 'Completed' || getGameSessionStateString(r.state) === 'Canceled' ? 'Activate' : 'End First'}
                             </button>
-                            {r.phase!=='results' && (
+                            {getGameSessionStateString(r.state) !== 'Completed' && getGameSessionStateString(r.state) !== 'Canceled' && (
                               <button 
-                                onClick={() => endRoom(r.roomCode)} 
+                                onClick={async () => {
+                                  try {
+                                    await endManagedRoom(r.roomCode);
+                                    await loadManagedRooms(); // Refresh the rooms list
+                                    setStatusMsg(`Room ${r.roomCode} ended successfully`);
+                                  } catch (error) {
+                                    console.error('Failed to end room:', error);
+                                    setStatusMsg(`Failed to end room ${r.roomCode}`);
+                                  }
+                                }} 
                                 className="flex-1 px-3 py-2 rounded-xl bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 text-xs font-semibold transition-all duration-200 hover:shadow-md"
-                                title="End the current session"
+                                title="End the current session to allow hosting new games"
                               >
                                 End
                               </button>
                             )}
                             <button 
-                              onClick={() => forgetRoom(r.roomCode)} 
+                              onClick={() => {
+                                setRoomToDelete({ roomCode: r.roomCode, gameTitle: title });
+                                setShowDeleteConfirm(true);
+                              }} 
                               className="flex-1 px-3 py-2 rounded-xl bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800 text-xs font-semibold transition-all duration-200 hover:shadow-md"
-                              title="Remove from managed rooms list"
+                              title="Delete room permanently from the system"
                             >
-                              Forget
+                              Delete
                             </button>
                           </div>
                         </div>
@@ -1282,6 +1365,85 @@ export default function AdminGameManagerPage() {
         </main>
       </div>
       <AIGameChat open={showAI} onClose={()=>setShowAI(false)} onGameCreated={(g)=>{ setShowAI(false); setStatusMsg(`AI created game: ${g.title}`); refetchGames?.(); setManageMode('games'); }} />
+      
+      {/* Beautiful Delete Confirmation Modal */}
+      {showDeleteConfirm && roomToDelete && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white/95 backdrop-blur-xl rounded-3xl p-8 max-w-md w-full shadow-2xl border border-white/20 transform transition-all duration-300 scale-100">
+            {/* Header */}
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-red-500 to-pink-600 flex items-center justify-center shadow-lg">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-slate-900">Delete Room</h3>
+                <p className="text-slate-600">This action cannot be undone</p>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="mb-8">
+              <p className="text-slate-700 text-lg mb-4">
+                Are you sure you want to permanently delete room <span className="font-bold text-slate-900">{roomToDelete.roomCode}</span>?
+              </p>
+              {roomToDelete.gameTitle && (
+                <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200">
+                  <p className="text-sm text-slate-600 mb-1">Game:</p>
+                  <p className="font-semibold text-slate-800">{roomToDelete.gameTitle}</p>
+                </div>
+              )}
+              <div className="mt-4 p-4 bg-red-50 rounded-2xl border border-red-200">
+                <div className="flex items-start gap-3">
+                  <svg className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                  <div>
+                    <p className="text-sm font-semibold text-red-800 mb-1">Warning</p>
+                    <p className="text-sm text-red-700">This will permanently remove the room and all its data from the system.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setRoomToDelete(null);
+                }}
+                className="flex-1 px-6 py-3 rounded-2xl border border-slate-200 bg-white/80 backdrop-blur-sm hover:bg-white text-slate-700 text-sm font-semibold transition-all duration-300 hover:shadow-lg transform hover:scale-105"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    await deleteManagedRoom(roomToDelete.roomCode);
+                    await loadManagedRooms(); // Refresh the rooms list
+                    setStatusMsg(`Room ${roomToDelete.roomCode} deleted successfully`);
+                    setShowDeleteConfirm(false);
+                    setRoomToDelete(null);
+                  } catch (error) {
+                    console.error('Failed to delete room:', error);
+                    setStatusMsg(`Failed to delete room ${roomToDelete.roomCode}`);
+                  }
+                }}
+                className="flex-1 px-6 py-3 rounded-2xl bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800 text-sm font-semibold transition-all duration-300 hover:shadow-xl transform hover:scale-105"
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Delete Room
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

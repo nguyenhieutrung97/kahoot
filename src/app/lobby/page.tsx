@@ -284,7 +284,7 @@ export default function Lobby() {
             try {
               const res = await hub.invoke(m, joinCode);
               if (cancelled) return;
-              const stateVal = res?.sessionState ?? res?.gameSessionState ?? res?.state ?? res?.status;
+              const stateVal = res?.state ;
               // Accept numeric codes; treat string mapping
               let numeric: number | undefined = undefined;
               if (typeof stateVal === 'number') numeric = stateVal; else if (typeof stateVal === 'string') {
@@ -295,12 +295,7 @@ export default function Lobby() {
                 // Backend mapping: Lobby=0 => joinable
                 allowJoinRef.current = (numeric === 0);
                 if (numeric !== 0) {
-                  if (numeric === 3) { // Completed state
-                    setError('The game session has not been activated yet. Please wait for the host to activate the session.');
-                    setShowWaitingInfo(true);
-                  } else {
-                    setError('Game not joinable (not in lobby).');
-                  }
+                  setError('Game not joinable (not in lobby).');
                 }
                 break;
               }
