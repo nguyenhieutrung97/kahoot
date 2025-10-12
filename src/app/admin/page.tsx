@@ -665,36 +665,36 @@ export default function AdminGameManagerPage() {
       <DashboardSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} isCollapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(s => !s)} onMenuClick={() => {}} />
       <div className="flex-1 flex flex-col min-h-screen overflow-hidden relative z-10">
         <DashboardHeader sidebarOpen={sidebarOpen} onMenuClick={() => setSidebarOpen(o => !o)} onProfileClick={() => {}} onSettingsClick={() => {}} />
-        <main className="flex-1 overflow-y-auto p-6 lg:p-8 space-y-6 lg:space-y-8">
+        <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 lg:p-8 space-y-4 sm:space-y-6 lg:space-y-8">
           <div className="space-y-3">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
               </div>
-              <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 via-indigo-900 to-purple-900 bg-clip-text text-transparent">
+              <div className="flex-1 min-w-0">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-slate-900 via-indigo-900 to-purple-900 bg-clip-text text-transparent leading-tight">
                   Game Control Center
                 </h1>
-                <p className="text-slate-600 text-lg font-medium">Manage your quiz games and active sessions</p>
+                <p className="text-slate-600 text-sm sm:text-base lg:text-lg font-medium">Manage your quiz games and active sessions</p>
               </div>
             </div>
           </div>
           <div className="flex gap-2 flex-wrap">
             <button 
               onClick={() => setManageMode('control')} 
-              className={`group relative px-6 py-3 rounded-2xl font-semibold text-sm transition-all duration-300 transform hover:scale-105 ${
+              className={`group relative px-3 sm:px-4 lg:px-6 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-semibold text-xs sm:text-sm transition-all duration-300 transform hover:scale-105 flex-1 sm:flex-none min-w-0 ${
                 manageMode==='control'
                   ?'bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 text-white shadow-xl shadow-indigo-500/25'
                   :'bg-white/80 backdrop-blur-sm text-slate-700 hover:text-slate-900 hover:bg-white/90 border border-slate-200/50 shadow-lg hover:shadow-xl'
               }`}
             >
-              <div className="flex items-center gap-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex items-center gap-1 sm:gap-2 justify-center">
+                <svg className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
                 </svg>
-                Session Control
+                <span className="truncate">Session Control</span>
               </div>
             </button>
             <button 
@@ -702,64 +702,65 @@ export default function AdminGameManagerPage() {
                 setManageMode('rooms');
                 loadManagedRooms(); // Load active rooms from server
               }} 
-              className={`group relative px-6 py-3 rounded-2xl font-semibold text-sm transition-all duration-300 transform hover:scale-105 ${
+              className={`group relative px-3 sm:px-4 lg:px-6 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-semibold text-xs sm:text-sm transition-all duration-300 transform hover:scale-105 flex-1 sm:flex-none min-w-0 ${
                 manageMode==='rooms'
                   ?'bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 text-white shadow-xl shadow-indigo-500/25'
                   :'bg-white/80 backdrop-blur-sm text-slate-700 hover:text-slate-900 hover:bg-white/90 border border-slate-200/50 shadow-lg hover:shadow-xl'
               }`}
             >
-              <div className="flex items-center gap-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex items-center gap-1 sm:gap-2 justify-center">
+                <svg className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
-                Rooms
+                <span className="truncate">Rooms</span>
               </div>
             </button>
             <button 
               onClick={() => setManageMode('room-management')} 
-              className={`group relative px-6 py-3 rounded-2xl font-semibold text-sm transition-all duration-300 transform hover:scale-105 ${
+              className={`group relative px-3 sm:px-4 lg:px-6 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-semibold text-xs sm:text-sm transition-all duration-300 transform hover:scale-105 flex-1 sm:flex-none min-w-0 ${
                 manageMode==='room-management'
                   ?'bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 text-white shadow-xl shadow-indigo-500/25'
                   :'bg-white/80 backdrop-blur-sm text-slate-700 hover:text-slate-900 hover:bg-white/90 border border-slate-200/50 shadow-lg hover:shadow-xl'
               }`}
             >
-              <div className="flex items-center gap-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex items-center gap-1 sm:gap-2 justify-center">
+                <svg className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                Room Management
+                <span className="truncate hidden sm:inline">Room Management</span>
+                <span className="truncate sm:hidden">Rooms</span>
               </div>
             </button>
             <button 
               onClick={() => { setManageMode('games'); setManageGameId(null); }} 
-              className={`group relative px-6 py-3 rounded-2xl font-semibold text-sm transition-all duration-300 transform hover:scale-105 ${
+              className={`group relative px-3 sm:px-4 lg:px-6 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-semibold text-xs sm:text-sm transition-all duration-300 transform hover:scale-105 flex-1 sm:flex-none min-w-0 ${
                 manageMode==='games'
                   ?'bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 text-white shadow-xl shadow-indigo-500/25'
                   :'bg-white/80 backdrop-blur-sm text-slate-700 hover:text-slate-900 hover:bg-white/90 border border-slate-200/50 shadow-lg hover:shadow-xl'
               }`}
             >
-              <div className="flex items-center gap-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex items-center gap-1 sm:gap-2 justify-center">
+                <svg className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                Games
+                <span className="truncate">Games</span>
               </div>
             </button>
             <button 
               onClick={() => { if (manageGameId) setManageMode('questions'); else setManageMode('games'); }} 
               disabled={!manageGameId} 
-              className={`group relative px-6 py-3 rounded-2xl font-semibold text-sm transition-all duration-300 transform hover:scale-105 ${
+              className={`group relative px-3 sm:px-4 lg:px-6 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-semibold text-xs sm:text-sm transition-all duration-300 transform hover:scale-105 flex-1 sm:flex-none min-w-0 ${
                 manageMode==='questions'
                   ?'bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 text-white shadow-xl shadow-indigo-500/25'
                   :'bg-white/80 backdrop-blur-sm text-slate-700 hover:text-slate-900 hover:bg-white/90 border border-slate-200/50 shadow-lg hover:shadow-xl'
               } ${!manageGameId?'opacity-50 cursor-not-allowed hover:scale-100':''}`}
             >
-              <div className="flex items-center gap-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex items-center gap-1 sm:gap-2 justify-center">
+                <svg className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                Questions
+                <span className="truncate">Questions</span>
               </div>
             </button>
             <button 
