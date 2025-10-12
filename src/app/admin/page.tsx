@@ -355,7 +355,15 @@ export default function AdminGameManagerPage() {
       return;
     }
     
+    // Prevent multiple simultaneous calls for the same room
+    const loadingKey = `loadRoomStatus_${rc}`;
+    if (loadingMap[loadingKey]) {
+      console.log(`Already loading room ${rc} status, skipping...`);
+      return;
+    }
+    
      try {
+       setLoading(loadingKey, true);
        setStatusMsg(`Loading room ${rc} status...`);
        const res = await requestRoomStatus(rc);
        
@@ -545,15 +553,17 @@ export default function AdminGameManagerPage() {
        } catch (apiError) {
          console.error('API fallback failed:', apiError);
        }
+    } finally {
+      setLoading(loadingKey, false);
     }
-  }, [connected, requestRoomStatus, upsertRoom, roomManagement]);
+  }, [connected, requestRoomStatus, upsertRoom, roomManagement, loadingMap, setLoading]);
 
   // Load room status when roomCode changes and we're connected
   useEffect(() => {
     if (roomCode && connected) {
       loadRoomStatus(roomCode);
     }
-  }, [roomCode, connected, loadRoomStatus]);
+  }, [roomCode, connected]); // Removed loadRoomStatus from dependencies to prevent infinite loop
 
   // Actions
   const handleCreateRoom = async () => {
@@ -618,80 +628,128 @@ export default function AdminGameManagerPage() {
   const Badge = ({ children, color = 'bg-gray-200 text-gray-700' }: any) => <span className={`px-2 py-0.5 rounded text-xs font-semibold tracking-wide ${color}`}>{children}</span>;
 
   return (
-    <div className="min-h-screen flex bg-gradient-to-br from-slate-50 via-white to-slate-100">
+    <div className="min-h-screen flex bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 relative">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-40" style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+      }}></div>
+      
       <DashboardSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} isCollapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(s => !s)} onMenuClick={() => {}} />
-      <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-screen overflow-hidden relative z-10">
         <DashboardHeader sidebarOpen={sidebarOpen} onMenuClick={() => setSidebarOpen(o => !o)} onProfileClick={() => {}} onSettingsClick={() => {}} />
-        <main className="flex-1 overflow-y-auto p-8 space-y-8">
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-              Admin Game Control
-            </h1>
-            <p className="text-slate-600">Manage your quiz games and active sessions</p>
+        <main className="flex-1 overflow-y-auto p-6 lg:p-8 space-y-6 lg:space-y-8">
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 via-indigo-900 to-purple-900 bg-clip-text text-transparent">
+                  Game Control Center
+                </h1>
+                <p className="text-slate-600 text-lg font-medium">Manage your quiz games and active sessions</p>
+              </div>
+            </div>
           </div>
-          <div className="flex gap-1 flex-wrap">
+          <div className="flex gap-2 flex-wrap">
             <button 
               onClick={() => setManageMode('control')} 
-              className={`px-6 py-3 rounded-xl font-medium text-sm transition-all duration-300 ${
+              className={`group relative px-6 py-3 rounded-2xl font-semibold text-sm transition-all duration-300 transform hover:scale-105 ${
                 manageMode==='control'
-                  ?'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-lg'
-                  :'bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200'
+                  ?'bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 text-white shadow-xl shadow-indigo-500/25'
+                  :'bg-white/80 backdrop-blur-sm text-slate-700 hover:text-slate-900 hover:bg-white/90 border border-slate-200/50 shadow-lg hover:shadow-xl'
               }`}
             >
-              Session Control
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
+                </svg>
+                Session Control
+              </div>
             </button>
             <button 
               onClick={() => setManageMode('rooms')} 
-              className={`px-6 py-3 rounded-xl font-medium text-sm transition-all duration-300 ${
+              className={`group relative px-6 py-3 rounded-2xl font-semibold text-sm transition-all duration-300 transform hover:scale-105 ${
                 manageMode==='rooms'
-                  ?'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-lg'
-                  :'bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200'
+                  ?'bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 text-white shadow-xl shadow-indigo-500/25'
+                  :'bg-white/80 backdrop-blur-sm text-slate-700 hover:text-slate-900 hover:bg-white/90 border border-slate-200/50 shadow-lg hover:shadow-xl'
               }`}
             >
-              Rooms
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+                Rooms
+              </div>
             </button>
             <button 
               onClick={() => setManageMode('room-management')} 
-              className={`px-6 py-3 rounded-xl font-medium text-sm transition-all duration-300 ${
+              className={`group relative px-6 py-3 rounded-2xl font-semibold text-sm transition-all duration-300 transform hover:scale-105 ${
                 manageMode==='room-management'
-                  ?'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-lg'
-                  :'bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200'
+                  ?'bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 text-white shadow-xl shadow-indigo-500/25'
+                  :'bg-white/80 backdrop-blur-sm text-slate-700 hover:text-slate-900 hover:bg-white/90 border border-slate-200/50 shadow-lg hover:shadow-xl'
               }`}
             >
-              Room Management
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Room Management
+              </div>
             </button>
             <button 
               onClick={() => { setManageMode('games'); setManageGameId(null); }} 
-              className={`px-6 py-3 rounded-xl font-medium text-sm transition-all duration-300 ${
+              className={`group relative px-6 py-3 rounded-2xl font-semibold text-sm transition-all duration-300 transform hover:scale-105 ${
                 manageMode==='games'
-                  ?'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-lg'
-                  :'bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200'
+                  ?'bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 text-white shadow-xl shadow-indigo-500/25'
+                  :'bg-white/80 backdrop-blur-sm text-slate-700 hover:text-slate-900 hover:bg-white/90 border border-slate-200/50 shadow-lg hover:shadow-xl'
               }`}
             >
-              Games
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Games
+              </div>
             </button>
             <button 
               onClick={() => { if (manageGameId) setManageMode('questions'); else setManageMode('games'); }} 
               disabled={!manageGameId} 
-              className={`px-6 py-3 rounded-xl font-medium text-sm transition-all duration-300 ${
+              className={`group relative px-6 py-3 rounded-2xl font-semibold text-sm transition-all duration-300 transform hover:scale-105 ${
                 manageMode==='questions'
-                  ?'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-lg'
-                  :'bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200'
-              } ${!manageGameId?'opacity-50 cursor-not-allowed':''}`}
+                  ?'bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 text-white shadow-xl shadow-indigo-500/25'
+                  :'bg-white/80 backdrop-blur-sm text-slate-700 hover:text-slate-900 hover:bg-white/90 border border-slate-200/50 shadow-lg hover:shadow-xl'
+              } ${!manageGameId?'opacity-50 cursor-not-allowed hover:scale-100':''}`}
             >
-              Questions
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Questions
+              </div>
             </button>
             <button 
               onClick={()=> setShowAI(true)} 
-              className="px-6 py-3 rounded-xl font-medium text-sm bg-gradient-to-r from-purple-50 to-purple-100 text-purple-700 hover:from-purple-100 hover:to-purple-200 border border-purple-200 transition-all duration-300"
+              className="group relative px-6 py-3 rounded-2xl font-semibold text-sm bg-gradient-to-r from-purple-500/10 to-pink-500/10 text-purple-700 hover:from-purple-500/20 hover:to-pink-500/20 border border-purple-200/50 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 backdrop-blur-sm"
             >
-              AI Builder
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+                AI Builder
+              </div>
             </button>
           </div>
           {statusMsg && (
-            <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200/50 text-amber-800 px-6 py-4 rounded-2xl text-sm font-medium shadow-sm backdrop-blur-sm">
+            <div className="bg-gradient-to-r from-amber-50/80 to-yellow-50/80 border border-amber-200/50 text-amber-800 px-6 py-4 rounded-2xl text-sm font-medium shadow-lg backdrop-blur-md border-l-4 border-l-amber-400">
               <div className="flex items-center justify-between">
-                <span>{statusMsg}</span>
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
+                  <span className="font-semibold">{statusMsg}</span>
+                </div>
                 <div className="flex gap-2">
                   {activationFailed && roomCode && (
                     <button
@@ -737,155 +795,199 @@ export default function AdminGameManagerPage() {
           )}
 
           {manageMode==='rooms' && (
-            <div className="bg-gradient-to-br from-white to-slate-50/50 shadow-xl rounded-2xl p-8 border border-slate-200/50 space-y-6 backdrop-blur-sm">
+            <div className="bg-white/80 backdrop-blur-xl shadow-2xl rounded-3xl p-8 border border-white/20 space-y-8">
               <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-                    Managed Rooms
-                  </h2>
-                  <p className="text-slate-600 text-sm mt-1">{rooms.length} active room{rooms.length !== 1 ? 's' : ''}</p>
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
+                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className="text-3xl font-bold bg-gradient-to-r from-slate-900 via-indigo-900 to-purple-900 bg-clip-text text-transparent">
+                      Managed Rooms
+                    </h2>
+                    <p className="text-slate-600 text-lg font-medium mt-1">{rooms.length} active room{rooms.length !== 1 ? 's' : ''}</p>
+                  </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                   <button 
                     onClick={() => setManageMode('control')} 
-                    className="px-4 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-medium transition-all duration-200 hover:shadow-sm"
+                    className="px-6 py-3 rounded-2xl border border-slate-200/50 bg-white/80 backdrop-blur-sm hover:bg-white text-slate-700 text-sm font-semibold transition-all duration-300 hover:shadow-lg transform hover:scale-105"
                   >
-                    Create New Room
+                    <div className="flex items-center gap-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                      Create New Room
+                    </div>
                   </button>
                   <button 
                     onClick={() => setManageMode('room-management')} 
-                    className="px-4 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-medium transition-all duration-200 hover:shadow-sm"
+                    className="px-6 py-3 rounded-2xl border border-slate-200/50 bg-white/80 backdrop-blur-sm hover:bg-white text-slate-700 text-sm font-semibold transition-all duration-300 hover:shadow-lg transform hover:scale-105"
                   >
-                    Advanced Management
+                    <div className="flex items-center gap-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      Advanced Management
+                    </div>
                   </button>
                 </div>
               </div>
               {!rooms.length && (
-                <div className="text-center py-12">
-                  <div className="text-gray-400 mb-4">
-                    <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                <div className="text-center py-16">
+                  <div className="w-24 h-24 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
+                    <svg className="w-12 h-12 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-700 mb-2">No Rooms Yet</h3>
-                  <p className="text-gray-500 text-sm mb-4">Create your first game room to start hosting quiz sessions.</p>
+                  <h3 className="text-2xl font-bold text-slate-800 mb-3">No Rooms Yet</h3>
+                  <p className="text-slate-600 text-lg mb-8 max-w-md mx-auto">Create your first game room to start hosting quiz sessions and engage with your audience.</p>
                   <button 
                     onClick={() => setManageMode('control')} 
-                    className="px-6 py-3 rounded-lg bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800 text-sm font-medium transition-all duration-200 hover:shadow-md"
+                    className="px-8 py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 text-white hover:from-indigo-700 hover:via-purple-700 hover:to-indigo-800 text-lg font-semibold transition-all duration-300 hover:shadow-xl transform hover:scale-105"
                   >
-                    Create Your First Room
+                    <div className="flex items-center gap-3">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                      Create Your First Room
+                    </div>
                   </button>
                 </div>
               )}
               {!!rooms.length && (
-                <div className="space-y-4">
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="text-blue-600 mt-0.5">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="space-y-6">
+                  <div className="bg-gradient-to-r from-blue-50/80 to-indigo-50/80 border border-blue-200/50 rounded-2xl p-6 backdrop-blur-sm">
+                    <div className="flex items-start gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+                        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       </div>
                       <div>
-                        <h4 className="text-sm font-semibold text-blue-800 mb-1">How to Manage Rooms</h4>
-                        <ul className="text-xs text-blue-700 space-y-1">
-                          <li><strong>Switch:</strong> Select this room for active management</li>
-                          <li><strong>Activate/Host:</strong> {rooms.some(r => r.phase === 'setup') ? 'Activate completed sessions or open host control' : 'Open host control panel for active sessions'}</li>
-                          <li><strong>End:</strong> End the current game session</li>
-                          <li><strong>Forget:</strong> Remove from this management list</li>
+                        <h4 className="text-lg font-bold text-blue-900 mb-2">How to Manage Rooms</h4>
+                        <ul className="text-sm text-blue-800 space-y-2">
+                          <li className="flex items-center gap-2"><span className="w-2 h-2 bg-blue-400 rounded-full"></span><strong>Switch:</strong> Select this room for active management</li>
+                          <li className="flex items-center gap-2"><span className="w-2 h-2 bg-blue-400 rounded-full"></span><strong>Activate/Host:</strong> {rooms.some(r => r.phase === 'setup') ? 'Activate completed sessions or open host control' : 'Open host control panel for active sessions'}</li>
+                          <li className="flex items-center gap-2"><span className="w-2 h-2 bg-blue-400 rounded-full"></span><strong>End:</strong> End the current game session</li>
+                          <li className="flex items-center gap-2"><span className="w-2 h-2 bg-blue-400 rounded-full"></span><strong>Forget:</strong> Remove from this management list</li>
                         </ul>
                       </div>
                     </div>
                   </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-slate-200">
-                        <th className="p-4 text-left font-semibold text-slate-700">Room</th>
-                        <th className="p-4 text-left font-semibold text-slate-700">Game</th>
-                        <th className="p-4 text-left font-semibold text-slate-700">Players</th>
-                        <th className="p-4 text-left font-semibold text-slate-700">Phase</th>
-                        <th className="p-4 text-left font-semibold text-slate-700">Mode</th>
-                        <th className="p-4 text-left font-semibold text-slate-700">Created</th>
-                        <th className="p-4" />
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rooms.map(r => {
-                        const title = r.title || safeGames.find(g => g.id === r.gameId)?.title || r.gameId || '—';
-                        return (
-                          <tr key={r.roomCode} className={`border-b border-slate-100 hover:bg-slate-50/50 transition-colors duration-200 ${roomCode===r.roomCode?'bg-indigo-50/50':''}`}>
-                            <td className="p-4 font-semibold text-slate-900">{r.roomCode}</td>
-                            <td className="p-4 truncate max-w-[160px] text-slate-700" title={title}>{title}</td>
-                            <td className="p-4">
-                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
-                                {r.players}
-                              </span>
-                            </td>
-                            <td className="p-4">
-                              <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                                r.phase === 'setup' ? 'bg-amber-100 text-amber-800' :
-                                r.phase === 'lobby' ? 'bg-blue-100 text-blue-800' :
-                                r.phase === 'game' ? 'bg-green-100 text-green-800' :
-                                'bg-purple-100 text-purple-800'
-                              }`}>
-                                {r.phase === 'setup' ? 'Completed' : r.phase}
-                              </span>
-                            </td>
-                            <td className="p-4">
-                              <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                                r.autoShowResults ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-800'
-                              }`}>
-                                {r.autoShowResults? 'Auto':'Manual'}
-                              </span>
-                            </td>
-                            <td className="p-4 text-slate-600 text-sm">{new Date(r.createdAt).toLocaleTimeString()}</td>
-                            <td className="p-4">
-                              <div className="flex flex-wrap gap-2">
-                                <button 
-                                  onClick={() => switchRoom(r.roomCode)} 
-                                  className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium transition-all duration-200 hover:shadow-sm"
-                                  title="Switch to this room for management"
-                                >
-                                  Switch
-                                </button>
-                                <button 
-                                  onClick={() => loadRoomStatus(r.roomCode)} 
-                                  className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium transition-all duration-200 hover:shadow-sm"
-                                  title="Refresh room status from server"
-                                >
-                                  Refresh
-                                </button>
-                                <button 
-                                  onClick={() => router.push(`/admin/host/${r.roomCode}?gameId=${r.gameId || ''}`)} 
-                                  className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-indigo-700 text-white hover:from-indigo-700 hover:to-indigo-800 text-xs font-medium transition-all duration-200 hover:shadow-md"
-                                  title={r.phase === 'setup' ? 'Activate session to allow players to join' : 'Open host control panel'}
-                                >
-                                  {r.phase === 'setup' ? 'Activate' : 'Host'}
-                                </button>
-                                {r.phase!=='results' && (
-                                  <button 
-                                    onClick={() => endRoom(r.roomCode)} 
-                                    className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 text-xs font-medium transition-all duration-200 hover:shadow-md"
-                                    title="End the current session"
-                                  >
-                                    End
-                                  </button>
-                                )}
-                                <button 
-                                  onClick={() => forgetRoom(r.roomCode)} 
-                                  className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800 text-xs font-medium transition-all duration-200 hover:shadow-md"
-                                  title="Remove from managed rooms list"
-                                >
-                                  Forget
-                                </button>
+                  
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {rooms.map(r => {
+                      const title = r.title || safeGames.find(g => g.id === r.gameId)?.title || r.gameId || '—';
+                      return (
+                        <div key={r.roomCode} className={`group relative bg-white/80 backdrop-blur-xl rounded-2xl p-6 border transition-all duration-300 hover:shadow-xl hover:scale-105 ${
+                          roomCode===r.roomCode 
+                            ? 'border-indigo-300 shadow-lg shadow-indigo-500/20' 
+                            : 'border-slate-200/50 shadow-lg hover:border-slate-300'
+                        }`}>
+                          {/* Room Code Header */}
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                                <span className="text-white font-bold text-sm">{r.roomCode.slice(0, 2)}</span>
                               </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                              <div>
+                                <h3 className="font-bold text-lg text-slate-900">{r.roomCode}</h3>
+                                <p className="text-sm text-slate-600">{new Date(r.createdAt).toLocaleTimeString()}</p>
+                              </div>
+                            </div>
+                            <div className={`w-3 h-3 rounded-full ${
+                              r.phase === 'setup' ? 'bg-amber-400' :
+                              r.phase === 'lobby' ? 'bg-blue-400' :
+                              r.phase === 'game' ? 'bg-green-400' :
+                              'bg-purple-400'
+                            }`}></div>
+                          </div>
+
+                          {/* Game Info */}
+                          <div className="mb-4">
+                            <h4 className="font-semibold text-slate-800 mb-1">Game</h4>
+                            <p className="text-slate-600 text-sm truncate" title={title}>{title}</p>
+                          </div>
+
+                          {/* Stats */}
+                          <div className="flex items-center gap-4 mb-6">
+                            <div className="flex items-center gap-2">
+                              <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                              </svg>
+                              <span className="text-sm font-medium text-slate-700">{r.players} players</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              <span className={`text-sm font-medium ${
+                                r.autoShowResults ? 'text-emerald-700' : 'text-slate-700'
+                              }`}>
+                                {r.autoShowResults ? 'Auto' : 'Manual'}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Status Badge */}
+                          <div className="mb-6">
+                            <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold ${
+                              r.phase === 'setup' ? 'bg-amber-100 text-amber-800' :
+                              r.phase === 'lobby' ? 'bg-blue-100 text-blue-800' :
+                              r.phase === 'game' ? 'bg-green-100 text-green-800' :
+                              'bg-purple-100 text-purple-800'
+                            }`}>
+                              {r.phase === 'setup' ? 'Completed' : r.phase}
+                            </span>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex flex-wrap gap-2">
+                            <button 
+                              onClick={() => switchRoom(r.roomCode)} 
+                              className="flex-1 px-3 py-2 rounded-xl border border-slate-200 bg-white/80 hover:bg-white text-slate-700 text-xs font-semibold transition-all duration-200 hover:shadow-md"
+                              title="Switch to this room for management"
+                            >
+                              Switch
+                            </button>
+                            <button 
+                              onClick={() => loadRoomStatus(r.roomCode)} 
+                              className="flex-1 px-3 py-2 rounded-xl border border-slate-200 bg-white/80 hover:bg-white text-slate-700 text-xs font-semibold transition-all duration-200 hover:shadow-md"
+                              title="Refresh room status from server"
+                            >
+                              Refresh
+                            </button>
+                            <button 
+                              onClick={() => router.push(`/admin/host/${r.roomCode}?gameId=${r.gameId || ''}`)} 
+                              className="flex-1 px-3 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 text-white hover:from-indigo-700 hover:to-indigo-800 text-xs font-semibold transition-all duration-200 hover:shadow-md"
+                              title={r.phase === 'setup' ? 'Activate session to allow players to join' : 'Open host control panel'}
+                            >
+                              {r.phase === 'setup' ? 'Activate' : 'Host'}
+                            </button>
+                            {r.phase!=='results' && (
+                              <button 
+                                onClick={() => endRoom(r.roomCode)} 
+                                className="flex-1 px-3 py-2 rounded-xl bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 text-xs font-semibold transition-all duration-200 hover:shadow-md"
+                                title="End the current session"
+                              >
+                                End
+                              </button>
+                            )}
+                            <button 
+                              onClick={() => forgetRoom(r.roomCode)} 
+                              className="flex-1 px-3 py-2 rounded-xl bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800 text-xs font-semibold transition-all duration-200 hover:shadow-md"
+                              title="Remove from managed rooms list"
+                            >
+                              Forget
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}

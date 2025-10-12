@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useRoomManagement, RoomManagementInfo } from '../../hooks/useRoomManagement';
+import { useRoomManagement } from '../../hooks/useRoomManagement';
+import { RoomManagementInfo } from '../../services/roomManagementService';
 import { Loader2, Users, Clock, Settings, Trash2, Power, PowerOff, Eye, EyeOff } from 'lucide-react';
 
 interface RoomManagementPanelProps {

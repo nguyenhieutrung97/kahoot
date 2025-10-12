@@ -26,7 +26,7 @@ export const RoomManagementDemo: React.FC = () => {
   // SignalR hook
   const {
     getManagedRooms,
-    isConnected
+    connected
   } = useRoomManagementSignalR();
 
   // Load rooms on component mount
@@ -55,7 +55,7 @@ export const RoomManagementDemo: React.FC = () => {
   };
 
   const handleRefreshSignalR = async () => {
-    if (isConnected) {
+    if (connected) {
       await getManagedRooms();
     }
   };
@@ -75,7 +75,7 @@ export const RoomManagementDemo: React.FC = () => {
             <div className="flex items-center gap-4">
               {/* Connection Status */}
               <div className="flex items-center gap-2">
-                {isConnected ? (
+                {connected ? (
                   <>
                     <Wifi className="w-5 h-5 text-green-600" />
                     <span className="text-sm text-green-600">Connected</span>
@@ -100,7 +100,7 @@ export const RoomManagementDemo: React.FC = () => {
                 </button>
                 <button
                   onClick={handleRefreshSignalR}
-                  disabled={!isConnected}
+                  disabled={!connected}
                   className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
                 >
                   Refresh SignalR
@@ -143,8 +143,8 @@ export const RoomManagementDemo: React.FC = () => {
           
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold text-gray-800 mb-2">Connection</h3>
-            <p className={`text-3xl font-bold ${isConnected ? 'text-green-600' : 'text-red-600'}`}>
-              {isConnected ? 'Live' : 'Offline'}
+            <p className={`text-3xl font-bold ${connected ? 'text-green-600' : 'text-red-600'}`}>
+              {connected ? 'Live' : 'Offline'}
             </p>
             <p className="text-sm text-gray-600 mt-1">Real-time updates</p>
           </div>
@@ -189,10 +189,10 @@ await activateRoom('ABC123');`}
               <pre className="bg-gray-100 p-3 rounded text-sm overflow-x-auto">
 {`import { useRoomManagementSignalR } from '@/hooks/useRoomManagementSignalR';
 
-const { getManagedRooms, isConnected } = useRoomManagementSignalR();
+const { getManagedRooms, connected } = useRoomManagementSignalR();
 
 // Get rooms via SignalR
-if (isConnected) {
+if (connected) {
   await getManagedRooms();
 }`}
               </pre>

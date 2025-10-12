@@ -27,7 +27,7 @@ const defaultHeaders = {
 };
 
 // Generic API request function
-async function apiRequest<T>(
+export async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {

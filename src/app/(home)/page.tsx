@@ -62,7 +62,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <GameHeader title="QUIZ GAME" withSvgBorder />
+      <GameHeader title="SMART QUIZ" withSvgBorder />
       {kicked && (
         <div className="mx-auto max-w-xl mt-4 px-4">
           <div className="bg-destructive/10 border border-destructive/20 text-destructive rounded-lg p-4 text-sm font-medium flex items-start gap-3 shadow-sm">

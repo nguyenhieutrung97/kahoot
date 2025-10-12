@@ -5,7 +5,7 @@ import { RoomManagementInfo, RoomStatistics, RoomStatus } from '../services/room
 
 export const useRoomManagementSignalR = () => {
   const { loadRooms, loadRoomInfo, loadRoomStatistics, loadRoomStatus } = useRoomManagement();
-  const { client, isConnected } = useGameHub();
+  const { client, connected } = useGameHub();
 
   // Handle SignalR events for room management
   const handleRoomListUpdated = useCallback((rooms: RoomManagementInfo[]) => {
@@ -48,7 +48,7 @@ export const useRoomManagementSignalR = () => {
 
   // Set up SignalR event handlers
   useEffect(() => {
-    if (!client || !isConnected) return;
+    if (!client || !connected) return;
 
     // Register event handlers
     client.on('RoomListUpdated', handleRoomListUpdated);
@@ -71,7 +71,7 @@ export const useRoomManagementSignalR = () => {
     };
   }, [
     client,
-    isConnected,
+    connected,
     handleRoomListUpdated,
     handleRoomInfoUpdated,
     handleRoomStatisticsUpdated,
@@ -83,67 +83,67 @@ export const useRoomManagementSignalR = () => {
 
   // SignalR methods for room management
   const getManagedRooms = useCallback(async () => {
-    if (!client || !isConnected) return;
+    if (!client || !connected) return;
     try {
       await client.invoke('GetManagedRooms');
     } catch (error) {
       console.error('Failed to get managed rooms:', error);
     }
-  }, [client, isConnected]);
+  }, [client, connected]);
 
   const getRoomInfoSignalR = useCallback(async (roomCode: string) => {
-    if (!client || !isConnected) return;
+    if (!client || !connected) return;
     try {
       await client.invoke('GetRoomInfo', roomCode);
     } catch (error) {
       console.error('Failed to get room info:', error);
     }
-  }, [client, isConnected]);
+  }, [client, connected]);
 
   const getRoomStatisticsSignalR = useCallback(async (roomCode: string) => {
-    if (!client || !isConnected) return;
+    if (!client || !connected) return;
     try {
       await client.invoke('GetRoomStatistics', roomCode);
     } catch (error) {
       console.error('Failed to get room statistics:', error);
     }
-  }, [client, isConnected]);
+  }, [client, connected]);
 
   const getRoomStatusSignalR = useCallback(async (roomCode: string) => {
-    if (!client || !isConnected) return;
+    if (!client || !connected) return;
     try {
       await client.invoke('GetRoomStatus', roomCode);
     } catch (error) {
       console.error('Failed to get room status:', error);
     }
-  }, [client, isConnected]);
+  }, [client, connected]);
 
   const updateRoomSettingsSignalR = useCallback(async (roomCode: string, autoShowResults?: boolean, allowReconnection?: boolean) => {
-    if (!client || !isConnected) return;
+    if (!client || !connected) return;
     try {
       await client.invoke('UpdateRoomSettings', roomCode, autoShowResults, allowReconnection);
     } catch (error) {
       console.error('Failed to update room settings:', error);
     }
-  }, [client, isConnected]);
+  }, [client, connected]);
 
   const kickPlayerSignalR = useCallback(async (roomCode: string, playerId: string) => {
-    if (!client || !isConnected) return;
+    if (!client || !connected) return;
     try {
       await client.invoke('KickPlayerFromRoom', roomCode, playerId);
     } catch (error) {
       console.error('Failed to kick player:', error);
     }
-  }, [client, isConnected]);
+  }, [client, connected]);
 
   const endRoomSessionSignalR = useCallback(async (roomCode: string) => {
-    if (!client || !isConnected) return;
+    if (!client || !connected) return;
     try {
       await client.invoke('EndRoomSession', roomCode);
     } catch (error) {
       console.error('Failed to end room session:', error);
     }
-  }, [client, isConnected]);
+  }, [client, connected]);
 
   return {
     // SignalR methods
@@ -156,6 +156,6 @@ export const useRoomManagementSignalR = () => {
     endRoomSessionSignalR,
     
     // Connection status
-    isConnected
+    connected
   };
 };
