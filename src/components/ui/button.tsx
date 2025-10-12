@@ -12,12 +12,12 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const baseClasses = "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50";
     
     const variantClasses = {
-      default: "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-600",
-      destructive: "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-600",
-      outline: "border border-gray-300 bg-white hover:bg-gray-50 focus-visible:ring-gray-600",
-      secondary: "bg-gray-100 text-gray-900 hover:bg-gray-200 focus-visible:ring-gray-600",
-      ghost: "hover:bg-gray-100 focus-visible:ring-gray-600",
-      link: "text-red-600 underline-offset-4 hover:underline focus-visible:ring-red-600",
+      default: "bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-primary shadow-sm",
+      destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 focus-visible:ring-destructive shadow-sm",
+      outline: "border border-border bg-background hover:bg-accent hover:text-accent-foreground focus-visible:ring-ring",
+      secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80 focus-visible:ring-ring shadow-sm",
+      ghost: "hover:bg-accent hover:text-accent-foreground focus-visible:ring-ring",
+      link: "text-primary underline-offset-4 hover:underline focus-visible:ring-ring",
     };
     
     const sizeClasses = {

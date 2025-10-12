@@ -61,11 +61,11 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <GameHeader title="QUIZ GAME" withSvgBorder />
       {kicked && (
         <div className="mx-auto max-w-xl mt-4 px-4">
-          <div className="bg-red-50 border border-red-200 text-red-700 rounded-md p-4 text-sm font-medium flex items-start gap-3">
+          <div className="bg-destructive/10 border border-destructive/20 text-destructive rounded-lg p-4 text-sm font-medium flex items-start gap-3 shadow-sm">
             <span>🚫</span>
             <div>
               <p className="font-bold tracking-wide uppercase text-xs mb-1">Removed From Game</p>
@@ -75,15 +75,15 @@ export default function Dashboard() {
         </div>
       )}
       <main className="flex items-center justify-center min-h-[calc(100vh-120px)]">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full mx-4 border-2 border-gray-200">
+        <div className="bg-card rounded-xl shadow-xl p-8 max-w-md w-full mx-4 border border-border/50 backdrop-blur-sm">
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 uppercase tracking-wide mb-4">JOIN GAME</h2>
-            <div className="w-16 h-1 bg-red-600 mx-auto mb-4"></div>
-            <p className="text-gray-600 font-medium">Enter room code and your name to join</p>
+            <h2 className="text-3xl font-bold text-primary uppercase tracking-wide mb-4">JOIN GAME</h2>
+            <div className="w-16 h-1 bg-gradient-to-r from-primary to-accent mx-auto mb-4 rounded-full"></div>
+            <p className="text-muted-foreground font-medium">Enter room code and your name to join</p>
           </div>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-4">
-              <div className="text-sm font-bold text-gray-700 uppercase tracking-wide">Room Code</div>
+              <div className="text-sm font-bold text-foreground uppercase tracking-wide">Room Code</div>
               <GameInput
                 type="text"
                 value={roomCode}
@@ -93,7 +93,7 @@ export default function Dashboard() {
                 fullWidth
                 disabled={isLoading}
               />
-              <div className="text-sm font-bold text-gray-700 uppercase tracking-wide">Player Name</div>
+              <div className="text-sm font-bold text-foreground uppercase tracking-wide">Player Name</div>
               <GameInput
                 type="text"
                 value={playerName}
@@ -103,7 +103,7 @@ export default function Dashboard() {
                 fullWidth
                 disabled={isLoading}
               />
-              {error && <div className="text-xs text-red-600 font-medium">{error}</div>}
+              {error && <div className="text-xs text-destructive font-medium">{error}</div>}
               <GameButton
                 type="submit"
                 variant="primary"
@@ -118,7 +118,7 @@ export default function Dashboard() {
               <button
                 type="button"
                 onClick={() => router.push('/admin')}
-                className="mt-2 inline-flex items-center justify-center w-full px-6 py-3 rounded-md border-2 border-gray-300 text-gray-700 font-bold uppercase tracking-wide hover:bg-gray-50 transition-colors"
+                className="mt-2 inline-flex items-center justify-center w-full px-6 py-3 rounded-lg border-2 border-border text-foreground font-bold uppercase tracking-wide hover:bg-accent hover:text-accent-foreground transition-all duration-200 shadow-sm hover:shadow-md"
               >
                 <span className="mr-2">🛠️</span>
                 Admin Dashboard

@@ -11,10 +11,10 @@ interface GameButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variants = {
-  primary: 'bg-red-600 text-white border-2 border-red-600 hover:bg-red-700 disabled:bg-gray-300 disabled:border-gray-300',
-  secondary: 'bg-white text-gray-900 border-2 border-gray-300 hover:bg-gray-50',
-  outline: 'bg-transparent border-2 border-gray-300 text-gray-700 hover:bg-gray-50',
-  answer: 'text-white border-4 border-transparent hover:scale-105 active:scale-95 shadow-lg transition-all duration-200 transform',
+  primary: 'bg-primary text-primary-foreground border-2 border-primary hover:bg-primary/90 hover:border-primary/90 disabled:bg-muted disabled:border-muted disabled:text-muted-foreground shadow-lg hover:shadow-xl',
+  secondary: 'bg-secondary text-secondary-foreground border-2 border-border hover:bg-accent hover:text-accent-foreground shadow-md hover:shadow-lg',
+  outline: 'bg-background border-2 border-border text-foreground hover:bg-accent hover:text-accent-foreground shadow-sm hover:shadow-md',
+  answer: 'text-primary-foreground border-4 border-transparent hover:scale-105 active:scale-95 shadow-xl hover:shadow-2xl transition-all duration-300 transform bg-gradient-to-br from-primary to-accent',
 } as const;
 
 const sizes = {
@@ -37,8 +37,8 @@ export const GameButton = forwardRef<HTMLButtonElement, GameButtonProps>(
     return (
       <button
         className={cn(
-          'font-bold uppercase tracking-wide rounded transition-colors',
-          'focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2',
+          'font-bold uppercase tracking-wide rounded-lg transition-all duration-200',
+          'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
           'disabled:cursor-not-allowed disabled:opacity-60',
           variants[variant],
           sizes[size],

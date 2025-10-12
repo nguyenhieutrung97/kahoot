@@ -16,13 +16,13 @@ export const GameHeader = ({
   withSvgBorder = false 
 }: GameHeaderProps) => {
   return (
-    <header className="bg-white shadow-sm p-6 relative flex justify-between items-start">
-      <div>
-        <h1 className="text-2xl font-bold text-red-600 uppercase tracking-wide">
+    <header className="bg-card border-b border-border/50 backdrop-blur-sm p-6 relative flex justify-between items-start shadow-sm">
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold text-primary uppercase tracking-wider font-sans">
           {title}
         </h1>
         {subtitle && (
-          <div className="text-sm text-gray-600 font-medium mt-1">
+          <div className="text-base text-muted-foreground font-medium">
             {subtitle}
           </div>
         )}
@@ -34,20 +34,7 @@ export const GameHeader = ({
         </div>
       )}
       
-      {/* SVG Border at bottom */}
-      {withSvgBorder ? (
-        <div 
-          className="absolute bottom-0 left-0 w-full h-1"
-          style={{
-            backgroundImage: 'url(/download.svg)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat'
-          }}
-        />
-      ) : (
-        <div className="absolute bottom-0 left-0 w-full h-1 bg-red-600" />
-      )}
+      <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-accent to-primary opacity-60" />
     </header>
   );
 };

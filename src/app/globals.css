@@ -44,72 +44,84 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* KATINAT Color Palette */
+  --katinat-teal: #2A4A5B;
+  --katinat-teal-light: #3A5A6B;
+  --katinat-teal-dark: #1A3A4B;
+  --katinat-tan: #B8906A;
+  --katinat-tan-light: #C8A07A;
+  --katinat-tan-dark: #A8805A;
+  --katinat-cream: #F5F1E8;
+  --katinat-warm-white: #FEFCF7;
+  
+  /* Modern Design System */
+  --radius: 0.75rem;
+  --background: var(--katinat-warm-white);
+  --foreground: var(--katinat-teal);
+  --card: var(--katinat-warm-white);
+  --card-foreground: var(--katinat-teal);
+  --popover: var(--katinat-warm-white);
+  --popover-foreground: var(--katinat-teal);
+  --primary: var(--katinat-teal);
+  --primary-foreground: var(--katinat-warm-white);
+  --secondary: var(--katinat-cream);
+  --secondary-foreground: var(--katinat-teal);
+  --muted: var(--katinat-cream);
+  --muted-foreground: var(--katinat-tan-dark);
+  --accent: var(--katinat-tan);
+  --accent-foreground: var(--katinat-warm-white);
+  --destructive: #DC2626;
+  --border: #E5E7EB;
+  --input: #F3F4F6;
+  --ring: var(--katinat-tan);
+  --chart-1: var(--katinat-tan);
+  --chart-2: var(--katinat-teal);
+  --chart-3: #8B5CF6;
+  --chart-4: #10B981;
+  --chart-5: #F59E0B;
+  --sidebar: var(--katinat-warm-white);
+  --sidebar-foreground: var(--katinat-teal);
+  --sidebar-primary: var(--katinat-teal);
+  --sidebar-primary-foreground: var(--katinat-warm-white);
+  --sidebar-accent: var(--katinat-cream);
+  --sidebar-accent-foreground: var(--katinat-teal);
+  --sidebar-border: #E5E7EB;
+  --sidebar-ring: var(--katinat-tan);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* Dark mode with KATINAT theme */
+  --background: var(--katinat-teal-dark);
+  --foreground: var(--katinat-tan-light);
+  --card: var(--katinat-teal);
+  --card-foreground: var(--katinat-tan-light);
+  --popover: var(--katinat-teal);
+  --popover-foreground: var(--katinat-tan-light);
+  --primary: var(--katinat-tan);
+  --primary-foreground: var(--katinat-teal-dark);
+  --secondary: var(--katinat-teal-light);
+  --secondary-foreground: var(--katinat-tan-light);
+  --muted: var(--katinat-teal-light);
+  --muted-foreground: var(--katinat-tan);
+  --accent: var(--katinat-tan);
+  --accent-foreground: var(--katinat-teal-dark);
+  --destructive: #EF4444;
+  --border: rgba(184, 144, 106, 0.2);
+  --input: rgba(184, 144, 106, 0.1);
+  --ring: var(--katinat-tan);
+  --chart-1: var(--katinat-tan);
+  --chart-2: var(--katinat-tan-light);
+  --chart-3: #A78BFA;
+  --chart-4: #34D399;
+  --chart-5: #FBBF24;
+  --sidebar: var(--katinat-teal);
+  --sidebar-foreground: var(--katinat-tan-light);
+  --sidebar-primary: var(--katinat-tan);
+  --sidebar-primary-foreground: var(--katinat-teal-dark);
+  --sidebar-accent: var(--katinat-teal-light);
+  --sidebar-accent-foreground: var(--katinat-tan-light);
+  --sidebar-border: rgba(184, 144, 106, 0.2);
+  --sidebar-ring: var(--katinat-tan);
 }
 
 @layer base {
@@ -117,6 +129,39 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  /* Modern typography improvements */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+  
+  /* Smooth transitions for interactive elements */
+  button, a, input, select, textarea {
+    @apply transition-all duration-200 ease-in-out;
+  }
+  
+  /* Modern focus styles */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-background;
+  }
+  
+  /* Custom scrollbar styling */
+  ::-webkit-scrollbar {
+    @apply w-2;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-muted;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-accent rounded-full;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-accent/80;
   }
 }

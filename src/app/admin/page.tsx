@@ -21,7 +21,10 @@ interface ManagedRoom { roomCode: string; gameId?: string; createdAt: number; ph
 // Backend: Lobby=0, InProgress=1, WaitingForHost=2, Completed=3, Canceled=4
 const parseSessionState = (p: any): number | undefined => {
   if (!p) return undefined;
-  const raw = p.sessionState ?? p.gameSessionState ?? p.state ?? p.status;
+  
+  // Try multiple possible field names and formats
+  const raw = p.sessionState ?? p.gameSessionState ?? p.state ?? p.status ?? p.SessionState ?? p.GameSessionState ?? p.State ?? p.Status;
+  
   if (typeof raw === 'number') return raw;
   if (typeof raw === 'string') {
     const map: Record<string, number> = {
@@ -30,9 +33,14 @@ const parseSessionState = (p: any): number | undefined => {
       waitingforhost: 2,
       completed: 3,
       canceled: 4,  // American spelling (matches backend)
+      cancelled: 4, // British spelling
     };
     return map[raw.replace(/\s+/g,'').toLowerCase()];
   }
+  
+  // If we can't parse it, log for debugging
+  console.warn('Could not parse session state from:', p);
+  return undefined;
 };
 
 export default function AdminGameManagerPage() {
@@ -56,6 +64,51 @@ export default function AdminGameManagerPage() {
   const [roomCode, setRoomCode] = useState('');
   const [players, setPlayers] = useState<LobbyPlayer[]>([]);
   const [canStart, setCanStart] = useState(false);
+  
+
+  // Restore room state from localStorage on component mount
+  useEffect(() => {
+    const savedRoomCode = localStorage.getItem('admin_current_room');
+    const savedGameId = localStorage.getItem('admin_selected_game');
+    const savedAutoShowResults = localStorage.getItem('admin_auto_show_results');
+    
+    if (savedRoomCode && savedRoomCode.trim()) {
+      setRoomCode(savedRoomCode);
+      setStatusMsg(`Restored room ${savedRoomCode}`);
+    }
+    
+    if (savedGameId && savedGameId.trim()) {
+      setSelectedGameId(savedGameId);
+    }
+    
+    if (savedAutoShowResults !== null) {
+      setAutoShowResults(savedAutoShowResults === 'true');
+    }
+  }, []);
+  
+  
+  // Save room code to localStorage whenever it changes
+  useEffect(() => {
+    if (roomCode && roomCode.trim()) {
+      localStorage.setItem('admin_current_room', roomCode);
+    } else {
+      localStorage.removeItem('admin_current_room');
+    }
+  }, [roomCode]);
+  
+  // Save selected game ID to localStorage whenever it changes
+  useEffect(() => {
+    if (selectedGameId && selectedGameId.trim()) {
+      localStorage.setItem('admin_selected_game', selectedGameId);
+    } else {
+      localStorage.removeItem('admin_selected_game');
+    }
+  }, [selectedGameId]);
+  
+  // Save autoShowResults to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('admin_auto_show_results', autoShowResults.toString());
+  }, [autoShowResults]);
 
   // Gameplay
   const [question, setQuestion] = useState<QuestionEnvelope | null>(null);
@@ -118,17 +171,78 @@ export default function AdminGameManagerPage() {
   const switchRoom = async (rc: string) => {
     if (!rc) return;
     setRoomCode(rc);
-    setStatusMsg(`Switched to room ${rc}`);
-    try {
-      const res = await requestRoomStatus(rc);
-      if(res?.ok && res.data){
-        upsertRoom(rc, { sessionState: parseSessionState(res.data) });
+    setStatusMsg(`Switching to room ${rc}...`);
+    
+    // Find the room in our managed rooms to get additional info
+    const managedRoom = rooms.find(r => r.roomCode === rc);
+    if (managedRoom) {
+      setSelectedGameId(managedRoom.gameId || '');
+      setAutoShowResults(managedRoom.autoShowResults || true);
+      setStatusMsg(`Switched to room ${rc} - using cached data`);
+    }
+    
+    // Try to load fresh status from server
+    if (connected) {
+      try {
+        const res = await requestRoomStatus(rc);
+        if(res?.ok && res.data){
+          const sessionState = parseSessionState(res.data);
+          upsertRoom(rc, { sessionState });
+          
+           // Update phase based on session state
+           if (sessionState === 3) { // Completed
+             setPhase('setup');
+           } else if (sessionState === 0) { // Lobby
+             setPhase('lobby');
+           } else if (sessionState === 1) { // InProgress
+             setPhase('game');
+           } else if (sessionState === 2) { // WaitingForHost
+             setPhase('results');
+           }
+          
+          setStatusMsg(`Switched to room ${rc} - ${sessionState} state`);
+        } else {
+          // If server status fails, use cached data if available
+          if (managedRoom) {
+            setStatusMsg(`Switched to room ${rc} - using cached data (server unavailable)`);
+            setPhase(managedRoom.phase as any || 'setup');
+          } else {
+            setStatusMsg(`Switched to room ${rc} - server status unavailable`);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to get room status:', error);
+        // Use cached data if available
+        if (managedRoom) {
+          setStatusMsg(`Switched to room ${rc} - using cached data (${managedRoom.phase})`);
+          setPhase(managedRoom.phase as any || 'setup');
+        } else {
+          setStatusMsg(`Switched to room ${rc} - server unavailable, no cached data`);
+        }
       }
-    } catch {}
+    } else {
+      // Not connected, use cached data if available
+      if (managedRoom) {
+        setStatusMsg(`Switched to room ${rc} - using cached data (offline)`);
+        setPhase(managedRoom.phase as any || 'setup');
+      } else {
+        setStatusMsg(`Switched to room ${rc} - not connected and no cached data`);
+      }
+    }
   };
   const forgetRoom = (rc: string) => {
     setRooms(r => r.filter(x => x.roomCode !== rc));
-    if (roomCode === rc) { setRoomCode(''); setPhase('setup'); setPlayers([]); setQuestion(null); setLeaderboard([]); setFinalResults(null); }
+    if (roomCode === rc) { 
+      setRoomCode(''); 
+      setPhase('setup'); 
+      setPlayers([]); 
+      setQuestion(null); 
+      setLeaderboard([]); 
+      setFinalResults(null);
+      // Clear localStorage when forgetting the current room
+      localStorage.removeItem('admin_current_room');
+      setStatusMsg('Room forgotten and cleared');
+    }
   };
   const endRoom = async (rc: string) => { try { if (client) await (client as any).invoke('ShowFinalLeaderboard', rc); } catch {} finally { upsertRoom(rc, { phase: 'results' }); } };
 
@@ -232,6 +346,215 @@ export default function AdminGameManagerPage() {
     onError: (m: any) => setStatusMsg(typeof m === 'string' ? m : (m?.message || 'Error'))
   });
 
+  // Function to load room status and update state
+  const loadRoomStatus = useCallback(async (rc: string) => {
+    if (!rc || !connected) {
+      if (!connected) {
+        setStatusMsg(`Cannot load room ${rc} - not connected to server`);
+      }
+      return;
+    }
+    
+     try {
+       setStatusMsg(`Loading room ${rc} status...`);
+       const res = await requestRoomStatus(rc);
+       
+       // Debug logging to help understand response format
+       console.log(`Room ${rc} status response:`, res);
+      
+       if (res?.ok && res.data) {
+         const sessionState = parseSessionState(res.data);
+         
+         if (sessionState !== undefined) {
+           upsertRoom(rc, { sessionState });
+           
+           // Update phase based on session state
+           if (sessionState === 3) { // Completed
+             setPhase('setup');
+           } else if (sessionState === 0) { // Lobby
+             setPhase('lobby');
+           } else if (sessionState === 1) { // InProgress
+             setPhase('game');
+           } else if (sessionState === 2) { // WaitingForHost
+             setPhase('results');
+           }
+           
+           const stateNames = ['Lobby', 'InProgress', 'WaitingForHost', 'Completed', 'Canceled'];
+           const stateName = stateNames[sessionState] || `Unknown(${sessionState})`;
+           setStatusMsg(`Room ${rc} loaded successfully - ${stateName} state`);
+         } else {
+           // Session state parsing failed, try API fallback
+           console.warn(`Could not parse session state for room ${rc}, trying API fallback`);
+           setStatusMsg(`Room ${rc} - Could not parse server response. Trying API fallback...`);
+           
+           try {
+             await roomManagement.loadRoomInfo(rc);
+             const roomInfo = roomManagement.currentRoom;
+             if (roomInfo) {
+               upsertRoom(rc, { 
+                 sessionState: (() => {
+                 const stateMap: Record<string, number> = {
+                   'Completed': 3,
+                   'Lobby': 0,
+                   'InProgress': 1,
+                   'WaitingForHost': 2
+                 };
+                 return stateMap[roomInfo.state] ?? 3;
+               })(),
+                 gameId: roomInfo.gameId,
+                 title: roomInfo.gameTitle,
+                 players: roomInfo.playerCount
+               });
+               setStatusMsg(`Room ${rc} loaded via API - ${roomInfo.state} state`);
+             } else {
+               setStatusMsg(`Room ${rc} - Server response unclear and API fallback failed`);
+             }
+           } catch (apiError) {
+             console.error('API fallback failed:', apiError);
+             setStatusMsg(`Room ${rc} - Could not parse server response and API fallback failed`);
+           }
+         }
+       } else if (res?.ok && !res.data) {
+         // Server responded OK but no data - room might not exist
+         setStatusMsg(`Room ${rc} - Server responded but room not found. Trying API fallback...`);
+         
+         // Try API fallback
+         try {
+           await roomManagement.loadRoomInfo(rc);
+           const roomInfo = roomManagement.currentRoom;
+           if (roomInfo) {
+             upsertRoom(rc, { 
+               sessionState: (() => {
+                 const stateMap: Record<string, number> = {
+                   'Completed': 3,
+                   'Lobby': 0,
+                   'InProgress': 1,
+                   'WaitingForHost': 2
+                 };
+                 return stateMap[roomInfo.state] ?? 3;
+               })(),
+               gameId: roomInfo.gameId,
+               title: roomInfo.gameTitle,
+               players: roomInfo.playerCount
+             });
+             setStatusMsg(`Room ${rc} found via API - ${roomInfo.state} state`);
+           } else {
+             setStatusMsg(`Room ${rc} not found on server or API`);
+           }
+         } catch (apiError) {
+           console.error('API fallback failed:', apiError);
+           setStatusMsg(`Room ${rc} not found on server or API`);
+         }
+      } else if (res?.reason === 'missing-methods') {
+        setStatusMsg(`Room ${rc} - Server doesn't support room status methods. Room may still be active.`);
+        // Set a default state for the room
+        upsertRoom(rc, { sessionState: 3 }); // Completed
+        setPhase('setup');
+      } else if (res?.reason === 'error') {
+        setStatusMsg(`Room ${rc} - ${res.error || 'Unknown error'}. Room may not exist on server.`);
+         // Try to use room management service as fallback
+         try {
+           await roomManagement.loadRoomInfo(rc);
+           const roomInfo = roomManagement.currentRoom;
+           if (roomInfo) {
+             upsertRoom(rc, { 
+               sessionState: (() => {
+                 const stateMap: Record<string, number> = {
+                   'Completed': 3,
+                   'Lobby': 0,
+                   'InProgress': 1,
+                   'WaitingForHost': 2
+                 };
+                 return stateMap[roomInfo.state] ?? 3;
+               })(),
+               gameId: roomInfo.gameId,
+               title: roomInfo.gameTitle,
+               players: roomInfo.playerCount
+             });
+             setStatusMsg(`Room ${rc} loaded via API - ${roomInfo.state} state`);
+           }
+         } catch (apiError) {
+           console.error('API fallback also failed:', apiError);
+           setStatusMsg(`Room ${rc} not found on server. It may have been deleted or expired.`);
+         }
+       } else {
+         // Handle unknown response format
+         console.log('Unknown response format:', res);
+         setStatusMsg(`Room ${rc} - Server returned unexpected response format. Trying API fallback...`);
+         
+         // Try API fallback for unknown responses
+         try {
+           await roomManagement.loadRoomInfo(rc);
+           const roomInfo = roomManagement.currentRoom;
+           if (roomInfo) {
+             upsertRoom(rc, { 
+               sessionState: (() => {
+                 const stateMap: Record<string, number> = {
+                   'Completed': 3,
+                   'Lobby': 0,
+                   'InProgress': 1,
+                   'WaitingForHost': 2
+                 };
+                 return stateMap[roomInfo.state] ?? 3;
+               })(),
+               gameId: roomInfo.gameId,
+               title: roomInfo.gameTitle,
+               players: roomInfo.playerCount
+             });
+             setStatusMsg(`Room ${rc} loaded via API - ${roomInfo.state} state`);
+           } else {
+             setStatusMsg(`Room ${rc} - No data available from server or API`);
+           }
+         } catch (apiError) {
+           console.error('API fallback failed:', apiError);
+           setStatusMsg(`Room ${rc} - Server response unclear and API fallback failed`);
+         }
+       }
+    } catch (error) {
+      console.error('Failed to load room status:', error);
+      const errorMsg = (error as Error).message;
+      
+      // Check if it's a connection error
+      if (errorMsg.includes('connection') || errorMsg.includes('network')) {
+        setStatusMsg(`Room ${rc} - Connection error. Please check your internet connection.`);
+      } else if (errorMsg.includes('timeout')) {
+        setStatusMsg(`Room ${rc} - Request timed out. Server may be slow.`);
+      } else {
+        setStatusMsg(`Room ${rc} - Error: ${errorMsg}`);
+      }
+      
+       // Try API fallback even on error
+       try {
+         await roomManagement.loadRoomInfo(rc);
+         const roomInfo = roomManagement.currentRoom;
+         if (roomInfo) {
+           const stateMap: Record<string, number> = {
+             'Completed': 3,
+             'Lobby': 0,
+             'InProgress': 1,
+             'WaitingForHost': 2
+           };
+           upsertRoom(rc, { 
+             sessionState: stateMap[roomInfo.state] ?? 3,
+             gameId: roomInfo.gameId,
+             title: roomInfo.gameTitle,
+             players: roomInfo.playerCount
+           });
+           setStatusMsg(`Room ${rc} loaded via API fallback - ${roomInfo.state} state`);
+         }
+       } catch (apiError) {
+         console.error('API fallback failed:', apiError);
+       }
+    }
+  }, [connected, requestRoomStatus, upsertRoom, roomManagement]);
+
+  // Load room status when roomCode changes and we're connected
+  useEffect(() => {
+    if (roomCode && connected) {
+      loadRoomStatus(roomCode);
+    }
+  }, [roomCode, connected, loadRoomStatus]);
+
   // Actions
   const handleCreateRoom = async () => {
     if (!selectedGameId || loadingMap.createRoom) return;
@@ -252,8 +575,9 @@ export default function AdminGameManagerPage() {
       try {
         const newRoom = await roomManagement.createRoom(selectedGameId, autoShowResults);
         setStatusMsg(`Room created successfully (code: ${newRoom.roomCode}) - Session activated! Players can now join. Go to "Rooms" tab to manage.`);
-        if(!roomCode) setRoomCode(newRoom.roomCode);
+        setRoomCode(newRoom.roomCode); // Always set the new room code
         setActivationFailed(false);
+        setPhase('lobby'); // Set phase to lobby since room is created and activated
       } catch (roomError) {
         // Fallback to SignalR method if API fails
         const createRoomPromise = createGameRoom(selectedGameId, autoShowResults);
@@ -264,7 +588,8 @@ export default function AdminGameManagerPage() {
         const rc = await Promise.race([createRoomPromise, timeoutPromise]);
         if (rc && typeof rc === 'string' && rc.trim()) { 
           setStatusMsg(`Room created successfully (code: ${rc})`); 
-          if(!roomCode) setRoomCode(rc);
+          setRoomCode(rc); // Always set the new room code
+          setPhase('lobby'); // Set phase to lobby since room is created
         } else { 
           setStatusMsg('Room created successfully'); 
         }
@@ -367,28 +692,46 @@ export default function AdminGameManagerPage() {
             <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200/50 text-amber-800 px-6 py-4 rounded-2xl text-sm font-medium shadow-sm backdrop-blur-sm">
               <div className="flex items-center justify-between">
                 <span>{statusMsg}</span>
-                {activationFailed && roomCode && (
-                  <button
-                    onClick={async () => {
-                      try {
-                        setLoading('activateSession', true);
-                        await activateGameSession(roomCode);
-                        setStatusMsg(`Session activated successfully! Players can now join room ${roomCode}.`);
-                        setActivationFailed(false);
-                      } catch (error) {
-                        console.error('Manual activation failed:', error);
-                        setStatusMsg(`Failed to activate session. Please try again or go to "Rooms" tab.`);
-                      } finally {
-                        setLoading('activateSession', false);
-                      }
-                    }}
-                    disabled={loadingMap.activateSession}
-                    className="ml-4 px-3 py-1.5 bg-amber-600 text-white rounded-lg text-xs font-semibold hover:bg-amber-700 disabled:opacity-50 flex items-center gap-2"
-                  >
-                    {loadingMap.activateSession && <Spinner size="w-3 h-3" />}
-                    Activate Now
-                  </button>
-                )}
+                <div className="flex gap-2">
+                  {activationFailed && roomCode && (
+                    <button
+                      onClick={async () => {
+                        try {
+                          setLoading('activateSession', true);
+                          await activateGameSession(roomCode);
+                          setStatusMsg(`Session activated successfully! Players can now join room ${roomCode}.`);
+                          setActivationFailed(false);
+                        } catch (error) {
+                          console.error('Manual activation failed:', error);
+                          setStatusMsg(`Failed to activate session. Please try again or go to "Rooms" tab.`);
+                        } finally {
+                          setLoading('activateSession', false);
+                        }
+                      }}
+                      disabled={loadingMap.activateSession}
+                      className="px-3 py-1.5 bg-amber-600 text-white rounded-lg text-xs font-semibold hover:bg-amber-700 disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {loadingMap.activateSession && <Spinner size="w-3 h-3" />}
+                      Activate Now
+                    </button>
+                  )}
+                  {statusMsg.includes('Unknown response') && roomCode && (
+                    <button
+                      onClick={() => loadRoomStatus(roomCode)}
+                      className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 flex items-center gap-2"
+                    >
+                      Retry
+                    </button>
+                  )}
+                  {statusMsg.includes('Server response unclear') && roomCode && (
+                    <button
+                      onClick={() => loadRoomStatus(roomCode)}
+                      className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 flex items-center gap-2"
+                    >
+                      Retry
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -507,6 +850,13 @@ export default function AdminGameManagerPage() {
                                   Switch
                                 </button>
                                 <button 
+                                  onClick={() => loadRoomStatus(r.roomCode)} 
+                                  className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium transition-all duration-200 hover:shadow-sm"
+                                  title="Refresh room status from server"
+                                >
+                                  Refresh
+                                </button>
+                                <button 
                                   onClick={() => router.push(`/admin/host/${r.roomCode}?gameId=${r.gameId || ''}`)} 
                                   className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-indigo-700 text-white hover:from-indigo-700 hover:to-indigo-800 text-xs font-medium transition-all duration-200 hover:shadow-md"
                                   title={r.phase === 'setup' ? 'Activate session to allow players to join' : 'Open host control panel'}
@@ -545,10 +895,38 @@ export default function AdminGameManagerPage() {
 
           {manageMode==='control' && phase==='setup' && (
             <div className="bg-white shadow rounded-xl p-6 border space-y-6">
-              <h2 className="text-lg font-bold tracking-wide text-gray-800 flex items-center gap-3">
-                Setup Room 
-                <ConnectionStatus showDetails={true} />
-              </h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-bold tracking-wide text-gray-800 flex items-center gap-3">
+                  Setup Room 
+                  <ConnectionStatus showDetails={true} />
+                </h2>
+                {roomCode && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => loadRoomStatus(roomCode)}
+                      className="px-3 py-1.5 text-xs rounded bg-blue-600 text-white font-semibold hover:bg-blue-700"
+                      title="Retry loading room status"
+                    >
+                      Retry
+                    </button>
+                    <button
+                      onClick={() => {
+                        setRoomCode('');
+                        setPhase('setup');
+                        setPlayers([]);
+                        setQuestion(null);
+                        setLeaderboard([]);
+                        setFinalResults(null);
+                        localStorage.removeItem('admin_current_room');
+                        setStatusMsg('Room cleared');
+                      }}
+                      className="px-3 py-1.5 text-xs rounded bg-red-600 text-white font-semibold hover:bg-red-700"
+                    >
+                      Clear Room
+                    </button>
+                  </div>
+                )}
+              </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wide text-gray-600 mb-1">Select Game</label>

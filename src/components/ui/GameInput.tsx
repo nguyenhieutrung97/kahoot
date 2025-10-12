@@ -14,12 +14,12 @@ export const GameInput = forwardRef<HTMLInputElement, GameInputProps>(
       <div className={cn('space-y-1', fullWidth && 'w-full')}>
         <input
           className={cn(
-            'px-4 py-3 border-2 rounded font-medium text-center uppercase tracking-wide',
-            'focus:outline-none focus:border-red-600 focus:ring-0 transition-colors',
-            'placeholder:text-gray-400 placeholder:normal-case',
+            'px-4 py-3 border-2 rounded-lg font-medium text-center uppercase tracking-wide',
+            'focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200',
+            'placeholder:text-muted-foreground placeholder:normal-case bg-background',
             error 
-              ? 'border-red-500 text-red-900 placeholder:text-red-400' 
-              : 'border-gray-300',
+              ? 'border-destructive text-destructive placeholder:text-destructive/60 bg-destructive/5' 
+              : 'border-border hover:border-primary/50',
             fullWidth && 'w-full',
             className
           )}
@@ -27,7 +27,7 @@ export const GameInput = forwardRef<HTMLInputElement, GameInputProps>(
           {...props}
         />
         {error && (
-          <p className="text-sm text-red-600 font-medium normal-case">
+          <p className="text-sm text-destructive font-medium normal-case">
             {error}
           </p>
         )}
