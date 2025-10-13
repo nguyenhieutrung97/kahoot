@@ -78,20 +78,23 @@ export default function AdminHostRoomPage(props: { params: Promise<{ roomCode: s
     onLobbyUpdate: (p: any) => { setPlayers(p.players || []); setCanStart(!!p.canStart || (p.players||[]).length>0); },
     onPlayerJoined: (p: any) => {
       const incoming = (p.players || []) as LobbyPlayer[];
-      if (incoming.length === 0) {
-        // If minimal payload, request status instead of wiping current list
-        (async () => { try { await requestRoomStatus(roomCode); } catch {} })();
+      // If backend now provides players list, replace with normalized merge (preserve existing player objects w/ scores)
+      if (Array.isArray(incoming) && incoming.length) {
+        setPlayers(prev => {
+          const index = new Map<string, LobbyPlayer>();
+          prev.forEach(pl => { const key = (pl.playerId||pl.id||'').toString(); if (key) index.set(key, pl); });
+          incoming.forEach(pl => {
+            const key = (pl.playerId||pl.id||'').toString();
+            if (!key) return;
+            if (!index.has(key)) index.set(key, pl); // add new
+          });
+          return Array.from(index.values());
+        });
+        setCanStart(true);
         return;
       }
-      // Merge: add new players not already present
-      setPlayers(prev => {
-        const byId = new Map<string,string>();
-        prev.forEach(pl => { const id = (pl.playerId||pl.id||'').toString(); if (id) byId.set(id, 'prev'); });
-        const merged = [...prev];
-        incoming.forEach(pl => { const id = (pl.playerId||pl.id||'').toString(); if (id && !byId.has(id)) merged.push(pl); });
-        return merged;
-      });
-      setCanStart(true);
+      // Fallback: request full lobby info if players list absent
+      (async () => { try { await requestRoomStatus(roomCode); } catch {} })();
     },
     onGameStarted: () => { setPhase('game'); setStatusMsg('Game started'); setQuestion(null); setLeaderboard([]); },
     onHostNewQuestion: (payload: QuestionEnvelope) => {

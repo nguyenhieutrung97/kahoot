@@ -241,11 +241,20 @@ export default function Lobby() {
     },
     onPlayerJoined: (payload) => {
       const rawPlayers = payload && (payload.players || (payload as any).Players);
-      if (rawPlayers && Array.isArray(rawPlayers)) {
+      if (rawPlayers && Array.isArray(rawPlayers) && rawPlayers.length) {
         debugLogPlayers('PlayerJoined/raw', rawPlayers);
-        const serverPlayers = mapServerPlayersMemo(rawPlayers);
-        debugLogPlayers('PlayerJoined/mapped', serverPlayers as any);
-        setPlayers(serverPlayers);
+        const incoming = mapServerPlayersMemo(rawPlayers);
+        debugLogPlayers('PlayerJoined/mapped', incoming as any);
+        setPlayers(prev => {
+          // Merge without losing existing enriched info (avatar, etc.)
+          const index = new Map<string, Player>();
+          prev.forEach(p => { const id = String(p.id||''); if (id) index.set(id, p); });
+          incoming.forEach(p => { const id = String(p.id||''); if (id && !index.has(id)) index.set(id, p); });
+          return Array.from(index.values());
+        });
+      } else {
+        // Fallback: request full status if event came without players list (legacy minimal broadcast)
+        try { ensureConnected().then(()=> (client as any)?.invoke?.('GetRoomStatus', joinCode)).catch(()=>{}); } catch {}
       }
     },
     onGameStarted: (payload) => {

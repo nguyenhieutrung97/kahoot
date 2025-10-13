@@ -337,23 +337,8 @@ export default function QuestionPage() {
       setHasSubmitted(false);
     }
   }, [hasSubmitted, selectedIds, submittedSnapshot, timeLeft, submitMultipleAnswers]);
-
-  // Early error UI
-  if (fatalError) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <GameHeader title="QUESTION" withSvgBorder />
-        <main className="flex items-center justify-center min-h-[calc(100vh-120px)] px-4">
-          <div className="bg-white p-8 rounded-lg shadow-lg border-2 border-red-200 max-w-md w-full text-center">
-            <h2 className="text-2xl font-bold text-red-600 uppercase tracking-wide mb-4">ERROR</h2>
-            <div className="w-16 h-1 bg-red-600 mx-auto mb-4" />
-            <p className="text-gray-700 font-medium mb-6">{fatalError}</p>
-            <p className="text-xs text-gray-400">If not redirected automatically, <button onClick={() => router.push('/')} className="underline text-red-600">click here</button>.</p>
-          </div>
-        </main>
-      </div>
-    );
-  }
+  // Removed early return for fatalError to preserve stable hook order.
+  // We'll render an overlay error state inside the main JSX instead.
 
   // NEW helper to locate stored session for this player
   const findStoredSession = useCallback(() => {
@@ -429,6 +414,16 @@ export default function QuestionPage() {
       <GameHeader title="QUESTION" withSvgBorder />
       <main className="px-6 py-6 max-w-3xl mx-auto">
         <div className="bg-white/90 backdrop-blur rounded-xl p-6 shadow-xl border border-gray-200/70 relative overflow-hidden">
+          {fatalError && (
+            <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center z-20">
+              <div className="bg-white p-8 rounded-lg shadow-lg border-2 border-red-200 max-w-md w-full text-center">
+                <h2 className="text-2xl font-bold text-red-600 uppercase tracking-wide mb-4">ERROR</h2>
+                <div className="w-16 h-1 bg-red-600 mx-auto mb-4" />
+                <p className="text-gray-700 font-medium mb-6">{fatalError}</p>
+                <p className="text-xs text-gray-400">If not redirected automatically, <button onClick={() => router.push('/')} className="underline text-red-600">click here</button>.</p>
+              </div>
+            </div>
+          )}
           {!connected && (
             <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center z-10">
               <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin mb-3" />
