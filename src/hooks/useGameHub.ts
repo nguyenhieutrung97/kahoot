@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { getGameHub, ensureStarted, forceReconnect, startConnectionHealthCheck, stopConnectionHealthCheck, getConnectionStatus } from '@/lib/gameHub';
+import { useEffect, useMemo, useState, useRef } from 'react';
+import { getConnectionStatus, startConnectionHealthCheck, stopConnectionHealthCheck } from '@/lib/gameHub';
+import { getHubClient } from '@/lib/HubClient';
 import type { HubEventPayloads, HubEventHandlerProps } from '@/types/hub-events';
 
 // Derive internal handlers type from HubEventHandlerProps while preserving backwards compatibility
@@ -11,7 +12,6 @@ type Handlers = HubEventHandlerProps & {
 };
 
 export function useGameHub(handlers: Handlers = {}) {
-  const connRef = useRef<ReturnType<typeof getGameHub> | null>(null);
   const [connected, setConnected] = useState(false);
   const [reconnecting, setReconnecting] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
@@ -20,10 +20,8 @@ export function useGameHub(handlers: Handlers = {}) {
   const pendingRoomResolvers = useRef<((rc: string)=>void)[]>([]); // always non-null
   const statusMethodRef = useRef<string | null>(null); // cache first successful status method
 
-  const connection = useMemo(() => {
-    if (!connRef.current) { connRef.current = getGameHub(); }
-    return connRef.current;
-  }, []);
+  const hubClient = useMemo(() => getHubClient(), []);
+  const connection = hubClient.connection();
 
   useEffect(() => {
     let mounted = true;
@@ -92,7 +90,7 @@ export function useGameHub(handlers: Handlers = {}) {
 
     const startIfNeeded = async () => {
       try { 
-        await ensureStarted(c); 
+        await hubClient.start(); 
         if (mounted) { 
           setConnected(true); 
           setConnectionError(null);
@@ -120,12 +118,13 @@ export function useGameHub(handlers: Handlers = {}) {
     reconnecting,
     connectionError,
     client: connection,
-    ensureConnected: () => ensureStarted(connection),
+  ensureConnected: async () => { await hubClient.start(); },
+  attachHost: async (roomCode: string) => { await hubClient.start(); return connection.invoke('AttachHost', roomCode); },
     forceReconnect: async () => {
       setReconnecting(true);
       setConnectionError(null);
       try {
-        await forceReconnect();
+        await hubClient.reconnect();
         setConnected(true);
         setReconnecting(false);
       } catch (err) {
@@ -136,7 +135,7 @@ export function useGameHub(handlers: Handlers = {}) {
     },
     getConnectionStatus: () => getConnectionStatus(),
     createGameRoom: async (gameId: string, autoShowResults = true): Promise<string> => {
-      await ensureStarted(connection);
+      await hubClient.start();
       const eventPromise = new Promise<string>(resolve => {
         pendingRoomResolvers.current.push(resolve);
       });
@@ -150,7 +149,7 @@ export function useGameHub(handlers: Handlers = {}) {
       };
       let invokeResult: any;
       try {
-        invokeResult = await connection.invoke('CreateGameRoom', gameId, autoShowResults);
+  invokeResult = await hubClient.createGameRoom(gameId, autoShowResults);
       } catch (err) {
         pendingRoomResolvers.current = [];
         throw err;
@@ -166,12 +165,12 @@ export function useGameHub(handlers: Handlers = {}) {
       const timeoutPromise = new Promise<string>(resolve => setTimeout(() => resolve(''), 5000));
       return Promise.race([eventPromise, timeoutPromise]);
     },
-    joinGame: async (roomCode: string, userName: string, playerId?: string | null) => { await ensureStarted(connection); return connection.invoke('JoinGame', roomCode, userName, playerId ?? null); },
-    startGame: async (roomCode: string) => { await ensureStarted(connection); return connection.invoke('StartGame', roomCode); },
-    submitAnswer: async (answerId: string) => { await ensureStarted(connection); return connection.invoke('SubmitAnswer', answerId); },
-    submitMultipleAnswers: async (answerIds: string[]) => { await ensureStarted(connection); return connection.invoke('SubmitMultipleAnswers', answerIds); },
+  joinGame: async (roomCode: string, userName: string, playerId?: string | null) => hubClient.joinGame(roomCode, userName, playerId),
+  startGame: async (roomCode: string) => hubClient.startGame(roomCode),
+  submitAnswer: async (answerId: string) => hubClient.submitAnswer(answerId),
+  submitMultipleAnswers: async (answerIds: string[]) => hubClient.submitMultipleAnswers(answerIds),
     requestRoomStatus: async (roomCode?: string): Promise<any> => {
-      await ensureStarted(connection);
+  await hubClient.start();
       const missingPattern = (msg: string) => {
         const lower = msg.toLowerCase();
         return lower.includes('does not exist') || lower.includes('no method') || lower.includes('could not find');
@@ -209,10 +208,10 @@ export function useGameHub(handlers: Handlers = {}) {
       }
       return { ok: false, reason: 'unknown' };
     },
-    proceedToNextQuestion: async (roomCode: string) => { await ensureStarted(connection); return connection.invoke('ProceedToNextQuestion', roomCode); },
-    showFinalLeaderboard: async (roomCode: string) => { await ensureStarted(connection); return connection.invoke('ShowFinalLeaderboard', roomCode); },
-    updateAutoShowResults: async (roomCode: string, autoShowResults: boolean) => { await ensureStarted(connection); return connection.invoke('UpdateAutoShowResults', roomCode, autoShowResults); },
-    activateGameSession: async (roomCode: string) => { await ensureStarted(connection); return connection.invoke('ActivateGameSession', roomCode); },
+  proceedToNextQuestion: async (roomCode: string) => hubClient.proceedToNextQuestion(roomCode),
+  showFinalLeaderboard: async (roomCode: string) => hubClient.showFinalLeaderboard(roomCode),
+  updateAutoShowResults: async (roomCode: string, autoShowResults: boolean) => hubClient.updateAutoShowResults(roomCode, autoShowResults),
+  activateGameSession: async (roomCode: string) => hubClient.activateGameSession(roomCode),
   };
 }
 

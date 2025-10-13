@@ -67,7 +67,7 @@ export default function AdminHostRoomPage(props: { params: Promise<{ roomCode: s
   }, []);
   useEffect(() => () => { stopTimer(); stopAutoAdvanceTimer(); }, []);
 
-  const { ensureConnected, startGame, proceedToNextQuestion, showFinalLeaderboard, requestRoomStatus, updateAutoShowResults, activateGameSession } = useGameHub({
+  const { ensureConnected, attachHost, startGame, proceedToNextQuestion, showFinalLeaderboard, requestRoomStatus, updateAutoShowResults, activateGameSession } = useGameHub({
     onLobbyInfo: (p: any) => { 
       setPlayers(p.players || []); 
       setCanStart(!!p.canStart || (p.players||[]).length>0); 
@@ -76,7 +76,23 @@ export default function AdminHostRoomPage(props: { params: Promise<{ roomCode: s
       if (typeof p.autoShowResults === 'boolean') setAutoShowResults(p.autoShowResults); 
     },
     onLobbyUpdate: (p: any) => { setPlayers(p.players || []); setCanStart(!!p.canStart || (p.players||[]).length>0); },
-    onPlayerJoined: (p: any) => { setPlayers(p.players || []); setCanStart((p.players||[]).length>0); },
+    onPlayerJoined: (p: any) => {
+      const incoming = (p.players || []) as LobbyPlayer[];
+      if (incoming.length === 0) {
+        // If minimal payload, request status instead of wiping current list
+        (async () => { try { await requestRoomStatus(roomCode); } catch {} })();
+        return;
+      }
+      // Merge: add new players not already present
+      setPlayers(prev => {
+        const byId = new Map<string,string>();
+        prev.forEach(pl => { const id = (pl.playerId||pl.id||'').toString(); if (id) byId.set(id, 'prev'); });
+        const merged = [...prev];
+        incoming.forEach(pl => { const id = (pl.playerId||pl.id||'').toString(); if (id && !byId.has(id)) merged.push(pl); });
+        return merged;
+      });
+      setCanStart(true);
+    },
     onGameStarted: () => { setPhase('game'); setStatusMsg('Game started'); setQuestion(null); setLeaderboard([]); },
     onHostNewQuestion: (payload: QuestionEnvelope) => {
       setQuestion(payload);
@@ -115,7 +131,22 @@ export default function AdminHostRoomPage(props: { params: Promise<{ roomCode: s
     onError: (m: any) => setStatusMsg(typeof m === 'string' ? m : (m?.message || 'Error'))
   });
 
-  useEffect(() => { (async() => { try { await ensureConnected(); await requestRoomStatus(roomCode); setStatusMsg('Connected - Game session is in Completed state. Click "Activate Session" to allow players to join.'); } catch (e:any) { console.error('[HostRoom] initial connect failed', e); setStatusMsg(`Unable to connect: ${e?.message||'error'}`); } })(); }, [roomCode, ensureConnected, requestRoomStatus]);
+  const initRef = useRef(false);
+  useEffect(() => {
+    if (initRef.current) return; // guard against duplicate mounts/renders
+    initRef.current = true;
+    (async() => {
+      try {
+        await ensureConnected();
+        await attachHost(roomCode);
+        await requestRoomStatus(roomCode);
+        setStatusMsg('Connected - Game session is in Completed state. Click "Activate Session" to allow players to join.');
+      } catch (e:any) {
+        console.error('[HostRoom] initial connect failed', e);
+        setStatusMsg(`Unable to connect: ${e?.message||'error'}`);
+      }
+    })();
+  }, [roomCode, ensureConnected, requestRoomStatus, attachHost]);
 
   const handleStart = async () => { 
     try { 

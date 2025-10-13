@@ -1028,20 +1028,33 @@ export default function AdminGameManagerPage() {
                               Refresh
                             </button>
                             <button 
-                              onClick={() => router.push(`/admin/host/${r.roomCode}?gameId=${r.gameId || ''}`)} 
+                              onClick={async () => {
+                                const stateStr = getGameSessionStateString(r.state);
+                                if (stateStr === 'Completed' || stateStr === 'Canceled') {
+                                  try {
+                                    setStatusMsg(`Activating room ${r.roomCode}...`);
+                                    // Optimistic UI update: mark as Lobby immediately
+                                    setRooms(prev => prev.map(room => room.roomCode === r.roomCode ? { ...room, state: 'Lobby' } : room));
+                                    await roomManagement.activateRoom(r.roomCode);
+                                    // Reload full list to ensure consistency
+                                    await loadManagedRooms();
+                                    setStatusMsg(`Room ${r.roomCode} activated. Redirecting to host view...`);
+                                    router.push(`/admin/host/${r.roomCode}?gameId=${r.gameId || ''}`);
+                                  } catch (err) {
+                                    console.error('Activation failed', err);
+                                    setStatusMsg(`Failed to activate room ${r.roomCode}`);
+                                    // Revert optimistic change if needed by reloading
+                                    await loadManagedRooms();
+                                  }
+                                }
+                              }} 
                               className={`flex-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs font-semibold transition-all duration-200 hover:shadow-md ${
-                                getGameSessionStateString(r.state) === 'Completed' || getGameSessionStateString(r.state) === 'Canceled'
-                                  ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white hover:from-indigo-700 hover:to-indigo-800'
-                                  : 'bg-gradient-to-r from-gray-400 to-gray-500 text-white cursor-not-allowed opacity-60'
+                                (() => { const s = getGameSessionStateString(r.state); return (s === 'Completed' || s === 'Canceled') ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white hover:from-indigo-700 hover:to-indigo-800' : 'bg-gradient-to-r from-gray-400 to-gray-500 text-white cursor-not-allowed opacity-60'; })()
                               }`}
-                              disabled={getGameSessionStateString(r.state) !== 'Completed' && getGameSessionStateString(r.state) !== 'Canceled'}
-                              title={
-                                getGameSessionStateString(r.state) === 'Completed' || getGameSessionStateString(r.state) === 'Canceled'
-                                  ? 'Activate session to allow players to join'
-                                  : 'End the current game first to host a new session'
-                              }
+                              disabled={(() => { const s = getGameSessionStateString(r.state); return !(s === 'Completed' || s === 'Canceled'); })()}
+                              title={( () => { const s = getGameSessionStateString(r.state); return (s === 'Completed' || s === 'Canceled') ? 'Activate session to allow players to join' : 'End the current game first to host a new session'; })()}
                             >
-                              {getGameSessionStateString(r.state) === 'Completed' || getGameSessionStateString(r.state) === 'Canceled' ? 'Activate' : 'End First'}
+                              {(() => { const s = getGameSessionStateString(r.state); return (s === 'Completed' || s === 'Canceled') ? 'Activate' : 'End First'; })()}
                             </button>
                             {getGameSessionStateString(r.state) !== 'Completed' && getGameSessionStateString(r.state) !== 'Canceled' && (
                               <button 

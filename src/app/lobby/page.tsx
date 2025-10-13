@@ -149,7 +149,7 @@ export default function Lobby() {
       } catch {}
       router.replace(`/?kicked=1&reason=${encodeURIComponent(reason)}`);
     },
-    onJoinedGame: (payload) => {
+  onJoinedGame: (payload) => {
       // --- handle and cache game title (duplicate key issue fallback) ---
       try {
         const rawTitle = (payload?.gameTitle ?? payload?.title ?? payload?.GameTitle ?? '') as string;
@@ -187,9 +187,10 @@ export default function Lobby() {
         });
       }
       // Players mapping
-      if (payload.players && Array.isArray(payload.players)) {
-        debugLogPlayers('JoinedGame/raw', payload.players);
-        const serverPlayers = mapServerPlayersMemo(payload.players);
+      const rawPlayers = (payload.players || (payload as any).Players || []);
+      if (rawPlayers && Array.isArray(rawPlayers)) {
+        debugLogPlayers('JoinedGame/raw', rawPlayers);
+        const serverPlayers = mapServerPlayersMemo(rawPlayers);
         debugLogPlayers('JoinedGame/mapped', serverPlayers as any);
         setPlayers(serverPlayers);
         try {
@@ -211,9 +212,10 @@ export default function Lobby() {
       setInitializing(false);
     },
     onLobbyInfo: (payload) => {
-      if (payload.players && Array.isArray(payload.players)) {
-        debugLogPlayers('LobbyInfo/raw', payload.players);
-        const serverPlayers = mapServerPlayersMemo(payload.players);
+      const rawPlayers = (payload.players || (payload as any).Players || []);
+      if (rawPlayers && Array.isArray(rawPlayers)) {
+        debugLogPlayers('LobbyInfo/raw', rawPlayers);
+        const serverPlayers = mapServerPlayersMemo(rawPlayers);
         debugLogPlayers('LobbyInfo/mapped', serverPlayers as any);
         setPlayers(serverPlayers);
         try {
@@ -228,18 +230,20 @@ export default function Lobby() {
       if (payload.players && Array.isArray(payload.players) && payload.players.length && initializing) setInitializing(false);
     },
     onLobbyUpdate: (payload) => {
-      if (payload && Array.isArray(payload.players)) {
-        debugLogPlayers('LobbyUpdate/raw', payload.players);
-        const serverPlayers = mapServerPlayersMemo(payload.players);
+      const rawPlayers = (payload && ((payload.players) || (payload as any).Players)) || [];
+      if (payload && Array.isArray(rawPlayers)) {
+        debugLogPlayers('LobbyUpdate/raw', rawPlayers);
+        const serverPlayers = mapServerPlayersMemo(rawPlayers);
         debugLogPlayers('LobbyUpdate/mapped', serverPlayers as any);
         setPlayers(serverPlayers);
       }
-      if (payload && Array.isArray(payload.players) && payload.players.length && initializing) setInitializing(false);
+      if (payload && Array.isArray(rawPlayers) && rawPlayers.length && initializing) setInitializing(false);
     },
     onPlayerJoined: (payload) => {
-      if (payload && Array.isArray(payload.players)) {
-        debugLogPlayers('PlayerJoined/raw', payload.players);
-        const serverPlayers = mapServerPlayersMemo(payload.players);
+      const rawPlayers = payload && (payload.players || (payload as any).Players);
+      if (rawPlayers && Array.isArray(rawPlayers)) {
+        debugLogPlayers('PlayerJoined/raw', rawPlayers);
+        const serverPlayers = mapServerPlayersMemo(rawPlayers);
         debugLogPlayers('PlayerJoined/mapped', serverPlayers as any);
         setPlayers(serverPlayers);
       }
