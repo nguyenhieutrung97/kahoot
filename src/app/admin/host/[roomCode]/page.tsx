@@ -241,6 +241,22 @@ export default function AdminHostRoomPage({ params }: { params: Promise<{ roomCo
     onError: (m: any) => setStatusMsg(typeof m === 'string' ? m : (m?.message || 'Error'))
   });
 
+  // Clear connection reload attempts when successfully connected
+  useEffect(() => {
+    const status = getConnectionStatus();
+    if (status.connected && status.state === 'Connected') {
+      console.log('[HostPage] SignalR connected successfully, clearing reload attempts');
+      sessionStorage.removeItem(`connection-reload-attempts-${roomCode}`);
+      setConnectionReloadAttempts(0);
+      
+      // Clear the timeout if connection is established
+      if (connectionTimeoutRef.current) {
+        clearTimeout(connectionTimeoutRef.current);
+        connectionTimeoutRef.current = null;
+      }
+    }
+  }, [getConnectionStatus, roomCode]);
+
   function normalizePlayer(raw: any): LobbyPlayer {
     if (!raw) return {};
     return {
@@ -723,7 +739,19 @@ export default function AdminHostRoomPage({ params }: { params: Promise<{ roomCo
         {statusMsg && (
           <div className="bg-gradient-to-r from-yellow-50 to-yellow-100/50 border border-yellow-200/50 text-yellow-800 px-6 py-3 rounded-2xl text-xs flex items-center gap-3 shadow-sm backdrop-blur-sm">
             <Loader2 className="w-4 h-4 animate-spin"/>
-            <span className="font-medium">{statusMsg}</span>
+            <span className="font-medium">
+              {statusMsg}
+              {connectionReloadAttempts > 0 && (
+                <span className="ml-2 text-orange-600">
+                  (Auto-reload attempt {connectionReloadAttempts}/{MAX_CONNECTION_RELOAD_ATTEMPTS})
+                </span>
+              )}
+            </span>
+          </div>
+        )}
+        {connectionReloadAttempts >= MAX_CONNECTION_RELOAD_ATTEMPTS && (
+          <div className="bg-gradient-to-r from-red-50 to-red-100/50 border border-red-200/50 text-red-800 px-6 py-3 rounded-2xl text-xs flex items-center gap-3 shadow-sm backdrop-blur-sm">
+            <span className="font-medium">⚠️ Connection issues detected. Please check your network and refresh manually.</span>
           </div>
         )}
         {debugEnabled && debugLines.length > 0 && (
