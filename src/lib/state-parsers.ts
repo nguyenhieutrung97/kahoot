@@ -1,5 +1,5 @@
 // Parsers for backend game/session states. Backend enums:
-// GameState: Draft=0, Active=1, InLobby=2, InActive=3
+// GameState: Draft=0, Published=1, Archived=2
 // GameSessionState: Lobby=0, InProgress=1, WaitingForHost=2, Completed=3, Canceled=4
 
 export type RawState = number | string | undefined | null;
@@ -9,12 +9,14 @@ export const parseGameState = (raw?: RawState): number | undefined => {
   if (typeof raw === 'number') return raw;
   const map: Record<string, number> = {
     draft: 0,
+    published: 1,
+    archived: 2,
+    // historical aliases for backward compatibility
+    ready: 1,
     active: 1,
-    inlobby: 2,
-    inactive: 3,
-    // historical aliases
-    ready: 2,
-    live: 3
+    live: 1,
+    inactive: 2,
+    closed: 2
   };
   return map[String(raw).replace(/\s+/g, '').toLowerCase()];
 };

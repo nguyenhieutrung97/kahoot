@@ -2,10 +2,9 @@
 
 // Enums
 export enum GameState {
-  Draft = 0,
-  Ready = 1,
-  Live = 2,
-  Closed = 3
+  Draft = 0,      // Game is being created/edited
+  Published = 1,  // Game is ready to be used in sessions
+  Archived = 2    // Game is no longer available for new sessions
 }
 
 export enum QuestionType {

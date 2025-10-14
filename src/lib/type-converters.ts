@@ -97,12 +97,10 @@ export const getGameStateDisplayText = (state: GameState): string => {
   switch (state) {
     case GameState.Draft:
       return 'Draft';
-    case GameState.Ready:
-      return 'Ready';
-    case GameState.Live:
-      return 'Live';
-    case GameState.Closed:
-      return 'Closed';
+    case GameState.Published:
+      return 'Published';
+    case GameState.Archived:
+      return 'Archived';
     default:
       return 'Unknown';
   }
@@ -131,11 +129,9 @@ export const getGameStateColorClass = (state: GameState): string => {
   switch (state) {
     case GameState.Draft:
       return 'bg-yellow-100 text-yellow-800';
-    case GameState.Ready:
-      return 'bg-blue-100 text-blue-800';
-    case GameState.Live:
+    case GameState.Published:
       return 'bg-green-100 text-green-800';
-    case GameState.Closed:
+    case GameState.Archived:
       return 'bg-gray-100 text-gray-800';
     default:
       return 'bg-gray-100 text-gray-800';

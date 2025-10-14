@@ -111,6 +111,7 @@ export interface HubEventPayloads {
   PlayerDisconnected: PlayerBasic;
   HostDisconnected: { hostId?: string; roomCode?: string; [k: string]: any };
   RoomClosed: { roomCode?: string; reason?: string; [k: string]: any };
+  RoomEnded: { roomCode?: string; reason?: string; [k: string]: any };
   KickedFromGame: { reason?: string; [k: string]: any };
   ReconnectState: any;
   AllPlayersAnswered: { questionIndex?: number; totalPlayers?: number; [k: string]: any };

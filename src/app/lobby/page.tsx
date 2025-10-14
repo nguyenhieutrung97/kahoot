@@ -7,7 +7,6 @@ import { getDeterministicAvatar } from '@/lib/utils';
 import { useGameHub } from '@/hooks/useGameHub';
 import { useGame } from '@/hooks/useGames';
 import { useQuestions } from '@/hooks/useQuestions';
-import { GameState } from '@/types/api';
 import { isGameReadyForLobby } from '@/lib/state-parsers';
 import { useFinalResult } from '@/context/FinalResultContext'; // NEW
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, use } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useGameHub } from '@/hooks/useGameHub';
 import { GameHeader } from '@/components/ui/GameHeader';
@@ -9,11 +9,14 @@ import { Loader2, Users, Gamepad2, Timer, Trophy, ArrowLeft, Play, Crown } from 
 interface LobbyPlayer { id?: string; playerId?: string; userName?: string; name?: string; isConnected?: boolean; score?: number; rank?: number; progress?: any; }
 interface QuestionEnvelope { questionIndex?: number; totalQuestions?: number; questionText?: string; answers?: any[]; timeLimitSeconds?: number; startTime?: string; isMultipleChoice?: boolean; correctAnswers?: any[]; correctAnswer?: any; questionType?: string; }
 
-export default function AdminHostRoomPage(props: { params: Promise<{ roomCode: string }> }) {
-  const { roomCode } = use(props.params);
+export default function AdminHostRoomPage({ params }: { params: Promise<{ roomCode: string }> }) {
+  const { roomCode } = React.use(params);
   const searchParams = useSearchParams();
   const gameId = searchParams.get('gameId') || undefined;
   const router = useRouter();
+
+  // Log when admin host page is accessed
+  console.log(`[HostPage] Admin host page accessed for room: ${roomCode}, gameId: ${gameId}`);
 
   const [phase, setPhase] = useState<'lobby' | 'game' | 'results'>('lobby');
   const [players, setPlayers] = useState<LobbyPlayer[]>([]);
@@ -30,6 +33,16 @@ export default function AdminHostRoomPage(props: { params: Promise<{ roomCode: s
   const [isSessionActivated, setIsSessionActivated] = useState<boolean>(false);
   const timerRef = useRef<any>(null);
   const autoAdvanceTimerRef = useRef<any>(null);
+
+  // First load reload mechanism to ensure clean GameHub connection
+  const hasReloadedRef = useRef(false);
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
+
+  // Auto-reload mechanism for connection failures
+  const connectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [connectionReloadAttempts, setConnectionReloadAttempts] = useState(0);
+  const MAX_CONNECTION_RELOAD_ATTEMPTS = 3;
+  const CONNECTION_TIMEOUT_MS = 10000; // 10 seconds
 
   const stopTimer = () => { if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; } };
   const stopAutoAdvanceTimer = () => { if (autoAdvanceTimerRef.current) { clearInterval(autoAdvanceTimerRef.current); autoAdvanceTimerRef.current = null; } };
@@ -67,7 +80,81 @@ export default function AdminHostRoomPage(props: { params: Promise<{ roomCode: s
   }, []);
   useEffect(() => () => { stopTimer(); stopAutoAdvanceTimer(); }, []);
 
-  const { ensureConnected, attachHost, startGame, proceedToNextQuestion, showFinalLeaderboard, requestRoomStatus, updateAutoShowResults, activateGameSession } = useGameHub({
+  // First load reload effect to ensure clean GameHub connection
+  useEffect(() => {
+    const handleFirstLoad = () => {
+      // Check if this is truly the first load by looking at session storage
+      const hasVisited = sessionStorage.getItem(`host-page-visited-${roomCode}`);
+      
+      if (!hasVisited && !hasReloadedRef.current && typeof window !== 'undefined') {
+        console.log('[HostPage] First load detected, scheduling reload for better GameHub connection...');
+        hasReloadedRef.current = true;
+        sessionStorage.setItem(`host-page-visited-${roomCode}`, 'true');
+        
+        // Delay reload slightly to avoid immediate reload loop
+        setTimeout(() => {
+          console.log('[HostPage] Reloading page for clean GameHub connection...');
+          window.location.reload();
+        }, 500);
+        return;
+      }
+      
+      // If we've already visited, mark as not first load
+      setIsFirstLoad(false);
+      console.log('[HostPage] Not first load, proceeding with normal connection...');
+    };
+
+    handleFirstLoad();
+  }, [roomCode]);
+
+  // Connection timeout monitoring - auto reload if no connection after timeout
+  useEffect(() => {
+    // Don't start timeout monitoring during first load
+    if (isFirstLoad) return;
+    
+    // Skip if we've exceeded max reload attempts
+    if (connectionReloadAttempts >= MAX_CONNECTION_RELOAD_ATTEMPTS) {
+      console.log('[HostPage] Max connection reload attempts reached, stopping auto-reload');
+      return;
+    }
+
+    // Start connection timeout
+    connectionTimeoutRef.current = setTimeout(() => {
+      const status = getConnectionStatus();
+      console.log('[HostPage] Connection timeout check:', status);
+      
+      if (!status.connected && status.state !== 'Connected') {
+        const attemptNum = connectionReloadAttempts + 1;
+        console.log(`[HostPage] No SignalR connection after ${CONNECTION_TIMEOUT_MS}ms, auto-reloading (attempt ${attemptNum}/${MAX_CONNECTION_RELOAD_ATTEMPTS})`);
+        
+        // Store attempt count in sessionStorage to persist across reloads
+        sessionStorage.setItem(`connection-reload-attempts-${roomCode}`, attemptNum.toString());
+        
+        // Reload the page
+        window.location.reload();
+      } else {
+        console.log('[HostPage] Connection timeout check passed - SignalR connected');
+      }
+    }, CONNECTION_TIMEOUT_MS);
+
+    // Load attempt count from sessionStorage
+    const storedAttempts = sessionStorage.getItem(`connection-reload-attempts-${roomCode}`);
+    if (storedAttempts) {
+      const attempts = parseInt(storedAttempts, 10);
+      if (!isNaN(attempts) && attempts !== connectionReloadAttempts) {
+        setConnectionReloadAttempts(attempts);
+      }
+    }
+
+    return () => {
+      if (connectionTimeoutRef.current) {
+        clearTimeout(connectionTimeoutRef.current);
+        connectionTimeoutRef.current = null;
+      }
+    };
+  }, [isFirstLoad, connectionReloadAttempts, roomCode]);
+
+  const { ensureConnected, attachHost, startGame, proceedToNextQuestion, showFinalLeaderboard, requestRoomStatus, updateAutoShowResults, activateGameSession, getConnectionStatus, endRoomSession } = useGameHub({
     onLobbyInfo: (p: any) => { 
       setPlayers(p.players || []); 
       setCanStart(!!p.canStart || (p.players||[]).length>0); 
@@ -76,6 +163,18 @@ export default function AdminHostRoomPage(props: { params: Promise<{ roomCode: s
       if (typeof p.autoShowResults === 'boolean') setAutoShowResults(p.autoShowResults); 
     },
     onLobbyUpdate: (p: any) => { setPlayers(p.players || []); setCanStart(!!p.canStart || (p.players||[]).length>0); },
+    onJoinedGame: (p: any) => {
+      // Treat JoinedGame similarly to a lobby hydration event for host visibility (some flows may emit this instead of LobbyInfo)
+      if (p && Array.isArray(p.players)) {
+        setPlayers(prev => {
+          const map = new Map<string, any>();
+          prev.forEach(pl => { const k = (pl.playerId||pl.id||'').toString(); if (k) map.set(k, pl); });
+          p.players.forEach((pl: any) => { const k = (pl.playerId||pl.id||'').toString(); if (k && !map.has(k)) map.set(k, normalizePlayer(pl)); });
+          return Array.from(map.values());
+        });
+        setCanStart(true);
+      }
+    },
     onPlayerJoined: (p: any) => {
       const incoming = (p.players || []) as LobbyPlayer[];
       // If backend now provides players list, replace with normalized merge (preserve existing player objects w/ scores)
@@ -86,15 +185,23 @@ export default function AdminHostRoomPage(props: { params: Promise<{ roomCode: s
           incoming.forEach(pl => {
             const key = (pl.playerId||pl.id||'').toString();
             if (!key) return;
-            if (!index.has(key)) index.set(key, pl); // add new
+            if (!index.has(key)) index.set(key, normalizePlayer(pl));
           });
           return Array.from(index.values());
         });
         setCanStart(true);
         return;
       }
-      // Fallback: request full lobby info if players list absent
-      (async () => { try { await requestRoomStatus(roomCode); } catch {} })();
+      // Fallback: Attempt a lobby info request (prefer GetLobbyInfo) if players list absent
+      (async () => { 
+        try { 
+          const status = await requestRoomStatus(roomCode); 
+          if (status?.data?.players && Array.isArray(status.data.players)) {
+            setPlayers(status.data.players.map((pl: any) => normalizePlayer(pl)));
+            setCanStart((status.data.players||[]).length>0);
+          }
+        } catch {}
+      })();
     },
     onGameStarted: () => { setPhase('game'); setStatusMsg('Game started'); setQuestion(null); setLeaderboard([]); },
     onHostNewQuestion: (payload: QuestionEnvelope) => {
@@ -134,22 +241,189 @@ export default function AdminHostRoomPage(props: { params: Promise<{ roomCode: s
     onError: (m: any) => setStatusMsg(typeof m === 'string' ? m : (m?.message || 'Error'))
   });
 
-  const initRef = useRef(false);
+  function normalizePlayer(raw: any): LobbyPlayer {
+    if (!raw) return {};
+    return {
+      playerId: raw.playerId || raw.id || raw.userId || raw.connectionId || raw.PlayerId,
+      userName: raw.userName || raw.name || raw.displayName || raw.UserName,
+      name: raw.name || raw.userName || raw.displayName,
+      isConnected: typeof raw.isConnected === 'boolean' ? raw.isConnected : (raw.connected ?? true),
+      score: typeof raw.score === 'number' ? raw.score : (raw.currentScore || 0),
+      rank: raw.rank,
+      progress: raw.progress
+    };
+  }
+
+  // Cleanup effect: End room session when host leaves
+  // DISABLED: We want the room to remain active for players to join even after host navigates away
+  // useEffect(() => {
+  //   return () => {
+  //     // Only end the room if we're in lobby phase (not during active game)
+  //     if (phase === 'lobby') {
+  //       endRoomSession(roomCode).catch(err => {
+  //         console.warn('Failed to end room session on cleanup:', err);
+  //       });
+  //     }
+  //   };
+  // }, [phase, roomCode, endRoomSession]);
+
+  const hostAttachedRef = useRef(false);
+  const connectionAttemptsRef = useRef(0);
+  const attachAttemptsRef = useRef(0);
+  const orchestratingRef = useRef(false);
+  const debugEnabled = typeof window !== 'undefined' && window.location.search.includes('hubDebug');
+  const [debugLines, setDebugLines] = useState<string[]>([]);
+
+  function logDebug(line: string) {
+    if (!debugEnabled) return;
+    setDebugLines(prev => [...prev, `${new Date().toISOString()} ${line}`].slice(-200));
+    // eslint-disable-next-line no-console
+    console.log('[HostDebug]', line);
+  }
+
   useEffect(() => {
-    if (initRef.current) return; // guard against duplicate mounts/renders
-    initRef.current = true;
-    (async() => {
-      try {
-        await ensureConnected();
-        await attachHost(roomCode);
-        await requestRoomStatus(roomCode);
-        setStatusMsg('Connected - Game session is in Completed state. Click "Activate Session" to allow players to join.');
-      } catch (e:any) {
-        console.error('[HostRoom] initial connect failed', e);
-        setStatusMsg(`Unable to connect: ${e?.message||'error'}`);
+    // Don't start orchestration if we're about to reload on first load
+    if (isFirstLoad) {
+      console.log('[HostPage] Waiting for first load check before starting orchestration...');
+      return;
+    }
+    
+    if (orchestratingRef.current) return; // ensure single orchestrator
+    orchestratingRef.current = true;
+    let cancelled = false;
+    let intervalId: NodeJS.Timeout | null = null;
+
+    const tick = async () => {
+      if (cancelled) return;
+      if (hostAttachedRef.current) return; // done
+
+      const status = getConnectionStatus();
+      logDebug(`Connection status: ${status.state}, connected: ${status.connected}`);
+      
+      if (!status.connected) {
+        // Force start the connection
+        try {
+          logDebug('Attempting ensureConnected()');
+          await ensureConnected();
+          logDebug('ensureConnected() resolved, checking status again...');
+          
+          // Wait a moment for connection to stabilize
+          await new Promise(resolve => setTimeout(resolve, 100));
+          const newStatus = getConnectionStatus();
+          logDebug(`Post-connect status: ${newStatus.state}, connected: ${newStatus.connected}`);
+          
+          if (!newStatus.connected) {
+            throw new Error(`Connection not established after ensureConnected(). State: ${newStatus.state}`);
+          }
+        } catch (err: any) {
+          const attempt = ++connectionAttemptsRef.current;
+          const backoff = Math.min(1000 * Math.pow(2, attempt), 8000);
+          setStatusMsg(`Connecting to hub failed (attempt ${attempt}). Retrying in ${Math.round(backoff/1000)}s...`);
+          logDebug(`Connection attempt ${attempt} failed: ${(err as Error)?.message}. Backoff ${backoff}ms`);
+          setTimeout(tick, backoff);
+          return;
+        }
       }
-    })();
-  }, [roomCode, ensureConnected, requestRoomStatus, attachHost]);
+      
+      // Connected, attach host
+      try {
+        logDebug(`Invoking attachHost(${roomCode})`);
+        await attachHost(roomCode);
+        hostAttachedRef.current = true;
+        setStatusMsg('Host attached. Checking room status...');
+        logDebug('attachHost succeeded');
+        
+        // Check room status and auto-activate if needed
+        const statusResult = await requestRoomStatus(roomCode);
+        console.log('[HostPage] Room status result:', statusResult);
+        logDebug(`Room status result: ${JSON.stringify(statusResult)}`);
+        
+        // If room is in Completed state (3), automatically activate it
+        if (statusResult?.data?.state === 3) {
+          console.log('[HostPage] Room is completed, auto-activating session...');
+          logDebug('Room is completed, auto-activating session...');
+          setStatusMsg('Activating game session...');
+          try {
+            console.log('[HostPage] Calling activateGameSession...');
+            await activateGameSession(roomCode);
+            console.log('[HostPage] Auto-activation succeeded');
+            setStatusMsg('Game session activated - lobby ready');
+            setIsSessionActivated(true);
+            logDebug('Auto-activation succeeded');
+          } catch (activateErr: any) {
+            console.error('[HostPage] Auto-activation failed:', activateErr);
+            logDebug(`Auto-activation failed: ${(activateErr as Error)?.message}`);
+            setStatusMsg(`Failed to activate session: ${(activateErr as Error)?.message}`);
+          }
+        } else {
+          console.log(`[HostPage] Room state is ${statusResult?.data?.state}, no activation needed`);
+          setStatusMsg('Lobby active');
+          setIsSessionActivated(true);
+        }
+        
+        logDebug('Lobby status loaded');
+        
+        // Clear the polling interval once successful
+        if (intervalId) {
+          clearInterval(intervalId);
+          intervalId = null;
+        }
+      } catch (err: any) {
+        const attempt = ++attachAttemptsRef.current;
+        const backoff = Math.min(1000 * Math.pow(2, attempt), 10000);
+        setStatusMsg(`AttachHost failed (attempt ${attempt}). Retrying in ${Math.round(backoff/1000)}s...`);
+        logDebug(`AttachHost attempt ${attempt} failed: ${(err as Error)?.message}. Backoff ${backoff}ms`);
+        setTimeout(tick, backoff);
+      }
+    };
+
+    // Start immediate attempt, then set up polling
+    logDebug('Starting host page orchestration');
+    tick();
+    
+    // Also poll every 2 seconds as backup in case the connection drops
+    intervalId = setInterval(() => {
+      if (!hostAttachedRef.current) {
+        logDebug('Polling tick - checking connection');
+        tick();
+      }
+    }, 2000);
+
+    return () => { 
+      cancelled = true; 
+      if (intervalId) clearInterval(intervalId);
+      logDebug('Host page orchestration cleanup');
+    };
+  }, [roomCode, isFirstLoad]); // Include isFirstLoad to restart orchestration after first load check
+
+  // Cleanup when host leaves the room (component unmount or navigation away)
+  useEffect(() => {
+    return () => {
+      if (hostAttachedRef.current && roomCode) {
+        logDebug('Host leaving room - initiating cleanup');
+        // Cancel the room and remove all players when host leaves
+        (async () => {
+          try {
+            // First try to end the room gracefully
+            const status = getConnectionStatus();
+            if (status.connected) {
+              logDebug('Attempting to end room on host leave');
+              // Call a backend method to end the room and kick all players
+              await requestRoomStatus(roomCode).then(() => {
+                // If we have access to an end room method, call it
+                // This should set room state to Completed/Canceled and remove players
+              }).catch(() => {
+                // If requestRoomStatus fails, the connection might be down
+                logDebug('Could not end room gracefully - connection lost');
+              });
+            }
+          } catch (err) {
+            logDebug(`Room cleanup failed: ${(err as Error)?.message}`);
+          }
+        })();
+      }
+    };
+  }, [roomCode, getConnectionStatus, requestRoomStatus]);
 
   const handleStart = async () => { 
     try { 
@@ -422,6 +696,21 @@ export default function AdminHostRoomPage(props: { params: Promise<{ roomCode: s
     </div>
   );
 
+  // Show loading state during first load reload
+  if (isFirstLoad) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="bg-white rounded-2xl p-8 shadow-xl max-w-md mx-auto text-center space-y-4">
+          <div className="flex items-center justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-indigo-600"/>
+          </div>
+          <h2 className="text-xl font-semibold text-slate-800">Initializing GameHub Connection</h2>
+          <p className="text-slate-600 text-sm">Preparing optimal connection for room {roomCode}...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
       <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
@@ -435,6 +724,14 @@ export default function AdminHostRoomPage(props: { params: Promise<{ roomCode: s
           <div className="bg-gradient-to-r from-yellow-50 to-yellow-100/50 border border-yellow-200/50 text-yellow-800 px-6 py-3 rounded-2xl text-xs flex items-center gap-3 shadow-sm backdrop-blur-sm">
             <Loader2 className="w-4 h-4 animate-spin"/>
             <span className="font-medium">{statusMsg}</span>
+          </div>
+        )}
+        {debugEnabled && debugLines.length > 0 && (
+          <div className="bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200/50 text-gray-700 px-4 py-3 rounded-2xl text-xs shadow-sm backdrop-blur-sm max-h-48 overflow-y-auto">
+            <div className="font-semibold mb-2">Debug Log:</div>
+            {debugLines.slice(-10).map((line, idx) => (
+              <div key={idx} className="font-mono text-[10px] mb-1">{line}</div>
+            ))}
           </div>
         )}
         {phase === 'lobby' && renderLobby()}

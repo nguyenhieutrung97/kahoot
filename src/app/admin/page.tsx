@@ -601,12 +601,12 @@ export default function AdminGameManagerPage() {
     const game = safeGames.find(g => g.id === selectedGameId);
     try {
       if (game && isGameDraft(game.state)) {
-        setStatusMsg('Preparing game (mark Ready)...');
+        setStatusMsg('Preparing game (publishing)...');
         try {
-          await updateGameState(game.id!, { id: game.id, userNTID: 'current-user-id', currentState: GameState.Draft, targetState: GameState.Ready });
-          setStatusMsg('Game marked Ready. Creating room...');
+          await updateGameState(game.id!, { id: game.id, userNTID: 'current-user-id', currentState: GameState.Draft, targetState: GameState.Published });
+          setStatusMsg('Game published. Creating room...');
           refetchGames?.();
-        } catch (e:any) { setStatusMsg(`Failed to set Ready: ${(e as Error).message}`); return; }
+        } catch (e:any) { setStatusMsg(`Failed to publish game: ${(e as Error).message}`); return; }
       } else { setStatusMsg('Creating room...'); }
       
       // Use the new room management service
