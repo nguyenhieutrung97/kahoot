@@ -20,17 +20,15 @@ export function getGameHub(): signalR.HubConnection {
       })
       .withAutomaticReconnect({
         nextRetryDelayInMilliseconds: (retryContext) => {
-          // Progressive backoff with jitter
+          // Progressive exponential backoff with jitter
           const baseDelay = Math.min(1000 * Math.pow(2, retryContext.previousRetryCount), 30000);
-          const jitter = Math.random() * 1000; // Add up to 1s jitter
+          const jitter = Math.random() * 750; // up to 750ms jitter to spread thundering herd
           const delay = baseDelay + jitter;
-          
-          // Stop after 2 minutes total
-          if (retryContext.elapsedMilliseconds > 120000) {
-            console.warn('[GameHub] Max reconnection time reached, giving up');
+          // Allow up to 5 minutes of reconnection attempts
+          if (retryContext.elapsedMilliseconds > 300000) {
+            console.warn('[GameHub] Max reconnection window (5m) reached, giving up');
             return null;
           }
-          
           console.log(`[GameHub] Retry ${retryContext.previousRetryCount + 1} in ${Math.round(delay)}ms`);
           return delay;
         }
@@ -68,6 +66,8 @@ export function getGameHub(): signalR.HubConnection {
           detail: { connectionId, timestamp: Date.now() } 
         }));
       }
+      // Reset last successful ping instantly so health checks resume
+      lastSuccessfulPing = Date.now();
     });
   }
   return singletonConnection;
@@ -140,6 +140,8 @@ export async function ensureStarted(conn: signalR.HubConnection): Promise<void> 
   
   try {
     await startingPromise;
+    // Begin health ping once connected (if not already)
+    startConnectionHealthCheck();
   } finally {
     starting = false;
     // allow tiny defer so awaiting callers finish before nulling
@@ -180,68 +182,41 @@ export async function forceReconnect(): Promise<void> {
   await ensureStarted(newConnection);
 }
 
-// Connection health monitoring
-export function startConnectionHealthCheck(): void {
-  if (connectionHealthCheck) return; // Already running
-  
+// Health check ping: periodically invoke Ping hub method to keep connection alive and detect silent drops
+// Primary health check API (single implementation)
+export function startConnectionHealthCheck(intervalMs: number = 20000) {
+  if (connectionHealthCheck || !singletonConnection) return;
   connectionHealthCheck = setInterval(async () => {
     if (!singletonConnection) return;
-    
-    const connectionState = singletonConnection.state;
-    const timeSinceLastPing = Date.now() - lastSuccessfulPing;
-    
-    // If connection is connected, try a simple ping
-    if (connectionState === signalR.HubConnectionState.Connected) {
+    const state = singletonConnection.state;
+    if (state === signalR.HubConnectionState.Connected) {
       try {
-        // Use a simple method that should always work if connection is healthy
-        await singletonConnection.invoke('Ping').catch(() => {
-          // If ping fails, mark as unhealthy
-          console.warn('[GameHub] Health check ping failed');
-        });
+        await singletonConnection.invoke('Ping');
         lastSuccessfulPing = Date.now();
       } catch (err) {
-        console.warn('[GameHub] Health check failed:', err);
+        console.warn('[GameHub] Ping failed', err);
       }
     }
-    
-    // If we haven't had a successful ping in 2 minutes and connection appears connected,
-    // force a reconnection
-    if (timeSinceLastPing > 120000 && connectionState === signalR.HubConnectionState.Connected) {
-      console.warn('[GameHub] Connection appears stale, forcing reconnection');
-      try {
-        await forceReconnect();
-      } catch (err) {
-        console.error('[GameHub] Failed to force reconnect:', err);
-      }
+    // Stale connection safeguard
+    if (Date.now() - lastSuccessfulPing > 120000 && state === signalR.HubConnectionState.Connected) {
+      console.warn('[GameHub] Connection stale (>120s since last successful ping). Forcing reconnect');
+      try { await forceReconnect(); } catch (reErr) { console.error('[GameHub] Forced reconnect failed', reErr); }
     }
-  }, 30000); // Check every 30 seconds
+  }, intervalMs);
 }
 
-// Stop health monitoring
-export function stopConnectionHealthCheck(): void {
-  if (connectionHealthCheck) {
-    clearInterval(connectionHealthCheck);
-    connectionHealthCheck = null;
-  }
+export function stopConnectionHealthCheck() {
+  if (connectionHealthCheck) { clearInterval(connectionHealthCheck); connectionHealthCheck = null; }
 }
 
-// Get connection status
-export function getConnectionStatus(): {
-  connected: boolean;
-  state: string;
-  lastPing: number;
-  timeSinceLastPing: number;
-} {
+export function getConnectionStatus(): { connected: boolean; state: string; lastPing: number; timeSinceLastPing: number } {
   const state = singletonConnection?.state || 'Disconnected';
   const connected = state === signalR.HubConnectionState.Connected;
   const timeSinceLastPing = Date.now() - lastSuccessfulPing;
-  
-  return {
-    connected,
-    state: state.toString(),
-    lastPing: lastSuccessfulPing,
-    timeSinceLastPing
-  };
+  return { connected, state: state.toString(), lastPing: lastSuccessfulPing, timeSinceLastPing };
 }
+
+// Connection health monitoring
+// (Removed duplicate legacy health-check block)
 
 
